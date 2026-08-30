@@ -127,6 +127,53 @@ unless they resurface.
 
 ---
 
+# SPT-Platform — Environment & Version Notes
+
+Tracks known gaps between the local development environment and the target
+deployment environment, so nothing here is a silent surprise during
+handover or production deployment.
+
+---
+
+## Database engine: MariaDB (local) vs MySQL 9.1 (target)
+
+**Local dev:** XAMPP bundles **MariaDB 10.4.32**, not MySQL. Laravel's
+`mysql` database driver connects to both without code changes, so this does
+not block development.
+
+**Target:** PNP ITMS's data center runs **MySQL 9.1** per the original
+architecture spec.
+
+**Why this matters:** MariaDB and MySQL have diverged since MariaDB forked
+from MySQL, and by MySQL 9.x the gap is larger than in earlier versions.
+Specific things to verify before/at handover rather than assume:
+
+- **JSON columns/functions** — used in `lesson_progress.state` and
+  `exam_attempts.answers`. MySQL 9.x's JSON function set and validation
+  behavior differs from MariaDB 10.4's older implementation.
+- **Window functions** — if any reporting/analytics queries use them
+  (e.g. for the Admin Analytics dashboard), confirm syntax compatibility.
+- **Default collation/charset behavior** — can differ between the two
+  engines and affect sorting or comparison of officer names, emails, etc.
+- **`ENUM` and check-constraint behavior** — used in several tables
+  (`role`, `status`, `file_type` columns).
+
+**Action before handover:** either test the schema and key queries directly
+against a real MySQL 9.1 instance (e.g. via the Docker Compose setup already
+planned for this project), or explicitly flag to PNP ITMS that local
+development was done against MariaDB and request a validation pass on
+their actual MySQL 9.1 environment before go-live.
+
+---
+
+## Recommendation
+
+Once the core application is functional against local MariaDB, switch local
+development to the Docker Compose setup (already planned — `mysql:9.1`
+image) so ongoing feature work is validated against the real target engine
+rather than discovering engine-specific issues late.
+
+
 ## Before handover checklist
 
 - [ ] Re-run `composer audit` and compare against this list
