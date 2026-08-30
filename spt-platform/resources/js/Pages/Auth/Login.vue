@@ -1,19 +1,10 @@
 <script setup>
-import Checkbox from '@/Components/Checkbox.vue';
-import GuestLayout from '@/Layouts/GuestLayout.vue';
-import InputError from '@/Components/InputError.vue';
-import InputLabel from '@/Components/InputLabel.vue';
-import PrimaryButton from '@/Components/PrimaryButton.vue';
-import TextInput from '@/Components/TextInput.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
+import { router } from '@inertiajs/vue3';
 
 defineProps({
-    canResetPassword: {
-        type: Boolean,
-    },
-    status: {
-        type: String,
-    },
+    canResetPassword: Boolean,
+    status: String,
 });
 
 const form = useForm({
@@ -27,74 +18,71 @@ const submit = () => {
         onFinish: () => form.reset('password'),
     });
 };
+
+const quickLogin = (type) => {
+    router.post(`/dev/quick-login/${type}`);
+};
 </script>
 
 <template>
-    <GuestLayout>
-        <Head title="Log in" />
+    <Head title="Log in" />
 
-        <div v-if="status" class="mb-4 text-sm font-medium text-green-600">
-            {{ status }}
+    <div class="min-h-screen flex items-center justify-center bg-gray-50">
+        <div class="w-full max-w-md">
+            <div class="text-center mb-6">
+                <div class="inline-flex items-center gap-2">
+                    <div class="w-8 h-8 bg-blue-900 rounded-full flex items-center justify-center text-white text-sm">O</div>
+                    <span class="font-bold text-blue-900">PNP LMS</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-1">Philippine National Police Learning Management System</p>
+            </div>
+
+            <div class="bg-white rounded-xl shadow-sm border p-6">
+                <h1 class="text-lg font-bold">Officer Log In</h1>
+                <p class="text-sm text-gray-500 mb-4">Enter your PNP email and password to log in to the LMS portal.</p>
+
+                <div v-if="status" class="mb-4 text-sm font-medium text-green-600">{{ status }}</div>
+
+                <form @submit.prevent="submit">
+                    <div>
+                        <label class="text-sm font-medium">Email Address</label>
+                        <input v-model="form.email" type="email" placeholder="officer@pnp.gov.ph"
+                            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required autofocus />
+                        <div v-if="form.errors.email" class="text-red-600 text-xs mt-1">{{ form.errors.email }}</div>
+                    </div>
+
+                    <div class="mt-4">
+                        <div class="flex justify-between">
+                            <label class="text-sm font-medium">Password</label>
+                            <Link v-if="canResetPassword" :href="route('password.request')" class="text-xs text-blue-600">Forgot password?</Link>
+                        </div>
+                        <input v-model="form.password" type="password" placeholder="Enter your password"
+                            class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
+                        <div v-if="form.errors.password" class="text-red-600 text-xs mt-1">{{ form.errors.password }}</div>
+                    </div>
+
+                    <button type="submit" :disabled="form.processing"
+                        class="mt-5 w-full bg-blue-900 text-white rounded-lg py-2 text-sm font-medium hover:bg-blue-800">
+                        Log In
+                    </button>
+                </form>
+
+                <div class="mt-6 pt-4 border-t text-center">
+                    <p class="text-xs text-gray-500 mb-2">Quick Test Logins</p>
+                    <div class="flex gap-2 justify-center">
+                        <button @click="quickLogin('officer')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Officer</button>
+                        <button @click="quickLogin('supervisor')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Supervisor</button>
+                        <button @click="quickLogin('admin')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Admin</button>
+                    </div>
+                </div>
+
+                <p class="text-center text-sm mt-4">
+                    Don't have an account?
+                    <Link :href="route('register')" class="text-blue-600 font-medium">Sign Up / Register Office →</Link>
+                </p>
+            </div>
+
+            <p class="text-center text-xs text-gray-400 mt-6">© 2026 Philippine National Police. All rights reserved.</p>
         </div>
-
-        <form @submit.prevent="submit">
-            <div>
-                <InputLabel for="email" value="Email" />
-
-                <TextInput
-                    id="email"
-                    type="email"
-                    class="mt-1 block w-full"
-                    v-model="form.email"
-                    required
-                    autofocus
-                    autocomplete="username"
-                />
-
-                <InputError class="mt-2" :message="form.errors.email" />
-            </div>
-
-            <div class="mt-4">
-                <InputLabel for="password" value="Password" />
-
-                <TextInput
-                    id="password"
-                    type="password"
-                    class="mt-1 block w-full"
-                    v-model="form.password"
-                    required
-                    autocomplete="current-password"
-                />
-
-                <InputError class="mt-2" :message="form.errors.password" />
-            </div>
-
-            <div class="mt-4 block">
-                <label class="flex items-center">
-                    <Checkbox name="remember" v-model:checked="form.remember" />
-                    <span class="ms-2 text-sm text-gray-600"
-                        >Remember me</span
-                    >
-                </label>
-            </div>
-
-            <div class="mt-4 flex items-center justify-end">
-                <Link
-                    v-if="canResetPassword"
-                    :href="route('password.request')"
-                    class="rounded-md text-sm text-gray-600 underline hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
-                >
-                    Forgot your password?
-                </Link>
-
-                <PrimaryButton
-                    class="ms-4"
-                    :class="{ 'opacity-25': form.processing }"
-                    :disabled="form.processing"
-                >
-                    Log in
-                </PrimaryButton>
-            </div>
-        </form>
-    </GuestLayout>
+    </div>
 </template>

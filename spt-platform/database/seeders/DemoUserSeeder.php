@@ -32,5 +32,16 @@ class DemoUserSeeder extends Seeder
                 'role' => 'admin',
             ]
         );
+
+            User::firstOrCreate(
+                ['email' => 'supervisor.demo@pnp.gov.ph'],
+                [
+                'name' => 'Supervisor Demo',
+                'password' => Hash::make('demo1234'),
+                'unit_office' => 'Regional Training Command',
+                'two_factor_verified' => true,
+                'role' => 'supervisor',
+            ]
+        );
     }
 }
