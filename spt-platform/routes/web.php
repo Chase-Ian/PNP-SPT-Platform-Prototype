@@ -42,9 +42,13 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-        Route::get('/admin/dashboard', function () {
+    Route::get('/admin/dashboard', function () {
         return Inertia::render('Admin/Dashboard');
     })->name('admin.dashboard');
+
+    Route::get('/supervisor/dashboard', function () {
+        return Inertia::render('Supervisor/Dashboard');
+    })->name('supervisor.dashboard');
 
     Route::get('/supervisor/monitoring', function () {
         return Inertia::render('Supervisor/Monitoring');

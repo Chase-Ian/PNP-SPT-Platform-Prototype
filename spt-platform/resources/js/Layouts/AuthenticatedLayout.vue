@@ -1,4 +1,6 @@
 <script setup>
+import { computed } from 'vue';
+import { usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
@@ -8,6 +10,18 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
 
 const showingNavigationDropdown = ref(false);
+const page = usePage();
+const dashboardRoute = computed(() => {
+    switch (page.props.auth.user.role) {
+        case 'admin': return route('admin.dashboard');
+        case 'supervisor': return route('supervisor.dashboard');
+        default: return route('dashboard');
+    }
+});
+const dashboardActive = computed(() => {
+    return route().current('dashboard') || route().current('admin.dashboard') || route().current('supervisor.dashboard');
+});
+
 </script>
 
 <template>
@@ -34,8 +48,8 @@ const showingNavigationDropdown = ref(false);
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
                                 <NavLink
-                                    :href="route('dashboard')"
-                                    :active="route().current('dashboard')"
+                                    :href="dashboardRoute"
+                                    :active="dashboardActive"
                                 >
                                     Dashboard
                                 </NavLink>
