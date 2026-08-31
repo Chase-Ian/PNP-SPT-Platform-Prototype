@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CourseController;
+use App\Http\Controllers\CertificateController;
 
 if (app()->environment(['local', 'staging'])) {
     Route::post('/dev/quick-login/{type}', function (string $type) {
@@ -61,6 +62,15 @@ Route::middleware('auth')->group(function () {
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/courses/{course}/drop', [CourseController::class, 'drop'])->name('courses.drop');
+    Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');
+    Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
+    Route::get('/verify/{serial}', [CertificateController::class, 'verify'])->name('certificates.verify');
 });
+
+// Public — no auth, matches the PDF's Certificate Verification screen
+Route::get('/verify/{hash}', [CertificateController::class, 'verify'])->name('certificates.verify');
+Route::get('/verify', function () {
+    return Inertia::render('Verify/Index');
+})->name('certificates.verify.form');
 
 require __DIR__.'/auth.php';
