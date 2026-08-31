@@ -12,4 +12,9 @@ class ExamAttempt extends Model
     protected $fillable = ['user_id', 'course_id', 'score', 'passed', 'answers'];
 
     protected $casts = ['answers' => 'array', 'passed' => 'boolean'];
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
 }

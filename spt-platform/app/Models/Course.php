@@ -13,4 +13,19 @@ class Course extends Model
         'activity_code', 'title', 'description', 'instructor_name',
         'duration_hours', 'lesson_count', 'is_published',
     ];
+
+    public function examSettings()
+    {
+        return $this->hasOne(ExamSetting::class);
+    }
+
+    public function modules()
+{
+    return $this->hasMany(Module::class);
+}
+
+public function enrollments()
+{
+    return $this->hasMany(Enrollment::class);
+}
 }

@@ -11,9 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('module_completions', function (Blueprint $table) {
+         Schema::create('module_completions', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('module_id')->constrained()->cascadeOnDelete();
+            $table->timestamp('completed_at')->nullable();
+            $table->unsignedSmallInteger('minutes_spent')->default(0);
             $table->timestamps();
+            $table->unique(['user_id', 'module_id']);
         });
     }
 
@@ -22,6 +27,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('module_completions');
+         Schema::dropIfExists('module_completions');
     }
 };
