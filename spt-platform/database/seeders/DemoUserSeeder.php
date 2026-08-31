@@ -19,7 +19,7 @@ class DemoUserSeeder extends Seeder
                 'unit_office' => 'Manila Police District - Station 1 (Ermita)',
                 'region' => 'National Capital Region (NCR)',
                 'two_factor_verified' => true,
-                'role' => 'officer',
+                'role' => 'trainee', // was 'officer'
             ]
         );
 

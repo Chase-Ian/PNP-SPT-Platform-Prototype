@@ -8,23 +8,23 @@ use Inertia\Inertia;
 
 
 if (app()->environment(['local', 'staging'])) {
-   Route::post('/dev/quick-login/{type}', function (string $type) {
-    abort_unless(in_array($type, ['officer', 'supervisor', 'admin']), 404);
+    Route::post('/dev/quick-login/{type}', function (string $type) {
+        abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
 
-    $emails = [
-        'officer' => 'maria.cruz@pnp.gov.ph',
-        'supervisor' => 'supervisor.demo@pnp.gov.ph',
-        'admin' => 'admin.demo@pnp.gov.ph',
-    ];
+        $emails = [
+            'trainee' => 'maria.cruz@pnp.gov.ph',
+            'supervisor' => 'supervisor.demo@pnp.gov.ph',
+            'admin' => 'admin.demo@pnp.gov.ph',
+        ];
 
-    $user = User::where('email', $emails[$type])->firstOrFail();
-    Auth::login($user);
+        $user = User::where('email', $emails[$type])->firstOrFail();
+        Auth::login($user);
 
-    return redirect(match ($type) {
-        'admin' => '/admin/dashboard',
-        'supervisor' => '/supervisor/dashboard',
-        default => '/dashboard',
-    });
+        return redirect(match ($type) {
+            'admin' => '/admin/dashboard',
+            'supervisor' => '/supervisor/dashboard',
+            default => '/dashboard',
+        });
     })->name('dev.quick-login');
 }
 
@@ -46,9 +46,9 @@ Route::middleware('auth')->group(function () {
         return Inertia::render('Admin/Dashboard');
     })->name('admin.dashboard');
 
-    Route::get('/supervisor/dashboard', function () {
-        return Inertia::render('Supervisor/Dashboard');
-    })->name('supervisor.dashboard');
+    Route::get('/supervisor/monitoring', function () {
+        return Inertia::render('Supervisor/Monitoring');
+    })->name('supervisor.monitoring');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');

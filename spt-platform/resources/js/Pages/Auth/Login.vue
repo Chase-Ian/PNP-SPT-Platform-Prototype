@@ -32,9 +32,9 @@ const quickLogin = (type) => {
             <div class="text-center mb-6">
                 <div class="inline-flex items-center gap-2">
                     <div class="w-8 h-8 bg-blue-900 rounded-full flex items-center justify-center text-white text-sm">O</div>
-                    <span class="font-bold text-blue-900">PNP LMS</span>
+                    <span class="font-bold text-blue-900">PNP SPT-PLATFORM</span>
                 </div>
-                <p class="text-xs text-gray-500 mt-1">Philippine National Police Learning Management System</p>
+                <p class="text-xs text-gray-500 mt-1">Philippine National Police Specialized Personnel Training Platform</p>
             </div>
 
             <div class="bg-white rounded-xl shadow-sm border p-6">
@@ -70,7 +70,7 @@ const quickLogin = (type) => {
                 <div class="mt-6 pt-4 border-t text-center">
                     <p class="text-xs text-gray-500 mb-2">Quick Test Logins</p>
                     <div class="flex gap-2 justify-center">
-                        <button @click="quickLogin('officer')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Officer</button>
+                        <button @click="quickLogin('trainee')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Trainee</button>
                         <button @click="quickLogin('supervisor')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Supervisor</button>
                         <button @click="quickLogin('admin')" type="button" class="border rounded-lg px-3 py-1.5 text-sm hover:bg-gray-50">Demo Admin</button>
                     </div>
