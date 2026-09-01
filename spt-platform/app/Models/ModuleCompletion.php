@@ -12,4 +12,14 @@ class ModuleCompletion extends Model
     protected $fillable = ['user_id', 'module_id', 'completed_at', 'minutes_spent'];
 
     protected $casts = ['completed_at' => 'datetime'];
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
+    }
+
+    public function module()
+    {
+        return $this->belongsTo(Module::class);
+    }
 }

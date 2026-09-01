@@ -13,4 +13,14 @@ class Module extends Model
         'course_id', 'order', 'title', 'description',
         'file_path', 'file_type', 'duration_minutes',
     ];
+
+    public function course()
+    {
+        return $this->belongsTo(Course::class);
+    }
+
+    public function completions()
+    {
+        return $this->hasMany(ModuleCompletion::class);
+    }
 }
