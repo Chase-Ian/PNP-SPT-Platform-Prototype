@@ -11,6 +11,8 @@ use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
+use App\Http\Controllers\Admin\StudentController as AdminStudentController;
+use App\Http\Controllers\Admin\ExamSettingController as AdminExamSettingController;
 
 if (app()->environment(['local', 'staging'])) {
     Route::post('/dev/quick-login/{type}', function (string $type) {
@@ -81,8 +83,10 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/modules', [AdminModuleController::class, 'index'])->name('admin.modules.index');
     Route::post('/modules', [AdminModuleController::class, 'store'])->name('admin.modules.store');
     Route::delete('/modules/{module}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
-    Route::get('/students', fn () => Inertia::render('Admin/Students/Index'))->name('admin.students.index');
-    Route::get('/exam-settings', fn () => Inertia::render('Admin/ExamSettings/Index'))->name('admin.exam-settings.index');
+    Route::get('/students', [AdminStudentController::class, 'index'])->name('admin.students.index');
+    Route::delete('/students/{student}', [AdminStudentController::class, 'destroy'])->name('admin.students.destroy');
+    Route::get('/exam-settings', [AdminExamSettingController::class, 'index'])->name('admin.exam-settings.index');
+    Route::put('/exam-settings/{course}', [AdminExamSettingController::class, 'update'])->name('admin.exam-settings.update');
     Route::get('/certificates', fn () => Inertia::render('Admin/Certificates/Index'))->name('admin.certificates.index');
     Route::get('/analytics', fn () => Inertia::render('Admin/Analytics/Index'))->name('admin.analytics.index');
 });
