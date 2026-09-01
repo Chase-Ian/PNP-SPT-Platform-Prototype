@@ -1,7 +1,10 @@
 <!-- resources/js/Pages/Verify/Index.vue -->
 <script setup>
-import { Head, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { Head, Link, router, usePage } from '@inertiajs/vue3';
+import { ref, computed } from 'vue';
+
+const page = usePage();
+const isLoggedIn = computed(() => !!page.props.auth?.user);
 
 const serial = ref('');
 const submit = () => {
@@ -13,6 +16,11 @@ const submit = () => {
     <Head title="Certificate Verification" />
     <div class="min-h-screen bg-gray-50 py-12 px-4">
         <div class="max-w-2xl mx-auto space-y-4">
+
+            <Link v-if="isLoggedIn" href="/dashboard" class="text-sm text-blue-600 inline-block">
+                ← Back to Dashboard
+            </Link>
+
             <div class="bg-white rounded-xl border p-6">
                 <h1 class="font-semibold text-lg flex items-center gap-2">✅ Certificate Verification</h1>
                 <p class="text-sm text-gray-500 mb-4">Verify the authenticity of PNP training certificates by entering the serial number.</p>

@@ -8,6 +8,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\CourseController;
 use App\Http\Controllers\CertificateController;
+use App\Http\Controllers\NotificationController;
 
 if (app()->environment(['local', 'staging'])) {
     Route::post('/dev/quick-login/{type}', function (string $type) {
@@ -65,6 +66,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/certificates', [CertificateController::class, 'index'])->name('certificates.index');
     Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
     Route::get('/verify/{serial}', [CertificateController::class, 'verify'])->name('certificates.verify');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 });
 
 // Public — no auth, matches the PDF's Certificate Verification screen

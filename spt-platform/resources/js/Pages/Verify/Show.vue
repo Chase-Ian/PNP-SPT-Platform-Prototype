@@ -1,11 +1,23 @@
-
+<!-- resources/js/Pages/Verify/Show.vue -->
 <script setup>
+import { Link, usePage } from '@inertiajs/vue3';
+import { computed } from 'vue';
+
 defineProps({ certificate: Object });
+
+const page = usePage();
+const isLoggedIn = computed(() => !!page.props.auth?.user);
 </script>
 
 <template>
     <div class="min-h-screen bg-gray-50 py-12 px-4">
-        <div class="max-w-2xl mx-auto">
+        <div class="max-w-2xl mx-auto space-y-3">
+
+            <div class="flex justify-between">
+                <Link href="/verify" class="text-sm text-blue-600">← Search another certificate</Link>
+                <Link v-if="isLoggedIn" href="/dashboard" class="text-sm text-blue-600">Back to Dashboard →</Link>
+            </div>
+
             <div v-if="certificate" class="bg-white rounded-xl border p-6">
                 <h1 class="font-semibold text-lg text-green-700">✅ Certificate Verified</h1>
                 <div class="mt-4 text-sm space-y-1">

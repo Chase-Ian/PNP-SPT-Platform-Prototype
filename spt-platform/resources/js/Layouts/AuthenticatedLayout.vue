@@ -2,12 +2,14 @@
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import NotificationBell from '@/Components/NotificationBell.vue';
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
 import Dropdown from '@/Components/Dropdown.vue';
 import DropdownLink from '@/Components/DropdownLink.vue';
 import NavLink from '@/Components/NavLink.vue';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink.vue';
 import { Link } from '@inertiajs/vue3';
+
 
 const showingNavigationDropdown = ref(false);
 const page = usePage();
@@ -47,16 +49,17 @@ const dashboardActive = computed(() => {
                             <div
                                 class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex"
                             >
-                                <NavLink
-                                    :href="dashboardRoute"
-                                    :active="dashboardActive"
-                                >
+                                <NavLink :href="dashboardRoute" :active="dashboardActive">
                                     Dashboard
+                                </NavLink>
+                                <NavLink :href="'/verify'" :active="route().current('certificates.verify*')">
+                                    Verification
                                 </NavLink>
                             </div>
                         </div>
 
                         <div class="hidden sm:ms-6 sm:flex sm:items-center">
+                            <NotificationBell />
                             <!-- Settings Dropdown -->
                             <div class="relative ms-3">
                                 <Dropdown align="right" width="48">
@@ -154,12 +157,12 @@ const dashboardActive = computed(() => {
                     class="sm:hidden"
                 >
                     <div class="space-y-1 pb-3 pt-2">
-                        <ResponsiveNavLink
-                            :href="route('dashboard')"
-                            :active="route().current('dashboard')"
-                        >
-                            Dashboard
-                        </ResponsiveNavLink>
+                        <ResponsiveNavLink :href="route('dashboard')" :active="route().current('dashboard')">
+                                Dashboard
+                            </ResponsiveNavLink>
+                            <ResponsiveNavLink :href="'/verify'" :active="route().current('certificates.verify*')">
+                                Verification
+                            </ResponsiveNavLink>
                     </div>
 
                     <!-- Responsive Settings Options -->
