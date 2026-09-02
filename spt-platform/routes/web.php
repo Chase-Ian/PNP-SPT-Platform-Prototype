@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\ExamSettingController as AdminExamSettingController;
 use App\Http\Controllers\Admin\CertificateLogController;
 use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Supervisor\MonitoringController;
 
 if (app()->environment(['local', 'staging'])) {
     Route::post('/dev/quick-login/{type}', function (string $type) {
@@ -73,9 +74,7 @@ Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(func
         return Inertia::render('Supervisor/Dashboard');
     })->name('supervisor.dashboard');
 
-    Route::get('/monitoring', function () {
-        return Inertia::render('Supervisor/Monitoring');
-    })->name('supervisor.monitoring');
+    Route::get('/monitoring', [MonitoringController::class, 'index'])->name('supervisor.monitoring');
 });
 
 // --- Admin routes ---
