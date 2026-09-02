@@ -13,6 +13,8 @@ use App\Http\Controllers\Admin\DashboardController as AdminDashboardController;
 use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\ExamSettingController as AdminExamSettingController;
+use App\Http\Controllers\Admin\CertificateLogController;
+use App\Http\Controllers\Admin\AnalyticsController;
 
 if (app()->environment(['local', 'staging'])) {
     Route::post('/dev/quick-login/{type}', function (string $type) {
@@ -87,8 +89,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::delete('/students/{student}', [AdminStudentController::class, 'destroy'])->name('admin.students.destroy');
     Route::get('/exam-settings', [AdminExamSettingController::class, 'index'])->name('admin.exam-settings.index');
     Route::put('/exam-settings/{course}', [AdminExamSettingController::class, 'update'])->name('admin.exam-settings.update');
-    Route::get('/certificates', fn () => Inertia::render('Admin/Certificates/Index'))->name('admin.certificates.index');
-    Route::get('/analytics', fn () => Inertia::render('Admin/Analytics/Index'))->name('admin.analytics.index');
+    Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
 });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

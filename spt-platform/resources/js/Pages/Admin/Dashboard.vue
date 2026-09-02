@@ -65,8 +65,13 @@ defineProps({
                                 </span>
                             </td>
                             <td class="py-3">
-                                <span :class="o.certificate_status === 'Issued' ? 'text-green-600' : 'text-gray-400'">
-                                    {{ o.certificate_status }}
+                                <p>{{ o.course }}</p>
+                                <span :class="{
+                                    'text-green-600': o.course_status === 'Completed',
+                                    'text-blue-600': o.course_status === 'In Progress',
+                                    'text-gray-400': o.course_status === 'Enrolled' || o.course_status === 'Not Enrolled',
+                                }" class="text-xs">
+                                    {{ o.course_status }}
                                 </span>
                             </td>
                         </tr>

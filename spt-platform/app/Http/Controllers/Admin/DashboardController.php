@@ -25,13 +25,23 @@ class DashboardController extends Controller
             ->with(['enrollments.course', 'certificates', 'examAttempts'])
             ->get()
             ->map(function ($officer) {
-                $enrollment = $officer->enrollments->first();
+                $totalEnrollments = $officer->enrollments->count();
+                $completedCount = $officer->enrollments->where('status', 'completed')->count();
+
+                $courseStatus = match (true) {
+                    $totalEnrollments === 0 => 'Not Enrolled',
+                    $completedCount === $totalEnrollments => 'Completed',
+                    $completedCount > 0 => 'In Progress',
+                    default => 'Enrolled',
+                };
+
                 $latestExam = $officer->examAttempts->last();
 
                 return [
                     'name' => $officer->name,
                     'unit_office' => $officer->unit_office,
-                    'course' => $enrollment?->course?->title ?? '—',
+                    'course' => $totalEnrollments > 0 ? "{$completedCount}/{$totalEnrollments} Courses" : '—',
+                    'course_status' => $courseStatus,
                     'modules_completed' => $officer->moduleCompletions()->whereNotNull('completed_at')->count(),
                     'exam_result' => $latestExam ? ($latestExam->passed ? 'Passed (' . $latestExam->score . ')' : 'Failed') : 'Pending',
                     'certificate_status' => $officer->certificates->isNotEmpty() ? 'Issued' : 'Pending',
