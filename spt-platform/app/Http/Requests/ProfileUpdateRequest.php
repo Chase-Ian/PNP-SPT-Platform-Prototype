@@ -18,14 +18,15 @@ class ProfileUpdateRequest extends FormRequest
     {
         return [
             'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required',
-                'string',
-                'lowercase',
-                'email',
-                'max:255',
-                Rule::unique(User::class)->ignore($this->user()->id),
-            ],
+            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
         ];
+    }
+
+    // Add this method if it doesn't already exist
+    protected function prepareForValidation(): void
+    {
+        $this->merge([
+            'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $this->input('email')),
+        ]);
     }
 }

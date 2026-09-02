@@ -29,24 +29,31 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|lowercase|email|max:255|unique:'.User::class,
-            'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+    Public function store(Request $request): RedirectResponse
+{
+    // Security mitigation: strip CRLF sequences from user-supplied email
+    // before validation. Laravel 11.x has an unpatched CRLF injection
+    // advisory in the default `email` rule (GHSA-5vg9-5847-vvmq).
+    // See docs/SECURITY_ADVISORIES.md.
+    $request->merge([
+        'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $request->input('email')),
+    ]);
 
-        $user = User::create([
-            'name' => $request->name,
-            'email' => $request->email,
-            'password' => Hash::make($request->password),
-        ]);
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|lowercase|email:filter|max:255|unique:'.User::class,
+        'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    ]);
 
-        event(new Registered($user));
+    $user = User::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+    ]);
 
-        Auth::login($user);
+    event(new Registered($user));
+    Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
-    }
+    return redirect(route('dashboard', absolute: false));
+}
 }
