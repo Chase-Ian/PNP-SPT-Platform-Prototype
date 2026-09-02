@@ -29,31 +29,34 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    Public function store(Request $request): RedirectResponse
-{
-    // Security mitigation: strip CRLF sequences from user-supplied email
-    // before validation. Laravel 11.x has an unpatched CRLF injection
-    // advisory in the default `email` rule (GHSA-5vg9-5847-vvmq).
-    // See docs/SECURITY_ADVISORIES.md.
-    $request->merge([
-        'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $request->input('email')),
-    ]);
+    public function store(Request $request): RedirectResponse
+    {
+        // Security mitigation — see docs/SECURITY_ADVISORIES.md (GHSA-5vg9-5847-vvmq)
+        $request->merge([
+            'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $request->input('email')),
+        ]);
 
-    $request->validate([
-        'name' => 'required|string|max:255',
-        'email' => 'required|string|lowercase|email:filter|max:255|unique:'.User::class,
-        'password' => ['required', 'confirmed', Rules\Password::defaults()],
-    ]);
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|string|lowercase|email:filter|max:255|unique:'.User::class,
+            'badge_number' => 'required|string|max:50',
+            'unit_office' => 'required|string|max:255',
+            'region' => 'required|string|max:255',
+            'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ]);
 
-    $user = User::create([
-        'name' => $request->name,
-        'email' => $request->email,
-        'password' => Hash::make($request->password),
-    ]);
+        $user = User::create([
+            'name' => $request->name,
+            'email' => $request->email,
+            'badge_number' => $request->badge_number,
+            'unit_office' => $request->unit_office,
+            'region' => $request->region,
+            'password' => Hash::make($request->password),
+        ]);
 
-    event(new Registered($user));
-    Auth::login($user);
+        event(new Registered($user));
+        Auth::login($user);
 
-    return redirect(route('dashboard', absolute: false));
-}
+        return redirect(route('dashboard', absolute: false));
+    }
 }
