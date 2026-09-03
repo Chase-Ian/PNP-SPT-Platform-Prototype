@@ -36,47 +36,46 @@ class ModuleController extends Controller
         ]);
     }
 
-    public function store(Request $request)
-    {
-        $request->validate([
-            'course_id' => 'required|exists:courses,id',
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'duration_minutes' => 'required|integer|min:1',
-            'file' => 'required|file|max:51200',
-        ]);
+        public function store(Request $request)
+        {
+            $request->validate([
+                'course_id' => 'required|exists:courses,id',
+                'title' => 'required|string|max:255',
+                'description' => 'nullable|string',
+                'duration_minutes' => 'required|integer|min:1',
+                'file' => 'required|file|max:51200',
+            ]);
 
-        $file = $request->file('file');
-        $mime = $file->getMimeType();
-        $allowed = [
-            'application/pdf' => 'pdf',
-            'video/mp4' => 'mp4',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
-        ];
+            $file = $request->file('file');
+            $mime = $file->getMimeType();
+            $allowed = [
+                'application/pdf' => 'pdf',
+                'video/mp4' => 'mp4',
+                'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
+            ];
 
-        // Security backstop: verify the real MIME type server-side (finfo-based,
-        // not the client-supplied extension). Defense-in-depth alongside
-        // Laravel 11.44+'s fix for GHSA-78fx-h6xr-vch4. See docs/SECURITY_ADVISORIES.md.
-        if (! array_key_exists($mime, $allowed)) {
-            return back()->withErrors([
-                'file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.',
-            ])->withInput();
+            if (! array_key_exists($mime, $allowed)) {
+                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
+            }
+
+            // Store with the correct extension explicitly — finfo can misdetect
+            // some PPTX files as generic binary data, which would otherwise
+            // produce a wrong extension via Laravel's default store().
+            $filename = \Illuminate\Support\Str::random(40) . '.' . $allowed[$mime];
+            $path = $file->storeAs('modules', $filename);
+
+            Module::create([
+                'course_id' => $request->course_id,
+                'order' => Module::where('course_id', $request->course_id)->max('order') + 1,
+                'title' => $request->title,
+                'description' => $request->description,
+                'file_path' => $path,
+                'file_type' => $allowed[$mime],
+                'duration_minutes' => $request->duration_minutes,
+            ]);
+
+            return back();
         }
-
-        $path = $file->store('modules');
-
-        Module::create([
-            'course_id' => $request->course_id,
-            'order' => Module::where('course_id', $request->course_id)->max('order') + 1,
-            'title' => $request->title,
-            'description' => $request->description,
-            'file_path' => $path,
-            'file_type' => $allowed[$mime],
-            'duration_minutes' => $request->duration_minutes,
-        ]);
-
-        return back();
-    }
 
     public function destroy(Module $module)
     {
