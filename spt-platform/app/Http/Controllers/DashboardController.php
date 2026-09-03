@@ -16,6 +16,11 @@ class DashboardController extends Controller
         $hoursSpent = round($user->moduleCompletions()->sum('minutes_spent') / 60, 1);
         $certificatesEarned = $user->certificates()->count();
 
+        $enrolledCourseIds = $user->enrollments()->pluck('course_id');
+        $newModulesCount = \App\Models\Course::where('is_published', true)
+            ->whereNotIn('id', $enrolledCourseIds)
+            ->count();
+
         $recentExams = $user->examAttempts()
             ->with('course')
             ->latest()
@@ -25,7 +30,7 @@ class DashboardController extends Controller
                 'title' => $attempt->course->title . ' Final Exam',
                 'completed_on' => $attempt->created_at->format('Y-m-d'),
                 'score_percent' => $attempt->course
-                    ? round(($attempt->score / max($attempt->course->examSettings->question_count ?? 50, 1)) * 100)
+                    ? round(($attempt->score / max($attempt->course->examSettings?->question_count ?? 50, 1)) * 100)
                     : null,
                 'passed' => $attempt->passed,
             ]);
@@ -36,6 +41,7 @@ class DashboardController extends Controller
                 'hoursSpent' => $hoursSpent,
                 'completedModules' => $completedModules,
                 'certificatesEarned' => $certificatesEarned,
+                'newModulesCount' => $newModulesCount,
             ],
             'recentExams' => $recentExams,
         ]);
