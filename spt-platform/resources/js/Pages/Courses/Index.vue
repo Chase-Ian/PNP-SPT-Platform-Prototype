@@ -1,7 +1,7 @@
 <!-- resources/js/Pages/Courses/Index.vue -->
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, router, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
 const props = defineProps({
@@ -103,12 +103,18 @@ const statusClass = (status) => {
                                         {{ statusLabel(course.status) }}
                                     </span>
                                 </td>
-                                <td class="py-3">
-                                    <button v-if="course.status === 'enrolled'" @click="drop(course)"
-                                        class="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs font-medium">Drop</button>
-                                    <button v-else @click="enroll(course)"
-                                        class="bg-blue-900 text-white px-3 py-1 rounded-lg text-xs font-medium">Enroll</button>
-                                </td>
+                                    <td class="py-3 flex items-center gap-2">
+                                        <template v-if="course.status === 'enrolled'">
+                                            <button @click="drop(course)" class="bg-red-100 text-red-600 px-3 py-1 rounded-lg text-xs font-medium">Drop</button>
+                                            <Link :href="`/exams/${course.id}`" class="text-blue-600 text-xs font-medium">Take Exam</Link>
+                                        </template>
+                                        <template v-else-if="course.status === 'completed'">
+                                            <span class="text-green-600 text-xs font-medium">✓ Completed</span>
+                                        </template>
+                                        <template v-else>
+                                            <button @click="enroll(course)" class="bg-blue-900 text-white px-3 py-1 rounded-lg text-xs font-medium">Enroll</button>
+                                        </template>
+                                    </td>
                             </tr>
                         </tbody>
                     </table>

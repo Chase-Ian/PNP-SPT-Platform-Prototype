@@ -29,6 +29,18 @@ class CourseSeeder extends Seeder
                 ['course_id' => $course->id, 'order' => 1],
                 ['title' => 'Introduction to ' . $data['title'], 'duration_minutes' => 20]
             );
+
+            $questions = [
+                ['question' => 'What is the primary goal of AI ethics?', 'choices' => ['Speed', 'Fairness and safety', 'Cost reduction', 'Automation'], 'correct_choice' => 'Fairness and safety'],
+                ['question' => 'Which law governs data privacy in the Philippines?', 'choices' => ['RA 10173', 'RA 9262', 'RA 7610', 'RA 8792'], 'correct_choice' => 'RA 10173'],
+            ];
+            foreach ($questions as $q) {
+                \App\Models\ExamQuestion::firstOrCreate(
+                    ['course_id' => $course->id, 'question' => $q['question']],
+                    ['choices' => $q['choices'], 'correct_choice' => $q['correct_choice']]
+                );
+            }
+
         }
     
         $maria = \App\Models\User::where('email', 'maria.cruz@pnp.gov.ph')->first();
@@ -64,5 +76,6 @@ class CourseSeeder extends Seeder
                 ]
             );
         }
+
     }
 }

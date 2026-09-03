@@ -16,6 +16,7 @@ use App\Http\Controllers\Admin\ExamSettingController as AdminExamSettingControll
 use App\Http\Controllers\Admin\CertificateLogController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Supervisor\MonitoringController;
+use App\Http\Controllers\ExamController;
 
 if (app()->environment(['local', 'staging'])) {
     Route::post('/dev/quick-login/{type}', function (string $type) {
@@ -66,6 +67,11 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+
+    Route::get('/exams/{course}', [ExamController::class, 'show'])->name('exams.show');
+    Route::post('/exams/{course}', [ExamController::class, 'submit'])->name('exams.submit');
+    Route::get('/exams/result/{attempt}', [ExamController::class, 'result'])->name('exams.result');
+
 });
 
 // --- Supervisor routes ---

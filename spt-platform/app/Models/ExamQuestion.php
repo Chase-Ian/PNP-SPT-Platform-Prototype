@@ -12,4 +12,5 @@ class ExamQuestion extends Model
     protected $fillable = ['course_id', 'question', 'choices', 'correct_choice'];
 
     protected $casts = ['choices' => 'array'];
+
 }
