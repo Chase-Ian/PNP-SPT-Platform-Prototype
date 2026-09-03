@@ -18,34 +18,27 @@ use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Supervisor\MonitoringController;
 use App\Http\Controllers\ExamController;
 
-if (app()->environment(['local', 'staging'])) {
-    Route::post('/dev/quick-login/{type}', function (string $type) {
-        abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
+Route::post('/dev/quick-login/{type}', function (string $type) {
+    abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
 
-        $emails = [
-            'trainee' => 'maria.cruz@pnp.gov.ph',
-            'supervisor' => 'supervisor.demo@pnp.gov.ph',
-            'admin' => 'admin.demo@pnp.gov.ph',
-        ];
+    $emails = [
+        'trainee' => 'maria.cruz@pnp.gov.ph',
+        'supervisor' => 'supervisor.demo@pnp.gov.ph',
+        'admin' => 'admin.demo@pnp.gov.ph',
+    ];
 
-        $user = User::where('email', $emails[$type])->firstOrFail();
-        Auth::login($user);
+    $user = User::where('email', $emails[$type])->firstOrFail();
+    Auth::login($user);
 
-        return redirect(match ($type) {
-            'admin' => '/admin/dashboard',
-            'supervisor' => '/supervisor/dashboard',
-            default => '/dashboard',
-        });
-    })->name('dev.quick-login');
-}
+    return redirect(match ($type) {
+        'admin' => '/admin/dashboard',
+        'supervisor' => '/supervisor/dashboard',
+        default => '/dashboard',
+    });
+})->name('dev.quick-login');
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect('/login');
 });
 
 Route::get('/dashboard', [DashboardController::class, 'index'])
