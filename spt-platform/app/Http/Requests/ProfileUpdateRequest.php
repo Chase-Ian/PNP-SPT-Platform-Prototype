@@ -14,19 +14,21 @@ class ProfileUpdateRequest extends FormRequest
      *
      * @return array<string, ValidationRule|array<mixed>|string>
      */
-    public function rules(): array
-    {
-        return [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
-        ];
-    }
+        public function rules(): array
+        {
+            return [
+                'first_name' => ['required', 'string', 'max:100'],
+                'last_name' => ['required', 'string', 'max:100'],
+                'rank' => ['nullable', 'string', 'max:50'],
+                'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            ];
 
-    // Add this method if it doesn't already exist
-    protected function prepareForValidation(): void
-    {
-        $this->merge([
-            'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $this->input('email')),
-        ]);
-    }
+        }
+
+        protected function prepareForValidation(): void
+        {
+            $this->merge([
+                'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $this->input('email')),
+            ]);
+        }
 }
