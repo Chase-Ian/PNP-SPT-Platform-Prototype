@@ -1,6 +1,7 @@
 <!-- resources/js/Pages/Admin/Certificates/Index.vue -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { Head } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -44,12 +45,11 @@ const isExpanded = (station) => {
 </script>
 
 <template>
-    <Head title="Monitor Officer Certificates" />
+    <Head title="Certificates Log" />
     <AdminLayout>
-        <template #header>
-            <h2 class="font-bold text-xl text-gray-800">Monitor Officer Certificates</h2>
-            <p class="text-sm text-gray-500">Audit, verify, and download official PNP certificates issued to personnel across regional commands.</p>
-        </template>
+        <AdminPageBanner badge="🏅 Official Credentials Registry • Audited Log" title="Monitor Certificates"
+            subtitle="Audit, verify, and download official PNP certificates issued to personnel across regional commands.">
+        </AdminPageBanner>
 
         <div class="space-y-4">
 

@@ -1,8 +1,9 @@
 <!-- resources/js/Pages/Admin/Modules/Index.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 
 const props = defineProps({
     modules: Array,
@@ -44,12 +45,14 @@ const fileBadgeClass = (type) => {
 </script>
 
 <template>
-    <Head title="Manage Course Modules" />
+    <Head title="Course Modules & Files" />
     <AdminLayout>
-        <template #header>
-            <h2 class="font-bold text-xl text-gray-800">Manage Course Modules & Insert Files</h2>
-            <p class="text-sm text-gray-500">Add, update, or delete course modules. Upload actual PDF, PowerPoint, or Video files.</p>
-        </template>
+        <AdminPageBanner badge="📖 Course Content Management • Module & File Operations" title="Course Modules & Files"
+            subtitle="Add, update, or delete course modules. Upload actual PDF, PowerPoint, or Video files and sync live training content across all PNP stations.">
+            <template #actions>
+                <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Insert New Module</button>
+            </template>
+        </AdminPageBanner>
 
         <div class="space-y-4">
 

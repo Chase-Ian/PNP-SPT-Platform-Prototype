@@ -34,5 +34,9 @@ class Course extends Model
         return $this->hasMany(ExamQuestion::class);
     }
 
+    public function lessons()
+    {
+        return $this->hasMany(Lesson::class)->orderBy('order');
+    }
     
 }

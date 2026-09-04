@@ -9,6 +9,7 @@ use Inertia\Inertia;
 
 class CourseController extends Controller
 {
+// app/Http/Controllers/CourseController.php
     public function index(Request $request)
     {
         $user = $request->user();
@@ -17,19 +18,36 @@ class CourseController extends Controller
 
         $courses = Course::where('is_published', true)
             ->withCount('modules')
+            ->with('lessons.progress') // only pulls progress relations we filter below
             ->get()
-            ->map(fn ($course) => [
-                'id' => $course->id,
-                'activity_code' => $course->activity_code,
-                'title' => $course->title,
-                'duration_hours' => $course->duration_hours,
-                'lesson_count' => $course->modules_count,
-                'status' => $enrollments[$course->id] ?? null, // 'enrolled' | 'dropped' | 'completed' | null
-            ]);
+            ->map(function ($course) use ($user, $enrollments) {
+                $totalLessons = $course->lessons->count();
+                $completedLessons = $course->lessons->filter(function ($lesson) use ($user) {
+                    return $lesson->progress->where('user_id', $user->id)->where('quiz_passed', true)->isNotEmpty();
+                })->count();
 
-        return Inertia::render('Courses/Index', [
-            'courses' => $courses,
-        ]);
+                $progressPercent = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
+
+                // Find the next lesson to launch into: first lesson without a passed quiz for this user
+                $nextLesson = $course->lessons->first(function ($lesson) use ($user) {
+                    return $lesson->progress->where('user_id', $user->id)->where('quiz_passed', true)->isEmpty();
+                });
+
+                return [
+                    'id' => $course->id,
+                    'activity_code' => $course->activity_code,
+                    'title' => $course->title,
+                    'duration_hours' => $course->duration_hours,
+                    'lesson_count' => $totalLessons > 0 ? $totalLessons : $course->modules_count,
+                    'status' => $enrollments[$course->id] ?? null,
+                    'lessons_total' => $totalLessons,
+                    'lessons_completed' => $completedLessons,
+                    'progress_percent' => $progressPercent,
+                    'launch_lesson_id' => $nextLesson?->id ?? $course->lessons->first()?->id,
+                ];
+            });
+
+        return Inertia::render('Courses/Index', ['courses' => $courses]);
     }
 
     public function enroll(Request $request, Course $course)
@@ -46,7 +64,7 @@ class CourseController extends Controller
     {
         Enrollment::where('user_id', $request->user()->id)
             ->where('course_id', $course->id)
-            ->update(['status' => 'dropped']);
+            ->delete();
 
         return back();
     }

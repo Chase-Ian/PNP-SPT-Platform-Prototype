@@ -1,6 +1,7 @@
 <!-- resources/js/Pages/Admin/ExamSettings/Index.vue -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({
@@ -25,12 +26,11 @@ const timePresets = [60, 90, 120, 150, 180];
 </script>
 
 <template>
-    <Head title="Exam Time Limits & Media Settings" />
+    <Head title="Exam Settings & Media" />
     <AdminLayout>
-        <template #header>
-            <h2 class="font-bold text-xl text-gray-800">Exam Time Limits & Media Settings</h2>
-            <p class="text-sm text-gray-500">Configure exam duration, passing score percentage, and manage course media resource attachments.</p>
-        </template>
+        <AdminPageBanner badge="⚙️ Assessment Configuration • Live Evaluation Settings" title="Exam Settings & Media"
+            subtitle="Configure exam duration (e.g. 2 hours), passing percentage thresholds (80% minimum), and manage multimedia test formats.">
+        </AdminPageBanner>
 
         <div class="space-y-4">
             <div v-for="course in courses" :key="course.course_id" class="bg-white rounded-xl border p-6">

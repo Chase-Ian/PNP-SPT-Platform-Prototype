@@ -1,81 +1,74 @@
 <!-- resources/js/Layouts/AdminLayout.vue -->
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
-import Dropdown from '@/Components/Dropdown.vue';
-import DropdownLink from '@/Components/DropdownLink.vue';
+import { ref } from 'vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
 
 const page = usePage();
+const user = page.props.auth.user;
+const sidebarOpen = ref(true);
 
 const navItems = [
-    { label: 'Admin Dashboard', href: '/admin/dashboard', match: 'admin.dashboard' },
-    { label: 'Manage Courses & Modules', href: '/admin/modules', match: 'admin.modules*' },
-    { label: 'Monitor Officers', href: '/admin/students', match: 'admin.students*' },
-    { label: 'Exam & Content Settings', href: '/admin/exam-settings', match: 'admin.exam-settings*' },
-    { label: 'Certificates Log', href: '/admin/certificates', match: 'admin.certificates*' },
-    { label: 'Analytics', href: '/admin/analytics', match: 'admin.analytics*' },
+    { label: 'Admin Dashboard', href: '/admin/dashboard', icon: '🏠', match: 'admin.dashboard' },
+    { label: 'Manage Courses & Modules', href: '/admin/modules', icon: '📖', match: 'admin.modules*' },
+    { label: 'Monitor Officers', href: '/admin/students', icon: '👥', match: 'admin.students*' },
+    { label: 'Exam & Content Settings', href: '/admin/exam-settings', icon: '📋', match: 'admin.exam-settings*' },
+    { label: 'Certificates Log', href: '/admin/certificates', icon: '🏅', match: 'admin.certificates*' },
+    { label: 'Analytics', href: '/admin/analytics', icon: '📊', match: 'admin.analytics*' },
 ];
+
+const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase();
 </script>
 
 <template>
-    <div class="min-h-screen bg-gray-100 flex">
+    <div class="min-h-screen bg-gray-50 flex">
 
-        <!-- Sidebar -->
-        <aside class="w-64 bg-white border-r flex flex-col">
-            <div class="p-5 border-b">
-                <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 bg-blue-900 rounded-full flex items-center justify-center text-white text-sm">O</div>
-                    <div>
-                        <p class="font-bold text-blue-900 leading-tight">PNP LMS</p>
-                        <p class="text-xs text-gray-400 leading-tight">Administrator Portal</p>
-                    </div>
+        <aside v-show="sidebarOpen" class="w-64 bg-white border-r flex flex-col shrink-0">
+            <div class="p-5 border-b flex items-center gap-2">
+                <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white">🎓</div>
+                <div>
+                    <p class="font-bold text-sm leading-tight">PNP LMS</p>
+                    <p class="text-xs text-orange-500 leading-tight">Command Admin</p>
                 </div>
             </div>
 
             <nav class="flex-1 p-3 space-y-1">
                 <Link v-for="item in navItems" :key="item.href" :href="item.href"
-                    :class="route().current(item.match)
-                        ? 'bg-blue-900 text-white'
-                        : 'text-gray-600 hover:bg-gray-100'"
-                    class="block px-3 py-2 rounded-lg text-sm font-medium">
-                    {{ item.label }}
+                    :class="route().current(item.match) ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium">
+                    <span class="flex items-center gap-2"><span>{{ item.icon }}</span>{{ item.label }}</span>
+                    <span v-if="route().current(item.match)" class="w-1.5 h-1.5 rounded-full bg-white"></span>
                 </Link>
             </nav>
 
             <div class="p-3 border-t">
-                <Link href="/dashboard" class="block text-center border rounded-lg px-3 py-2 text-sm text-gray-600 hover:bg-gray-50">
-                    ⇄ Switch to Officer Portal
+                <Link href="/dashboard" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                    <div class="w-8 h-8 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium">{{ initials() }}</div>
+                    Switch to Officer View
                 </Link>
             </div>
         </aside>
 
-        <!-- Main content -->
-        <div class="flex-1 flex flex-col">
-            <header class="bg-white border-b h-16 flex items-center justify-end px-6 gap-3">
-                <NotificationBell />
-                <Dropdown align="right" width="48">
-                    <template #trigger>
-                        <button type="button" class="inline-flex items-center text-sm font-medium text-gray-500 hover:text-gray-700">
-                            {{ page.props.auth.user.name }}
-                            <svg class="ms-2 h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    </template>
-                    <template #content>
-                        <DropdownLink :href="route('profile.edit')">Profile</DropdownLink>
-                        <DropdownLink :href="route('logout')" method="post" as="button">Log Out</DropdownLink>
-                    </template>
-                </Dropdown>
-            </header>
-
-            <header v-if="$slots.header" class="bg-white border-b">
-                <div class="max-w-7xl mx-auto px-6 py-6">
-                    <slot name="header" />
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="bg-white border-b h-16 flex items-center px-6 gap-4">
+                <button @click="sidebarOpen = !sidebarOpen"
+                    class="w-8 h-8 rounded-full flex items-center justify-center border"
+                    :class="sidebarOpen ? 'text-red-500 border-red-200 hover:bg-red-50' : 'text-gray-500 border-gray-200 hover:bg-gray-50'">
+                    {{ sidebarOpen ? '✕' : '☰' }}
+                </button>
+                <div class="flex-1"></div>
+                <div class="text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <span class="text-sm font-medium">{{ user.email }}</span>
+                        <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded uppercase">{{ user.role }}</span>
+                    </div>
+                    <p class="text-xs text-gray-400 truncate max-w-xs">{{ user.unit_office || 'NHQ Camp Crame - Directorate for Human Resource' }}</p>
                 </div>
+                <NotificationBell />
+                <Link :href="route('logout')" method="post" as="button" class="text-sm text-gray-500 hover:text-gray-700">↪ Log out</Link>
             </header>
 
-            <main class="flex-1 p-6">
+            <main class="flex-1 p-6 space-y-6 overflow-x-hidden">
                 <slot />
             </main>
         </div>

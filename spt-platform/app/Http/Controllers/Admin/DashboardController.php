@@ -40,6 +40,7 @@ class DashboardController extends Controller
                 return [
                     'name' => $officer->name,
                     'unit_office' => $officer->unit_office,
+                    'region' => $officer->region, // ← moved here, inside the closure
                     'course' => $totalEnrollments > 0 ? "{$completedCount}/{$totalEnrollments} Courses" : '—',
                     'course_status' => $courseStatus,
                     'modules_completed' => $officer->moduleCompletions()->whereNotNull('completed_at')->count(),
@@ -56,6 +57,7 @@ class DashboardController extends Controller
                 'certificatesIssued' => $certificatesIssued,
             ],
             'officers' => $officers,
+           
         ]);
     }
 }

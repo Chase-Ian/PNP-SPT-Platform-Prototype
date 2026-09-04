@@ -17,6 +17,8 @@ use App\Http\Controllers\Admin\CertificateLogController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Supervisor\MonitoringController;
 use App\Http\Controllers\ExamController;
+use App\Http\Controllers\Admin\LessonController;
+
 
 Route::post('/dev/quick-login/{type}', function (string $type) {
     abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
@@ -89,6 +91,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::put('/exam-settings/{course}', [AdminExamSettingController::class, 'update'])->name('admin.exam-settings.update');
     Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
+    Route::get('/courses/{course}/lessons', [LessonController::class, 'index'])->name('admin.lessons.index');
+    Route::post('/courses/{course}/lessons', [LessonController::class, 'store'])->name('admin.lessons.store');
+    Route::delete('/lessons/{lesson}', [LessonController::class, 'destroy'])->name('admin.lessons.destroy');
+    Route::post('/lessons/{lesson}/questions', [LessonController::class, 'storeQuestion'])->name('admin.lessons.questions.store');
+    Route::delete('/questions/{question}', [LessonController::class, 'destroyQuestion'])->name('admin.lessons.questions.destroy');
 });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

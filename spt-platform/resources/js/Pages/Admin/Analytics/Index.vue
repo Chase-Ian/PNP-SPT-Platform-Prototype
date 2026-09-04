@@ -1,6 +1,7 @@
 <!-- resources/js/Pages/Admin/Analytics/Index.vue -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { Head } from '@inertiajs/vue3';
 
 defineProps({
@@ -11,12 +12,11 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Analytics & Command Reporting" />
+    <Head title="Analytics" />
     <AdminLayout>
-        <template #header>
-            <h2 class="font-bold text-xl text-gray-800">Analytics & Command Reporting</h2>
-            <p class="text-sm text-gray-500">System-wide performance metrics, regional compliance rates, and officer exam completion statistics.</p>
-        </template>
+        <AdminPageBanner badge="📊 Executive Analytics • Command Reporting" title="Command Analytics"
+            subtitle="System-wide performance metrics, regional compliance rates, and officer exam completion statistics.">
+        </AdminPageBanner>
 
         <div class="space-y-4">
 

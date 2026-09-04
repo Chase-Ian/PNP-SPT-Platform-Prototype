@@ -1,6 +1,7 @@
 <!-- resources/js/Pages/Admin/Students/Index.vue -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -29,12 +30,11 @@ const remove = (student) => {
 </script>
 
 <template>
-    <Head title="Manage Students" />
+    <Head title="Monitor Officers" />
     <AdminLayout>
-        <template #header>
-            <h2 class="font-bold text-xl text-gray-800">Manage Students</h2>
-            <p class="text-sm text-gray-500">Monitor officer progress, enrollments, and certificate achievement.</p>
-        </template>
+        <AdminPageBanner badge="👥 Personnel Training Roster • All Units" title="Monitor Officers"
+            subtitle="Track enrolled police trainees, module progress percentages, exam results, and certification status.">
+        </AdminPageBanner>
 
         <div class="space-y-4">
 
