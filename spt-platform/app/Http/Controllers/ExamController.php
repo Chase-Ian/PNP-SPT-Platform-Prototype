@@ -47,7 +47,16 @@ class ExamController extends Controller
 
         $correctCount = 0;
         foreach ($questions as $question) {
-            if (($request->answers[$question->id] ?? null) === $question->correct_choice) {
+            $submitted = $request->answers[$question->id] ?? null;
+
+            $isCorrect = match ($question->type) {
+                'multiple_choice', 'true_false' => $submitted === $question->answer_data['correct_choice'],
+                'identification' => is_string($submitted) && strtolower(trim($submitted)) === strtolower(trim($question->answer_data['correct_answer'])),
+                'matching' => $this->gradeMatching($submitted, $question->answer_data['pairs']),
+                default => false,
+            };
+
+            if ($isCorrect) {
                 $correctCount++;
             }
         }
@@ -71,6 +80,22 @@ class ExamController extends Controller
         }
 
         return redirect()->route('exams.result', $attempt->id);
+    }
+
+    private function gradeMatching($submitted, array $correctPairs): bool
+    {
+        // $submitted expected shape: { "RA 10173": "Data Privacy Act", ... } — left => chosen right
+        if (! is_array($submitted)) {
+            return false;
+        }
+
+        foreach ($correctPairs as $pair) {
+            if (($submitted[$pair['left']] ?? null) !== $pair['right']) {
+                return false; // every pair must be correct — no partial credit for now
+            }
+        }
+
+        return true;
     }
 
     public function result(Request $request, ExamAttempt $attempt)

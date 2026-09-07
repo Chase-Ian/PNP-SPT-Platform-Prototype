@@ -20,6 +20,7 @@ use App\Http\Controllers\ExamController;
 use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
+use App\Http\Controllers\Admin\ExamQuestionController;
 
 Route::post('/dev/quick-login/{type}', function (string $type) {
     abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
@@ -116,6 +117,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     
     Route::post('/lessons/extract-pptx', [LessonController::class, 'extractPptx'])->name('admin.lessons.extract-pptx');
     Route::get('/lessons/{lesson}/preview', [LessonController::class, 'show'])->name('admin.lessons.preview');
+    
+    Route::get('/courses/{course}/exam-questions', [ExamQuestionController::class, 'index'])->name('admin.exam-questions.index');
+    Route::post('/courses/{course}/exam-questions', [ExamQuestionController::class, 'store'])->name('admin.exam-questions.store');
+    Route::delete('/exam-questions/{question}', [ExamQuestionController::class, 'destroy'])->name('admin.exam-questions.destroy');
+
     });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

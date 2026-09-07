@@ -93,9 +93,10 @@ const remove = (course) => {
                         </td>
                         <td class="py-3">{{ course.modules_count }}</td>
                         <td class="py-3">
-                            <div class="flex items-center justify-between gap-6">
+                            <div class="flex items-center gap-4">
                                 <Link :href="`/admin/courses/${course.id}/modules`" class="text-blue-600 text-xs font-medium">Manage Modules</Link>
-                                <button @click="remove(course)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
+                                <Link :href="`/admin/courses/${course.id}/exam-questions`" class="text-blue-600 text-xs font-medium">Manage Final Exam</Link>
+                                <button @click="remove(course)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50 ml-auto">🗑 Delete</button>
                             </div>
                         </td>
                     </tr>

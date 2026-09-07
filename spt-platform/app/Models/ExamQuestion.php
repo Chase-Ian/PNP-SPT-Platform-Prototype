@@ -9,8 +9,8 @@ class ExamQuestion extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['course_id', 'question', 'choices', 'correct_choice'];
+    protected $fillable = ['course_id', 'type', 'question', 'answer_data'];
 
-    protected $casts = ['choices' => 'array'];
+    protected $casts = ['answer_data' => 'array'];
 
 }
