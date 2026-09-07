@@ -66,7 +66,11 @@ const deleteLesson = (lesson) => {
 <template>
     <Head :title="`Lessons — ${module.title}`" />
     <AdminLayout>
-        <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Dashboard</Link>
+        <div class="flex gap-4 mb-2">
+            <Link href="/admin/dashboard" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">← Back to Dashboard</Link>
+            <span class="text-gray-300">|</span>
+            <Link :href="`/admin/courses/${module.course_id}/modules`" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">← Back to Modules</Link>
+        </div>
         <AdminPageBanner badge="📚 Lesson Authoring • Module Content"
             :title="`Lessons — ${module.title}`"
             subtitle="Build sequential lesson content with text blocks, or import from an existing PowerPoint file.">
