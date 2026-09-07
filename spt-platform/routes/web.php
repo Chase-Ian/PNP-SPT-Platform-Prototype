@@ -18,7 +18,8 @@ use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Supervisor\MonitoringController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\Admin\LessonController;
-
+use App\Http\Controllers\Admin\StaffController;
+use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 
 Route::post('/dev/quick-login/{type}', function (string $type) {
     abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
@@ -81,22 +82,41 @@ Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(func
 // --- Admin routes ---
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('admin.dashboard');
-
-    Route::get('/modules', [AdminModuleController::class, 'index'])->name('admin.modules.index');
-    Route::post('/modules', [AdminModuleController::class, 'store'])->name('admin.modules.store');
-    Route::delete('/modules/{module}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
+    
     Route::get('/students', [AdminStudentController::class, 'index'])->name('admin.students.index');
     Route::delete('/students/{student}', [AdminStudentController::class, 'destroy'])->name('admin.students.destroy');
+    
     Route::get('/exam-settings', [AdminExamSettingController::class, 'index'])->name('admin.exam-settings.index');
     Route::put('/exam-settings/{course}', [AdminExamSettingController::class, 'update'])->name('admin.exam-settings.update');
+    
     Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
+    
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
-    Route::get('/courses/{course}/lessons', [LessonController::class, 'index'])->name('admin.lessons.index');
-    Route::post('/courses/{course}/lessons', [LessonController::class, 'store'])->name('admin.lessons.store');
+    
+    Route::get('/modules/{module}/lessons', [LessonController::class, 'index'])->name('admin.lessons.index');
+    Route::post('/modules/{module}/lessons', [LessonController::class, 'store'])->name('admin.lessons.store');
+    
+    Route::get('/courses', [AdminCourseController::class, 'index'])->name('admin.courses.index');
+    Route::post('/courses', [AdminCourseController::class, 'store'])->name('admin.courses.store');
+    Route::delete('/courses/{course}', [AdminCourseController::class, 'destroy'])->name('admin.courses.destroy');
+
+    Route::get('/courses/{course}/modules', [AdminModuleController::class, 'index'])->name('admin.modules.index');
+    Route::post('/courses/{course}/modules', [AdminModuleController::class, 'store'])->name('admin.modules.store');
+    Route::delete('/modules/{module}', [AdminModuleController::class, 'destroy'])->name('admin.modules.destroy');
+
     Route::delete('/lessons/{lesson}', [LessonController::class, 'destroy'])->name('admin.lessons.destroy');
     Route::post('/lessons/{lesson}/questions', [LessonController::class, 'storeQuestion'])->name('admin.lessons.questions.store');
+    
     Route::delete('/questions/{question}', [LessonController::class, 'destroyQuestion'])->name('admin.lessons.questions.destroy');
-});
+    Route::post('/lessons/extract-pptx', [LessonController::class, 'extractPptx'])->name('admin.lessons.extract-pptx');
+    
+    Route::get('/staff', [StaffController::class, 'index'])->name('admin.staff.index');
+    Route::post('/staff', [StaffController::class, 'store'])->name('admin.staff.store');
+    Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('admin.staff.destroy');
+    
+    Route::post('/lessons/extract-pptx', [LessonController::class, 'extractPptx'])->name('admin.lessons.extract-pptx');
+    Route::get('/lessons/{lesson}/preview', [LessonController::class, 'show'])->name('admin.lessons.preview');
+    });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---
 Route::get('/verify', function () {

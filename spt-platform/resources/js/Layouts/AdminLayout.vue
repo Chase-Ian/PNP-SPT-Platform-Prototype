@@ -10,11 +10,12 @@ const sidebarOpen = ref(true);
 
 const navItems = [
     { label: 'Admin Dashboard', href: '/admin/dashboard', icon: '🏠', match: 'admin.dashboard' },
-    { label: 'Manage Courses & Modules', href: '/admin/modules', icon: '📖', match: 'admin.modules*' },
+    { label: 'Manage Courses & Modules', href: '/admin/courses', icon: '📖', match: 'admin.courses*' },
     { label: 'Monitor Officers', href: '/admin/students', icon: '👥', match: 'admin.students*' },
     { label: 'Exam & Content Settings', href: '/admin/exam-settings', icon: '📋', match: 'admin.exam-settings*' },
     { label: 'Certificates Log', href: '/admin/certificates', icon: '🏅', match: 'admin.certificates*' },
     { label: 'Analytics', href: '/admin/analytics', icon: '📊', match: 'admin.analytics*' },
+    { label: 'Manage Staff', href: '/admin/staff', icon: '🧑‍✈️', match: 'admin.staff*' },
 ];
 
 const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase();
