@@ -10,28 +10,31 @@ use Inertia\Inertia;
 class CourseController extends Controller
 {
 // app/Http/Controllers/CourseController.php
-    public function index(Request $request)
+  public function index(Request $request)
     {
         $user = $request->user();
-
         $enrollments = $user->enrollments()->pluck('status', 'course_id');
 
         $courses = Course::where('is_published', true)
             ->withCount('modules')
-            ->with('lessons.progress') // only pulls progress relations we filter below
+            ->with('lessons.progress')
             ->get()
             ->map(function ($course) use ($user, $enrollments) {
                 $totalLessons = $course->lessons->count();
+
                 $completedLessons = $course->lessons->filter(function ($lesson) use ($user) {
                     return $lesson->progress->where('user_id', $user->id)->where('quiz_passed', true)->isNotEmpty();
                 })->count();
 
                 $progressPercent = $totalLessons > 0 ? round(($completedLessons / $totalLessons) * 100) : 0;
+                $allLessonsPassed = $totalLessons > 0 && $completedLessons === $totalLessons;
 
-                // Find the next lesson to launch into: first lesson without a passed quiz for this user
                 $nextLesson = $course->lessons->first(function ($lesson) use ($user) {
                     return $lesson->progress->where('user_id', $user->id)->where('quiz_passed', true)->isEmpty();
                 });
+
+                // Has the trainee already passed the final exam for this course?
+                $examPassed = $user->examAttempts()->where('course_id', $course->id)->where('passed', true)->exists();
 
                 return [
                     'id' => $course->id,
@@ -44,6 +47,8 @@ class CourseController extends Controller
                     'lessons_completed' => $completedLessons,
                     'progress_percent' => $progressPercent,
                     'launch_lesson_id' => $nextLesson?->id ?? $course->lessons->first()?->id,
+                    'all_lessons_passed' => $allLessonsPassed,
+                    'exam_passed' => $examPassed,
                 ];
             });
 

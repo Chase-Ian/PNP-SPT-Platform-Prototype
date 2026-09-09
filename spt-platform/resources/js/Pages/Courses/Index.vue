@@ -94,6 +94,7 @@ const statusClass = (status) => ({
                             <th class="py-2 px-3">Module Title</th>
                             <th class="py-2 px-3">Progress</th>
                             <th class="py-2 px-3 text-right">Launch</th>
+                            <th class="py-2 px-3 text-right">Final Exam</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -115,6 +116,15 @@ const statusClass = (status) => ({
                                     class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700">
                                     ▶
                                 </Link>
+                            </td>
+                            <td class="py-4 px-3 text-right">
+                                <span v-if="course.exam_passed" class="text-green-600 text-xs font-medium">✓ Passed</span>
+                                <Link v-else-if="course.all_lessons_passed" :href="`/exams/${course.id}`" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">
+                                    Take Final Exam
+                                </Link>
+                                <span v-else class="text-gray-400 text-xs" :title="`Complete all ${course.lessons_total} lessons to unlock`">
+                                    🔒 Locked
+                                </span>
                             </td>
                         </tr>
                     </tbody>

@@ -13,14 +13,18 @@ const props = defineProps({
 
 const form = useForm({ answers: {} });
 
-// --- Countdown timer ---
+// Initialize matching answers as an object per question: { [leftItem]: chosenRight }
+props.questions.forEach(q => {
+    if (q.type === 'matching') {
+        form.answers[q.id] = {};
+    }
+});
+
 const secondsRemaining = ref(props.time_limit_minutes * 60);
 let timerInterval = null;
-
 const minutesDisplay = computed(() => Math.floor(secondsRemaining.value / 60));
 const secondsDisplay = computed(() => String(secondsRemaining.value % 60).padStart(2, '0'));
-
-const isLowTime = computed(() => secondsRemaining.value <= 60); // last minute warning
+const isLowTime = computed(() => secondsRemaining.value <= 60);
 
 const submit = () => {
     if (timerInterval) clearInterval(timerInterval);
@@ -32,14 +36,11 @@ onMounted(() => {
         secondsRemaining.value--;
         if (secondsRemaining.value <= 0) {
             clearInterval(timerInterval);
-            submit(); // auto-submit whatever answers are filled in when time runs out
+            submit();
         }
     }, 1000);
 });
-
-onUnmounted(() => {
-    if (timerInterval) clearInterval(timerInterval);
-});
+onUnmounted(() => { if (timerInterval) clearInterval(timerInterval); });
 </script>
 
 <template>
@@ -48,8 +49,7 @@ onUnmounted(() => {
         <template #header>
             <div class="flex justify-between items-center">
                 <h2 class="font-semibold text-xl text-gray-800">{{ course.title }} — Final Exam</h2>
-                <div :class="isLowTime ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'"
-                    class="px-4 py-2 rounded-lg font-mono font-bold text-lg">
+                <div :class="isLowTime ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'" class="px-4 py-2 rounded-lg font-mono font-bold text-lg">
                     {{ minutesDisplay }}:{{ secondsDisplay }}
                 </div>
             </div>
@@ -66,11 +66,30 @@ onUnmounted(() => {
                 <form @submit.prevent="submit" class="space-y-4">
                     <div v-for="(q, i) in questions" :key="q.id" class="bg-white rounded-xl border p-5">
                         <p class="font-medium mb-3">{{ i + 1 }}. {{ q.question }}</p>
-                        <div class="space-y-2">
-                            <label v-for="choice in q.choices" :key="choice" class="flex items-center gap-2 text-sm">
+
+                        <!-- Multiple Choice / True-False -->
+                        <div v-if="q.type === 'multiple_choice' || q.type === 'true_false'" class="space-y-2">
+                            <label v-for="choice in (q.type === 'true_false' ? ['True', 'False'] : q.choices)" :key="choice"
+                                class="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm cursor-pointer">
                                 <input type="radio" :name="`q${q.id}`" :value="choice" v-model="form.answers[q.id]" />
                                 {{ choice }}
                             </label>
+                        </div>
+
+                        <!-- Identification -->
+                        <input v-else-if="q.type === 'identification'" v-model="form.answers[q.id]" type="text"
+                            placeholder="Type your answer" class="w-full border rounded-lg px-3 py-2 text-sm" />
+
+                        <!-- Matching -->
+                        <div v-else-if="q.type === 'matching'" class="space-y-2">
+                            <div v-for="pair in q.pairs" :key="pair.left" class="flex items-center gap-3">
+                                <span class="flex-1 text-sm font-medium">{{ pair.left }}</span>
+                                <span class="text-gray-400">↔</span>
+                                <select v-model="form.answers[q.id][pair.left]" class="flex-1 border rounded-lg px-2 py-1.5 text-sm">
+                                    <option value="" disabled>Select match</option>
+                                    <option v-for="opt in q.right_options" :key="opt" :value="opt">{{ opt }}</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
 

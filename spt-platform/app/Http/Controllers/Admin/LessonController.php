@@ -15,7 +15,7 @@ class LessonController extends Controller
     {
         return Inertia::render('Admin/Lessons/Index', [
             'module' => $module->only('id', 'title', 'course_id'),
-            'lessons' => $module->lessons()->withCount('quizQuestions')->get(),
+            'lessons' => $module->lessons()->with('quizQuestions')->withCount('quizQuestions')->get(),
         ]);
     }
 

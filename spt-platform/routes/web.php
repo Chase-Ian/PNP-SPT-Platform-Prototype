@@ -21,6 +21,8 @@ use App\Http\Controllers\Admin\LessonController;
 use App\Http\Controllers\Admin\StaffController;
 use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\ExamQuestionController;
+use App\Http\Controllers\LessonViewController;
+use App\Http\Controllers\LessonQuizController;
 
 Route::post('/dev/quick-login/{type}', function (string $type) {
     abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
@@ -69,7 +71,11 @@ Route::middleware('auth')->group(function () {
     Route::post('/exams/{course}', [ExamController::class, 'submit'])->name('exams.submit');
     Route::get('/exams/result/{attempt}', [ExamController::class, 'result'])->name('exams.result');
 
-});
+    Route::get('/lessons/{lesson}', [LessonViewController::class, 'show'])->name('lessons.show');
+
+    Route::get('/lessons/{lesson}/quiz', [LessonQuizController::class, 'show'])->name('lessons.quiz.show');
+    Route::post('/lessons/{lesson}/quiz', [LessonQuizController::class, 'submit'])->name('lessons.quiz.submit');
+    });
 
 // --- Supervisor routes ---
 Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(function () {

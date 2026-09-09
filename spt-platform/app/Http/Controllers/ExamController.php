@@ -15,18 +15,37 @@ class ExamController extends Controller
 {
     // app/Http/Controllers/ExamController.php
 
-    public function show(Request $request, Course $course)
+  public function show(Request $request, Course $course)
     {
         $user = $request->user();
 
         $alreadyEnrolled = $user->enrollments()->where('course_id', $course->id)->exists();
         abort_unless($alreadyEnrolled, 403, 'You must enroll in this course before taking the exam.');
 
+        $totalLessons = $course->lessons()->count();
+        if ($totalLessons > 0) {
+            $passedLessons = $course->lessons()
+                ->whereHas('progress', fn ($q) => $q->where('user_id', $user->id)->where('quiz_passed', true))
+                ->count();
+
+            abort_unless($passedLessons === $totalLessons, 403, 'Complete all lessons before taking the final exam.');
+        }
+
         $questions = $course->examQuestions()->get()->map(fn ($q) => [
             'id' => $q->id,
+            'type' => $q->type,
             'question' => $q->question,
-            'choices' => $q->choices,
+            'choices' => $q->answer_data['choices'] ?? [],
+            'pairs' => $q->answer_data['pairs'] ?? [], // only 'left' side shown to trainee; 'right' options extracted below
         ]);
+
+        // For matching questions, trainees pick from a shuffled pool of right-side answers
+        $questions = $questions->map(function ($q) {
+            if ($q['type'] === 'matching') {
+                $q['right_options'] = collect($q['pairs'])->pluck('right')->shuffle()->values();
+            }
+            return $q;
+        });
 
         $settings = $course->examSettings;
 

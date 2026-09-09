@@ -61,6 +61,27 @@ const deleteLesson = (lesson) => {
         router.delete(`/admin/lessons/${lesson.id}`);
     }
 };
+
+const expandedQuiz = ref(null);
+const questionForm = useForm({ question: '', choices: ['', ''], correct_choice: '' });
+
+const toggleQuiz = (lessonId) => {
+    expandedQuiz.value = expandedQuiz.value === lessonId ? null : lessonId;
+};
+
+const addChoice = () => questionForm.choices.push('');
+const removeChoice = (i) => questionForm.choices.splice(i, 1);
+
+const submitQuestion = (lessonId) => {
+    questionForm.post(`/admin/lessons/${lessonId}/questions`, {
+        onSuccess: () => questionForm.reset('question', 'choices', 'correct_choice'),
+        preserveScroll: true,
+    });
+};
+
+const deleteQuestion = (question) => {
+    router.delete(`/admin/questions/${question.id}`, { preserveScroll: true });
+};
 </script>
 
 <template>
@@ -144,16 +165,47 @@ const deleteLesson = (lesson) => {
             <div class="bg-white rounded-xl border p-6">
                 <h3 class="font-semibold mb-4">Existing Lessons ({{ lessons.length }})</h3>
                 <div v-if="lessons.length === 0" class="text-sm text-gray-400">No lessons yet — add one above.</div>
-                <div v-for="lesson in lessons" :key="lesson.id" class="flex justify-between items-center border-b last:border-0 py-3">
+                <div v-for="lesson in lessons" :key="lesson.id" class="border-b last:border-0">
+                <div class="flex justify-between items-center py-3">
                     <div>
                         <p class="font-medium">{{ lesson.order }}. {{ lesson.title }}</p>
                         <p class="text-xs text-gray-400">{{ lesson.duration_minutes }} mins · {{ lesson.quiz_questions_count }} quiz questions</p>
                     </div>
                     <div class="flex items-center gap-4">
+                        <button @click="toggleQuiz(lesson.id)" class="text-purple-600 text-xs font-medium">
+                            📝 {{ expandedQuiz === lesson.id ? 'Hide Quiz' : 'Manage Quiz' }}
+                        </button>
                         <Link :href="`/admin/lessons/${lesson.id}/preview`" class="text-blue-600 text-xs font-medium">👁 Preview</Link>
                         <button @click="deleteLesson(lesson)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
                     </div>
                 </div>
+
+                <div v-if="expandedQuiz === lesson.id" class="bg-gray-50 rounded-lg p-4 mb-3 space-y-3">
+                    <div v-for="q in lesson.quiz_questions" :key="q.id" class="bg-white border rounded-lg p-3 flex justify-between items-start">
+                        <div>
+                            <p class="text-sm font-medium">{{ q.question }}</p>
+                            <p class="text-xs text-gray-400">{{ q.choices.join(' · ') }} — correct: {{ q.correct_choice }}</p>
+                        </div>
+                        <button @click="deleteQuestion(q)" class="text-red-600 text-xs">✕</button>
+                    </div>
+
+                    <form @submit.prevent="submitQuestion(lesson.id)" class="bg-white border rounded-lg p-3 space-y-2">
+                        <input v-model="questionForm.question" type="text" placeholder="Quiz question" class="w-full border rounded px-2 py-1.5 text-sm" required />
+                        <div v-for="(c, i) in questionForm.choices" :key="i" class="flex gap-2">
+                            <input v-model="questionForm.choices[i]" type="text" :placeholder="`Choice ${i + 1}`" class="flex-1 border rounded px-2 py-1 text-sm" required />
+                            <button type="button" @click="removeChoice(i)" class="text-red-600 text-xs">✕</button>
+                        </div>
+                        <button type="button" @click="addChoice" class="text-blue-600 text-xs font-medium">+ Add Choice</button>
+
+                        <select v-model="questionForm.correct_choice" class="w-full border rounded px-2 py-1.5 text-sm" required>
+                            <option value="" disabled>Select correct answer</option>
+                            <option v-for="(c, i) in questionForm.choices" :key="i" :value="c">{{ c || `Choice ${i + 1}` }}</option>
+                        </select>
+
+                        <button type="submit" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-medium">Add Question</button>
+                    </form>
+                </div>
+            </div>
             </div>
     </AdminLayout>
 </template>
