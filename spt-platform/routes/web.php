@@ -128,6 +128,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/courses/{course}/exam-questions', [ExamQuestionController::class, 'store'])->name('admin.exam-questions.store');
     Route::delete('/exam-questions/{question}', [ExamQuestionController::class, 'destroy'])->name('admin.exam-questions.destroy');
 
+    Route::put('/lessons/{lesson}', [LessonController::class, 'update'])->name('admin.lessons.update');
     });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

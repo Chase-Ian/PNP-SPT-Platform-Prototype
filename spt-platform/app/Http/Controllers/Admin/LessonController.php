@@ -25,16 +25,17 @@ class LessonController extends Controller
             'title' => 'required|string|max:255',
             'duration_minutes' => 'required|integer|min:1',
             'blocks' => 'required|array|min:1',
-            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video',
+            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video,youtube',
         ]);
 
-        $this->validateBlockStructure($request->blocks);
+        $blocks = $this->resolveYoutubeBlocks($request->blocks);
+        $this->validateBlockStructure($blocks);
 
         $module->lessons()->create([
             'course_id' => $module->course_id,
             'order' => $module->lessons()->max('order') + 1,
             'title' => $request->title,
-            'content' => $request->blocks,
+            'content' => $blocks,
             'duration_minutes' => $request->duration_minutes,
         ]);
 
@@ -82,19 +83,64 @@ class LessonController extends Controller
         return response()->json(['blocks' => $blocks]);
     }
 
+    private function extractYoutubeId(string $url): ?string
+    {
+        if (preg_match('/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/', $url, $matches)) {
+            return $matches[1];
+        }
+        return null;
+    }
+
     private function validateBlockStructure(array $blocks): void
     {
-        $videoIndexes = collect($blocks)->keys()->filter(fn ($i) => $blocks[$i]['type'] === 'video')->values();
+        $videoTypeIndexes = collect($blocks)->keys()
+            ->filter(fn ($i) => in_array($blocks[$i]['type'], ['video', 'youtube']))
+            ->values();
 
-        abort_if($videoIndexes->count() > 1, 422, 'Only one video block is allowed per lesson.');
+        abort_if($videoTypeIndexes->count() > 1, 422, 'Only one video (uploaded or YouTube) is allowed per lesson.');
 
-        if ($videoIndexes->count() === 1) {
-            $index = $videoIndexes->first();
+        if ($videoTypeIndexes->count() === 1) {
+            $index = $videoTypeIndexes->first();
             $isTop = $index === 0;
             $isBottom = $index === count($blocks) - 1;
             abort_unless($isTop || $isBottom, 422, 'The video block must be the first or last block in the lesson.');
         }
     }
+
+    public function update(Request $request, Lesson $lesson)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'duration_minutes' => 'required|integer|min:1',
+            'blocks' => 'required|array|min:1',
+            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video,youtube',
+        ]);
+
+        $blocks = $this->resolveYoutubeBlocks($request->blocks);
+        $this->validateBlockStructure($blocks);
+
+        $lesson->update([
+            'title' => $request->title,
+            'content' => $blocks,
+            'duration_minutes' => $request->duration_minutes,
+        ]);
+
+        return back();
+    }
+
+    private function resolveYoutubeBlocks(array $blocks): array
+    {
+        return array_map(function ($block) {
+            if ($block['type'] === 'youtube') {
+                $id = $this->extractYoutubeId($block['url'] ?? '');
+                abort_if(! $id, 422, 'That does not look like a valid YouTube URL.');
+                $block['video_id'] = $id;
+                unset($block['url']); // don't store the raw pasted URL, only the validated ID
+            }
+            return $block;
+        }, $blocks);
+    }
+    
 
 
 }

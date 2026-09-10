@@ -14,6 +14,12 @@ defineProps({ blocks: Array });
                 </li>
             </ul>
             <video v-else-if="block.type === 'video'" :src="`/storage/${block.file_path}`" controls class="w-full rounded-lg"></video>
+            <iframe v-else-if="block.type === 'youtube'"
+                :src="`https://www.youtube-nocookie.com/embed/${block.video_id}`"
+                class="w-full aspect-video rounded-lg" frameborder="0"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowfullscreen>
+            </iframe>
         </template>
     </div>
 </template>
