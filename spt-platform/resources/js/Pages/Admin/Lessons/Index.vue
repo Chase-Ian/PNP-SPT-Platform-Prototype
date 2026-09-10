@@ -106,16 +106,39 @@ const toggleQuiz = (lessonId) => {
 const addChoice = () => questionForm.choices.push('');
 const removeChoiceOpt = (i) => questionForm.choices.splice(i, 1);
 
-const submitQuestion = (lessonId) => {
-    questionForm.post(`/admin/lessons/${lessonId}/questions`, {
-        onSuccess: () => questionForm.reset('question', 'choices', 'correct_choice'),
-        preserveScroll: true,
-    });
-};
-
 const deleteQuestion = (question) => {
     router.delete(`/admin/questions/${question.id}`, { preserveScroll: true });
 };
+
+
+const editingQuestionId = ref(null);
+
+const openEditQuestion = (q) => {
+    editingQuestionId.value = q.id;
+    questionForm.question = q.question;
+    questionForm.choices = [...q.choices];
+    questionForm.correct_choice = q.correct_choice;
+};
+
+const cancelQuestionEdit = () => {
+    editingQuestionId.value = null;
+    questionForm.reset('question', 'choices', 'correct_choice');
+};
+
+const submitQuestion = (lessonId) => {
+    if (editingQuestionId.value) {
+        questionForm.put(`/admin/questions/${editingQuestionId.value}`, {
+            onSuccess: cancelQuestionEdit,
+            preserveScroll: true,
+        });
+    } else {
+        questionForm.post(`/admin/lessons/${lessonId}/questions`, {
+            onSuccess: () => questionForm.reset('question', 'choices', 'correct_choice'),
+            preserveScroll: true,
+        });
+    }
+};
+
 </script>
 
 <template>
@@ -229,7 +252,10 @@ const deleteQuestion = (question) => {
                             <p class="text-sm font-medium">{{ q.question }}</p>
                             <p class="text-xs text-gray-400">{{ q.choices.join(' · ') }} — correct: {{ q.correct_choice }}</p>
                         </div>
-                        <button @click="deleteQuestion(q)" class="text-red-600 text-xs">✕</button>
+                        <div class="flex gap-2 shrink-0">
+                            <button @click="openEditQuestion(q)" class="text-green-600 text-xs">✏️</button>
+                            <button @click="deleteQuestion(q)" class="text-red-600 text-xs">✕</button>
+                        </div>
                     </div>
 
                     <form @submit.prevent="submitQuestion(lesson.id)" class="bg-white border rounded-lg p-3 space-y-2">
@@ -243,7 +269,9 @@ const deleteQuestion = (question) => {
                             <option value="" disabled>Select correct answer</option>
                             <option v-for="(c, i) in questionForm.choices" :key="i" :value="c">{{ c || `Choice ${i + 1}` }}</option>
                         </select>
-                        <button type="submit" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-medium">Add Question</button>
+                        <button type="submit" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-medium">
+                            {{ editingQuestionId ? 'Save Changes' : 'Add Question' }}
+                        </button>
                     </form>
                 </div>
             </div>

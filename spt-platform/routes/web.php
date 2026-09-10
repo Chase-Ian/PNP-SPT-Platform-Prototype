@@ -93,8 +93,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/students', [AdminStudentController::class, 'index'])->name('admin.students.index');
     Route::delete('/students/{student}', [AdminStudentController::class, 'destroy'])->name('admin.students.destroy');
     
-    Route::get('/exam-settings', [AdminExamSettingController::class, 'index'])->name('admin.exam-settings.index');
-    Route::put('/exam-settings/{course}', [AdminExamSettingController::class, 'update'])->name('admin.exam-settings.update');
+    Route::put('/courses/{course}/exam-settings', [ExamQuestionController::class, 'updateSettings'])->name('admin.exam-questions.settings.update');
     
     Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
     
@@ -129,6 +128,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::delete('/exam-questions/{question}', [ExamQuestionController::class, 'destroy'])->name('admin.exam-questions.destroy');
 
     Route::put('/lessons/{lesson}', [LessonController::class, 'update'])->name('admin.lessons.update');
+    
+    Route::put('/exam-questions/{question}', [ExamQuestionController::class, 'update'])->name('admin.exam-questions.update');
+    
+    Route::put('/questions/{question}', [LessonController::class, 'updateQuestion'])->name('admin.lessons.questions.update');
+    
+    Route::get('/courses/{course}/exam-questions/preview', [ExamQuestionController::class, 'preview'])->name('admin.exam-questions.preview');
     });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

@@ -48,6 +48,19 @@ class LessonController extends Controller
         return back();
     }
 
+    public function updateQuestion(Request $request, LessonQuizQuestion $question)
+    {
+        $request->validate([
+            'question' => 'required|string',
+            'choices' => 'required|array|min:2',
+            'correct_choice' => 'required|string',
+        ]);
+
+        $question->update($request->only('question', 'choices', 'correct_choice'));
+
+        return back();
+    }
+
     public function storeQuestion(Request $request, Lesson $lesson)
     {
         $request->validate([

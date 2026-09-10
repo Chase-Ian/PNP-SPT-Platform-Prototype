@@ -3,9 +3,25 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { ref, computed } from 'vue';
 
-const props = defineProps({ course: Object, questions: Array });
+const props = defineProps({ course: Object, questions: Array, settings: Object, liveQuestionCount: Number });
+
+const settingsForm = useForm({
+    time_limit_minutes: props.settings.time_limit_minutes,
+    pass_threshold_percent: props.settings.pass_threshold_percent,
+});
+
+const requiredCorrect = computed(() =>
+    Math.ceil((settingsForm.pass_threshold_percent / 100) * props.liveQuestionCount)
+);
+
+const saveSettings = () => {
+    settingsForm.put(`/admin/courses/${props.course.id}/exam-settings`, { preserveScroll: true });
+};
+
+const timePresets = [60, 90, 120, 150, 180];
+
 const showForm = ref(false);
 const selectedType = ref('multiple_choice');
 
@@ -28,10 +44,30 @@ const removeChoice = (i) => form.answer_data.choices.splice(i, 1);
 const addPair = () => form.answer_data.pairs.push({ left: '', right: '' });
 const removePair = (i) => form.answer_data.pairs.splice(i, 1);
 
+const editingQuestionId = ref(null);
+
+const openEditQuestion = (q) => {
+    editingQuestionId.value = q.id;
+    resetForType(q.type);
+    form.question = q.question;
+    form.answer_data = JSON.parse(JSON.stringify(q.answer_data));
+    showForm.value = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const cancelQuestionForm = () => {
+    showForm.value = false;
+    editingQuestionId.value = null;
+    resetForType('multiple_choice');
+    form.question = '';
+};
+
 const submit = () => {
-    form.post(`/admin/courses/${props.course.id}/exam-questions`, {
-        onSuccess: () => { resetForType('multiple_choice'); form.question = ''; showForm.value = false; },
-    });
+    if (editingQuestionId.value) {
+        form.put(`/admin/exam-questions/${editingQuestionId.value}`, { onSuccess: cancelQuestionForm });
+    } else {
+        form.post(`/admin/courses/${props.course.id}/exam-questions`, { onSuccess: cancelQuestionForm });
+    }
 };
 
 const remove = (question) => {
@@ -42,16 +78,49 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
 </script>
 
 <template>
-    <Head :title="`Exam Questions — ${course.title}`" />
+    <Head :title="`Final Exam — ${course.title}`" />
     <AdminLayout>
         <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
 
-        <AdminPageBanner badge="📋 Final Assessment • Question Bank" :title="`Final Exam — ${course.title}`"
-            subtitle="Build the final assessment question bank: Multiple Choice, True/False, Matching Type, or Identification.">
+        <AdminPageBanner badge="📋 Final Assessment • Question Bank & Settings" :title="`Final Exam — ${course.title}`"
+            subtitle="Configure exam duration, passing threshold, and manage the question bank all in one place.">
             <template #actions>
+                <Link :href="`/admin/courses/${course.id}/exam-questions/preview`" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">👁 Preview Exam</Link>
                 <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Add Question</button>
             </template>
         </AdminPageBanner>
+
+        <!-- Settings panel -->
+        <div class="bg-white rounded-xl border p-6">
+            <div class="flex justify-between items-start mb-4">
+                <h3 class="font-semibold">Exam Settings</h3>
+                <div class="flex gap-2">
+                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ liveQuestionCount }} Questions</span>
+                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">{{ settingsForm.pass_threshold_percent }}% Pass Score Threshold</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-6">
+                <div>
+                    <p class="text-xs text-gray-500 mb-2">Exam Time Limit (Minutes)</p>
+                    <p class="text-xl font-bold text-blue-900 mb-2">{{ (settingsForm.time_limit_minutes / 60).toFixed(1) }} Hours</p>
+                    <div class="flex gap-1 flex-wrap">
+                        <button v-for="preset in timePresets" :key="preset" @click="settingsForm.time_limit_minutes = preset"
+                            :class="settingsForm.time_limit_minutes === preset ? 'bg-blue-900 text-white' : 'bg-gray-100 text-gray-600'"
+                            class="px-2 py-1 rounded text-xs">{{ preset }} min</button>
+                    </div>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500 mb-2">Passing Threshold (%)</p>
+                    <input v-model.number="settingsForm.pass_threshold_percent" type="number" min="1" max="100" class="border rounded-lg px-3 py-2 text-sm w-24" />
+                    <p class="text-xs text-gray-400 mt-1">{{ requiredCorrect }} / {{ liveQuestionCount }} Correct Required</p>
+                </div>
+            </div>
+
+            <button @click="saveSettings" :disabled="settingsForm.processing" class="mt-4 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                Save Exam Settings
+            </button>
+        </div>
 
         <form v-if="showForm" @submit.prevent="submit" class="bg-white rounded-xl border p-6 space-y-4">
             <div>
@@ -116,19 +185,25 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
                 <p class="text-xs text-gray-400 mt-1">Matching is case-insensitive; extra spaces are trimmed.</p>
             </div>
 
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium">Save Question</button>
+            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
+                {{ editingQuestionId ? 'Save Changes' : 'Save Question' }}
+            </button>
+            <button v-if="editingQuestionId" type="button" @click="cancelQuestionForm" class="text-xs text-gray-400 ml-3">Cancel Edit</button>
         </form>
 
-        <div class="bg-white rounded-xl border p-6">
-            <h3 class="font-semibold mb-4">Question Bank ({{ questions.length }})</h3>
-            <div v-if="questions.length === 0" class="text-sm text-gray-400">No questions yet.</div>
-            <div v-for="q in questions" :key="q.id" class="flex justify-between items-start border-b last:border-0 py-3">
-                <div>
-                    <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full mr-2">{{ typeLabel(q.type) }}</span>
-                    <p class="text-sm mt-1">{{ q.question }}</p>
+            <div class="bg-white rounded-xl border p-6">
+                <h3 class="font-semibold mb-4">Question Bank ({{ questions.length }})</h3>
+                <div v-if="questions.length === 0" class="text-sm text-gray-400">No questions yet.</div>
+                <div v-for="q in questions" :key="q.id" class="flex justify-between items-start border-b last:border-0 py-3">
+                    <div>
+                        <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full mr-2">{{ typeLabel(q.type) }}</span>
+                        <p class="text-sm mt-1">{{ q.question }}</p>
+                    </div>
+                    <div class="flex items-center gap-4 shrink-0">
+                        <button @click="openEditQuestion(q)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
+                        <button @click="remove(q)" class="text-red-600 text-xs font-medium">Delete</button>
+                    </div>
                 </div>
-                <button @click="remove(q)" class="text-red-600 text-xs font-medium shrink-0">Delete</button>
             </div>
-        </div>
     </AdminLayout>
 </template>
