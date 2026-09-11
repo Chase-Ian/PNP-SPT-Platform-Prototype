@@ -3,6 +3,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { ref, onMounted, onUnmounted, computed } from 'vue';
+import MatchingDropdown from '@/Components/MatchingDropdown.vue';
 
 const props = defineProps({
     course: Object,
@@ -82,15 +83,12 @@ onUnmounted(() => { if (timerInterval) clearInterval(timerInterval); });
 
                         <!-- Matching -->
                         <div v-else-if="q.type === 'matching'" class="space-y-2">
-                            <div v-for="pair in q.pairs" :key="pair.left" class="flex items-center gap-3">
-                                <span class="flex-1 text-sm font-medium">{{ pair.left }}</span>
-                                <span class="text-gray-400">↔</span>
-                                <select v-model="form.answers[q.id][pair.left]" class="flex-1 border rounded-lg px-2 py-1.5 text-sm">
-                                    <option value="" disabled>Select match</option>
-                                    <option v-for="opt in q.right_options" :key="opt" :value="opt">{{ opt }}</option>
-                                </select>
-                            </div>
-                        </div>
+                <div v-for="pair in q.pairs" :key="pair.left" class="flex items-start gap-3">
+                    <span class="flex-1 text-sm font-medium pt-2 break-words">{{ pair.left }}</span>
+                    <span class="text-gray-400 pt-2">↔</span>
+                    <MatchingDropdown v-model="form.answers[q.id][pair.left]" :options="q.right_options" />
+                </div>
+            </div>
                     </div>
 
                     <button type="submit" :disabled="form.processing" class="bg-blue-900 text-white px-6 py-2 rounded-lg text-sm font-medium">

@@ -48,13 +48,10 @@ const props = defineProps({ course: Object, questions: Array, settings: Object }
 
                 <!-- Matching -->
                 <div v-else-if="q.type === 'matching'" class="space-y-2">
-                    <div v-for="pair in q.pairs" :key="pair.left" class="flex items-center gap-3">
-                        <span class="flex-1 text-sm font-medium">{{ pair.left }}</span>
-                        <span class="text-gray-400">↔</span>
-                        <select disabled class="flex-1 border rounded-lg px-2 py-1.5 text-sm text-gray-400 bg-gray-50">
-                            <option>Select match</option>
-                            <option v-for="opt in q.right_options" :key="opt">{{ opt }}</option>
-                        </select>
+                    <div v-for="pair in q.pairs" :key="pair.left" class="flex items-start gap-3">
+                        <span class="flex-1 text-sm font-medium pt-2 break-words">{{ pair.left }}</span>
+                        <span class="text-gray-400 pt-2">↔</span>
+                        <MatchingDropdown model-value="" :options="q.right_options" disabled />
                     </div>
                 </div>
             </div>

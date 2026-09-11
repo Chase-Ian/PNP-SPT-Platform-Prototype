@@ -64,36 +64,31 @@ class ExamController extends Controller
         $user = $request->user();
         $questions = $course->examQuestions;
 
-        $totalPoints = 0;
-        $earnedPoints = 0;
-
+        $correctCount = 0;
         foreach ($questions as $question) {
             $submitted = $request->answers[$question->id] ?? null;
 
-            if ($question->type === 'matching') {
-                $pairs = $question->answer_data['pairs'];
-                $totalPoints += count($pairs);
-                $earnedPoints += $this->gradeMatchingPartial($submitted, $pairs);
-            } else {
-                $totalPoints += 1;
-                $isCorrect = match ($question->type) {
-                    'multiple_choice', 'true_false' => $submitted === $question->answer_data['correct_choice'],
-                    'identification' => is_string($submitted) && strtolower(trim($submitted)) === strtolower(trim($question->answer_data['correct_answer'])),
-                    default => false,
-                };
-                $earnedPoints += $isCorrect ? 1 : 0;
+            $isCorrect = match ($question->type) {
+                'multiple_choice', 'true_false' => $submitted === $question->answer_data['correct_choice'],
+                'identification' => is_string($submitted) && strtolower(trim($submitted)) === strtolower(trim($question->answer_data['correct_answer'])),
+                'matching' => $this->gradeMatching($submitted, $question->answer_data['pairs']),
+                default => false,
+            };
+
+            if ($isCorrect) {
+                $correctCount++;
             }
         }
 
-        $totalPoints = max($totalPoints, 1);
-        $percent = round(($earnedPoints / $totalPoints) * 100);
+        $totalQuestions = max($questions->count(), 1);
+        $percent = round(($correctCount / $totalQuestions) * 100);
         $passThreshold = $course->examSettings?->pass_threshold_percent ?? 80;
         $passed = $percent >= $passThreshold;
 
         $attempt = ExamAttempt::create([
             'user_id' => $user->id,
             'course_id' => $course->id,
-            'score' => $earnedPoints, // now represents points, not question count
+            'score' => $correctCount,
             'passed' => $passed,
             'answers' => $request->answers,
         ]);
@@ -106,20 +101,19 @@ class ExamController extends Controller
         return redirect()->route('exams.result', $attempt->id);
     }
 
-    private function gradeMatchingPartial($submitted, array $correctPairs): int
+    private function gradeMatching($submitted, array $correctPairs): bool
     {
         if (! is_array($submitted)) {
-            return 0;
+            return false;
         }
 
-        $earned = 0;
         foreach ($correctPairs as $pair) {
-            if (($submitted[$pair['left']] ?? null) === $pair['right']) {
-                $earned++;
+            if (($submitted[$pair['left']] ?? null) !== $pair['right']) {
+                return false; // every pair must be correct — no partial credit
             }
         }
 
-        return $earned;
+        return true;
     }
 
     public function result(Request $request, ExamAttempt $attempt)

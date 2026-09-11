@@ -38,12 +38,5 @@ class Course extends Model
     {
         return $this->hasMany(Lesson::class)->orderBy('order');
     }
-
-    public function totalExamPoints(): int
-    {
-        return $this->examQuestions->sum(function ($q) {
-            return $q->type === 'matching' ? count($q->answer_data['pairs'] ?? []) : 1;
-        });
-    }
     
 }
