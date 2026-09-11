@@ -57,7 +57,7 @@ class ExamController extends Controller
         ]);
     }
 
-    public function submit(Request $request, Course $course)
+   public function submit(Request $request, Course $course)
     {
         $request->validate(['answers' => 'required|array']);
 
@@ -65,6 +65,8 @@ class ExamController extends Controller
         $questions = $course->examQuestions;
 
         $correctCount = 0;
+        $breakdown = [];
+
         foreach ($questions as $question) {
             $submitted = $request->answers[$question->id] ?? null;
 
@@ -78,6 +80,14 @@ class ExamController extends Controller
             if ($isCorrect) {
                 $correctCount++;
             }
+
+            $breakdown[] = [
+                'question_id' => $question->id,
+                'question' => $question->question,
+                'type' => $question->type,
+                'correct' => $isCorrect,
+                // Deliberately NOT including the correct answer here
+            ];
         }
 
         $totalQuestions = max($questions->count(), 1);
@@ -98,7 +108,16 @@ class ExamController extends Controller
             $this->issueCertificate($user, $course);
         }
 
-        return redirect()->route('exams.result', $attempt->id);
+        return Inertia::render('Exam/Result', [
+            'attempt' => [
+                'score' => $attempt->score,
+                'total' => $totalQuestions,
+                'percent' => $percent,
+                'passed' => $attempt->passed,
+                'course_title' => $course->title,
+            ],
+            'breakdown' => $breakdown,
+        ]);
     }
 
     private function gradeMatching($submitted, array $correctPairs): bool

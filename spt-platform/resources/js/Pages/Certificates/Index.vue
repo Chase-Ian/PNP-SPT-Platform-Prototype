@@ -34,7 +34,7 @@ const props = defineProps({ certificates: Array });
                 </div>
                 <div class="flex gap-2 items-center">
                     <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">✓ Issued</span>
-                    <a :href="`/certificates/${cert.id}/download`" target="_blank" class="border px-3 py-1.5 rounded-lg text-xs font-medium">👁 View</a>
+                    <a :href="`/certificates/${cert.id}/view`" target="_blank" class="border px-3 py-1.5 rounded-lg text-xs font-medium">👁 View</a>
                     <a :href="`/certificates/${cert.id}/download`" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">⬇ Download</a>
                 </div>
             </div>

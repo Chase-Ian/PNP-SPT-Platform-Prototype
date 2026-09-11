@@ -22,7 +22,7 @@ class DashboardController extends Controller
             ->count();
 
         $recentExams = $user->examAttempts()
-            ->with('course')
+            ->with('course.examQuestions')
             ->latest()
             ->take(3)
             ->get()
@@ -30,7 +30,7 @@ class DashboardController extends Controller
                 'title' => $attempt->course->title . ' Final Exam',
                 'completed_on' => $attempt->created_at->format('Y-m-d'),
                 'score_percent' => $attempt->course
-                    ? round(($attempt->score / max($attempt->course->examSettings?->question_count ?? 50, 1)) * 100)
+                    ? round(($attempt->score / max($attempt->course->examQuestions->count(), 1)) * 100)
                     : null,
                 'passed' => $attempt->passed,
             ]);

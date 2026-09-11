@@ -29,11 +29,20 @@ class LessonQuizController extends Controller
 
         $questions = $lesson->quizQuestions;
         $correctCount = 0;
+        $breakdown = [];
 
         foreach ($questions as $q) {
-            if (($request->answers[$q->id] ?? null) === $q->correct_choice) {
+            $submitted = $request->answers[$q->id] ?? null;
+            $isCorrect = $submitted === $q->correct_choice;
+
+            if ($isCorrect) {
                 $correctCount++;
             }
+
+            $breakdown[] = [
+                'question' => $q->question,
+                'correct' => $isCorrect,
+            ];
         }
 
         $total = max($questions->count(), 1);
@@ -50,6 +59,7 @@ class LessonQuizController extends Controller
             'passed' => $passed,
             'score' => $correctCount,
             'total' => $total,
+            'breakdown' => $breakdown,
         ]);
-    }
+}
 }

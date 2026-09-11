@@ -63,4 +63,26 @@ class CertificateController extends Controller
             ] : null,
         ]);
     }
+
+    public function view(Request $request, Certificate $certificate)
+    {
+        abort_unless($certificate->user_id === $request->user()->id, 403);
+
+        abort_if(
+            $certificate->issued_at->addDays(90)->isPast(),
+            403,
+            'This certificate link has expired. Please contact your training administrator.'
+        );
+
+        if (! $certificate->pdf_path || ! Storage::exists($certificate->pdf_path)) {
+            abort(404, 'Certificate file not found.');
+        }
+
+        // Inline display instead of forcing a download
+        $file = Storage::get($certificate->pdf_path);
+
+        return response($file, 200)
+            ->header('Content-Type', 'application/pdf')
+            ->header('Content-Disposition', 'inline; filename="' . $certificate->serial_id . '.pdf"');
+    }
 }
