@@ -153,6 +153,20 @@ class LessonController extends Controller
             return $block;
         }, $blocks);
     }
+
+    public function previewQuiz(Lesson $lesson)
+    {
+        $questions = $lesson->quizQuestions()->get()->map(fn ($q) => [
+            'id' => $q->id,
+            'question' => $q->question,
+            'choices' => $q->choices,
+        ]);
+
+        return Inertia::render('Admin/Lessons/QuizPreview', [
+            'lesson' => $lesson->only('id', 'title', 'module_id'),
+            'questions' => $questions,
+        ]);
+    }
     
 
 

@@ -245,7 +245,12 @@ const submitQuestion = (lessonId) => {
                         <button @click="deleteLesson(lesson)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
                     </div>
                 </div>
-
+                        <div v-if="expandedQuiz === lesson.id" class="bg-gray-50 rounded-lg p-4 mb-3 space-y-3">
+                <div class="flex justify-between items-center">
+                    <p class="text-xs font-semibold text-gray-500">QUIZ QUESTIONS</p>
+                    <Link :href="`/admin/lessons/${lesson.id}/quiz-preview`" class="text-blue-600 text-xs font-medium">👁 Preview Quiz</Link>
+                </div>
+                </div>
                 <div v-if="expandedQuiz === lesson.id" class="bg-gray-50 rounded-lg p-4 mb-3 space-y-3">
                     <div v-for="q in lesson.quiz_questions" :key="q.id" class="bg-white border rounded-lg p-3 flex justify-between items-start">
                         <div>

@@ -135,6 +135,8 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::put('/questions/{question}', [LessonController::class, 'updateQuestion'])->name('admin.lessons.questions.update');
     
     Route::get('/courses/{course}/exam-questions/preview', [ExamQuestionController::class, 'preview'])->name('admin.exam-questions.preview');
+    
+    Route::get('/lessons/{lesson}/quiz-preview', [LessonController::class, 'previewQuiz'])->name('admin.lessons.quiz-preview');
     });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---
