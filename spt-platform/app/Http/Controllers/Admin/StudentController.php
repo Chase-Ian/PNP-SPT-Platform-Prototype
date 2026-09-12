@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use Inertia\Inertia;
+use App\Services\AccountLockService;
 
 class StudentController extends Controller
 {
@@ -48,6 +49,41 @@ class StudentController extends Controller
     {
         abort_unless($student->role === 'trainee', 403);
         $student->delete();
+
+        return back();
+    }
+
+    public function show(User $student)
+    {
+        abort_unless($student->role === 'trainee', 403);
+
+        $student->load(['enrollments.course', 'certificates.course', 'examAttempts.course', 'moduleCompletions']);
+
+        return Inertia::render('Admin/Students/Show', [
+            'student' => $student->only('id', 'first_name', 'last_name', 'rank', 'email', 'unit_office', 'region', 'is_locked'),
+            'enrollments' => $student->enrollments->map(fn ($e) => [
+                'course_title' => $e->course->title,
+                'status' => $e->status,
+            ]),
+            'certificates' => $student->certificates->map(fn ($c) => [
+                'course_title' => $c->course->title,
+                'serial_id' => $c->serial_id,
+                'issued_at' => $c->issued_at->format('Y-m-d'),
+            ]),
+            'examAttempts' => $student->examAttempts->map(fn ($a) => [
+                'course_title' => $a->course->title,
+                'score' => $a->score,
+                'passed' => $a->passed,
+                'date' => $a->created_at->format('Y-m-d'),
+            ]),
+        ]);
+    }
+
+    public function toggleLock(User $student, AccountLockService $lockService)
+    {
+        abort_unless($student->role === 'trainee', 403);
+
+        $lockService->toggle($student);
 
         return back();
     }

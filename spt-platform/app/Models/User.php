@@ -14,6 +14,7 @@ class User extends Authenticatable
     protected $fillable = [
         'first_name', 'last_name', 'rank', 'email', 'password',
         'unit_office', 'region', 'two_factor_verified', 'role', 'poa_user_id',
+        'is_locked', 'locked_at', 
     ];
 
     protected $hidden = ['password', 'remember_token'];

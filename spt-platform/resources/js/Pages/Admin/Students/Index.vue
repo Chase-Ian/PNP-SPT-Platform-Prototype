@@ -27,6 +27,14 @@ const remove = (student) => {
         router.delete(`/admin/students/${student.id}`);
     }
 };
+
+const toggleLock = (student) => {
+    const action = student.is_locked ? 'unlock' : 'lock';
+    if (confirm(`${action === 'lock' ? 'Lock' : 'Unlock'} ${student.name}'s account?`)) {
+        router.post(`/admin/students/${student.id}/toggle-lock`);
+    }
+};
+
 </script>
 
 <template>
@@ -91,12 +99,14 @@ const remove = (student) => {
                                 <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ s.certificates }}</span>
                             </td>
                             <td class="py-3">
-                                <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">{{ s.status }}</span>
-                            </td>
-                            <td class="py-3 flex gap-2">
-                                <button class="text-blue-600 text-xs">👁</button>
+                            <div class="flex gap-3 items-center">
+                                <Link :href="`/admin/students/${s.id}`" class="text-blue-600 text-xs">👁</Link>
+                                <button @click="toggleLock(s)" :class="s.is_locked ? 'text-green-600' : 'text-orange-600'" class="text-xs">
+                                    {{ s.is_locked ? '🔓' : '🔒' }}
+                                </button>
                                 <button @click="remove(s)" class="text-red-600 text-xs">🗑</button>
-                            </td>
+                            </div>
+                        </td>
                         </tr>
                     </tbody>
                 </table>

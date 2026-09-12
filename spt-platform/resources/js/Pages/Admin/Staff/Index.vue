@@ -32,6 +32,14 @@ const remove = (person) => {
         router.delete(`/admin/staff/${person.id}`);
     }
 };
+
+const toggleLock = (person) => {
+    const action = person.is_locked ? 'unlock' : 'lock';
+    if (confirm(`${action === 'lock' ? 'Lock' : 'Unlock'} ${person.first_name} ${person.last_name}'s account?`)) {
+        router.post(`/admin/staff/${person.id}/toggle-lock`);
+    }
+};
+
 </script>
 
 <template>
@@ -132,6 +140,7 @@ const remove = (person) => {
                         <td class="py-3 px-3 text-gray-500">{{ person.rank }}</td>
                         <td class="py-3 px-3">
                             <span :class="person.role === 'admin' ? 'bg-orange-100 text-orange-700' : 'bg-blue-100 text-blue-700'" class="px-2 py-0.5 rounded-full text-xs uppercase font-medium">{{ person.role }}</span>
+                            <span v-if="person.is_locked" class="bg-red-100 text-red-700 px-2 py-0.5 rounded-full text-xs font-medium ml-1">Locked</span>
                         </td>
                         <td class="py-3 px-3 text-gray-500">
                             {{ person.unit_office || '—' }}
@@ -139,7 +148,12 @@ const remove = (person) => {
                         </td>
                         <td class="py-3 px-3">{{ person.email }}</td>
                         <td class="py-3 px-3">
-                            <button @click="remove(person)" class="text-red-600 text-xs font-medium">Delete</button>
+                            <div class="flex items-center gap-3">
+                                <button @click="toggleLock(person)" :class="person.is_locked ? 'text-green-600' : 'text-orange-600'" class="text-xs font-medium">
+                                    {{ person.is_locked ? '🔓 Unlock' : '🔒 Lock' }}
+                                </button>
+                                <button @click="remove(person)" class="text-red-600 text-xs font-medium">Delete</button>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

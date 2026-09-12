@@ -23,25 +23,35 @@ use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\ExamQuestionController;
 use App\Http\Controllers\LessonViewController;
 use App\Http\Controllers\LessonQuizController;
+use App\Http\Controllers\Admin\StudentController;
 
-Route::post('/dev/quick-login/{type}', function (string $type) {
-    abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
+if (app()->environment(['local', 'staging'])) {
+    Route::post('/dev/quick-login/{type}', function (string $type) {
+        abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
 
-    $emails = [
-        'trainee' => 'maria.cruz@pnp.gov.ph',
-        'supervisor' => 'supervisor.demo@pnp.gov.ph',
-        'admin' => 'admin.demo@pnp.gov.ph',
-    ];
+        $emails = [
+            'trainee' => 'maria.cruz@pnp.gov.ph',
+            'supervisor' => 'supervisor.demo@pnp.gov.ph',
+            'admin' => 'admin.demo@pnp.gov.ph',
+        ];
 
-    $user = User::where('email', $emails[$type])->firstOrFail();
-    Auth::login($user);
+        $user = User::where('email', $emails[$type])->firstOrFail();
 
-    return redirect(match ($type) {
-        'admin' => '/admin/dashboard',
-        'supervisor' => '/supervisor/dashboard',
-        default => '/dashboard',
-    });
-})->name('dev.quick-login');
+        if ($user->is_locked) {
+            return redirect()->route('login')->withErrors([
+                'email' => 'This account has been locked. Please contact your administrator.',
+            ]);
+        }
+
+        Auth::login($user);
+
+        return redirect(match ($type) {
+            'admin' => '/admin/dashboard',
+            'supervisor' => '/supervisor/dashboard',
+            default => '/dashboard',
+        });
+    })->name('dev.quick-login');
+}
 
 Route::get('/', function () {
     return redirect('/login');
@@ -136,7 +146,9 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     
     Route::get('/courses/{course}/exam-questions/preview', [ExamQuestionController::class, 'preview'])->name('admin.exam-questions.preview');
     
-    Route::get('/lessons/{lesson}/quiz-preview', [LessonController::class, 'previewQuiz'])->name('admin.lessons.quiz-preview');
+    Route::post('/staff/{staff}/toggle-lock', [StaffController::class, 'toggleLock'])->name('admin.staff.toggle-lock');
+    Route::post('/students/{student}/toggle-lock', [StudentController::class, 'toggleLock'])->name('admin.students.toggle-lock');
+    Route::get('/students/{student}', [StudentController::class, 'show'])->name('admin.students.show');
     });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

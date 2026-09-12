@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
+use App\Services\AccountLockService;
 
 class StaffController extends Controller
 {
@@ -35,7 +36,7 @@ class StaffController extends Controller
     public function index()
     {
         $staff = User::whereIn('role', ['supervisor', 'admin'])
-            ->select('id', 'first_name', 'last_name', 'rank', 'email', 'role', 'unit_office', 'region', 'created_at')
+            ->select('id', 'first_name', 'last_name', 'rank', 'email', 'role', 'unit_office', 'region', 'is_locked', 'created_at')
             ->latest()
             ->get();
 
@@ -87,4 +88,15 @@ class StaffController extends Controller
 
         return back();
     }
+
+    public function toggleLock(User $staff, AccountLockService $lockService)
+    {
+        abort_unless(in_array($staff->role, ['supervisor', 'admin']), 403);
+        abort_if($staff->id === request()->user()->id, 403, 'You cannot lock your own account.');
+
+        $lockService->toggle($staff);
+
+        return back();
+    }
+
 }
