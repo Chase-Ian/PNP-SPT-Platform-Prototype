@@ -2,6 +2,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { UserCog } from 'lucide-vue-next';
 import { Head, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -45,7 +46,7 @@ const toggleLock = (person) => {
 <template>
     <Head title="Manage Staff" />
     <AdminLayout>
-        <AdminPageBanner badge="🧑‍✈️ Personnel Administration • Staff Accounts"
+        <AdminPageBanner :icon="UserCog" badge-text="Personnel Administration • Staff Accounts"
             title="Manage Staff Accounts"
             subtitle="Create and manage Supervisor and Administrator accounts. These accounts are not self-registered — only Admins can create them here.">
             <template #actions>

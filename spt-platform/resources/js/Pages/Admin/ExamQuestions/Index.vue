@@ -2,6 +2,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { ClipboardList } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -82,7 +83,8 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
     <AdminLayout>
         <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
 
-        <AdminPageBanner badge="📋 Final Assessment • Question Bank & Settings" :title="`Final Exam — ${course.title}`"
+        <AdminPageBanner :icon="ClipboardList" badge-text="Final Assessment • Question Bank & Settings"
+            :title="`Final Exam — ${course.title}`"
             subtitle="Configure exam duration, passing threshold, and manage the question bank all in one place.">
             <template #actions>
                 <Link :href="`/admin/courses/${course.id}/exam-questions/preview`" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">👁 Preview Exam</Link>

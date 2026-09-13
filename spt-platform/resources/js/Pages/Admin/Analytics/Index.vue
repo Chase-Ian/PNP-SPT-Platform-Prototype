@@ -2,7 +2,9 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { BarChart3 } from 'lucide-vue-next';
 import { Head } from '@inertiajs/vue3';
+
 
 defineProps({
     stats: Object,
@@ -12,11 +14,11 @@ defineProps({
 </script>
 
 <template>
-    <Head title="Analytics" />
+    <Head title="Command Analytics" />
     <AdminLayout>
-        <AdminPageBanner badge="📊 Executive Analytics • Command Reporting" title="Command Analytics"
-            subtitle="System-wide performance metrics, regional compliance rates, and officer exam completion statistics.">
-        </AdminPageBanner>
+        <AdminPageBanner :icon="BarChart3" badge-text="Executive Analytics • Command Reporting"
+            title="Command Analytics"
+            subtitle="System-wide performance metrics, regional compliance rates, and officer exam completion statistics." />
 
         <div class="space-y-4">
 

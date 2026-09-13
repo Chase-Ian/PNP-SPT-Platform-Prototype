@@ -2,6 +2,7 @@
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { ArrowLeft, Search, X, FileCheck2, ArrowLeftRightIcon, ArrowBigRight } from 'lucide-vue-next';
 
 const props = defineProps({ courses: Array });
 const tab = ref('catalog');
@@ -29,25 +30,30 @@ const statusClass = (status) => ({
 }[status] ?? 'bg-gray-100 text-gray-600');
 </script>
 
+
 <template>
     <Head title="Course Catalog" />
     <TraineeLayout>
         <div class="space-y-4">
-            <Link href="/dashboard" class="inline-flex items-center gap-1 text-sm font-medium">← Back to Home</Link>
+            <Link href="/dashboard" class="inline-flex items-center gap-1 text-sm font-medium">
+                <ArrowLeft :size="14" /> Back to Home
+            </Link>
 
             <div class="flex gap-2">
                 <button @click="tab = 'catalog'" :class="tab === 'catalog' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600'" class="px-4 py-1.5 rounded-full text-sm font-medium">Course Catalog</button>
                 <button @click="tab = 'mine'" :class="tab === 'mine' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600'" class="px-4 py-1.5 rounded-full text-sm font-medium">My Learning ({{ myLearningCount }})</button>
             </div>
 
-            <!-- Catalog tab -->
             <div v-if="tab === 'catalog'" class="bg-white rounded-xl border p-6">
                 <div class="flex justify-between items-center mb-4">
                     <div>
                         <h3 class="font-bold text-lg">Course Catalog</h3>
                         <p class="text-xs text-gray-500">Browse and enroll in available learning modules (5 to 6 hours each).</p>
                     </div>
-                    <input v-model="search" type="text" placeholder="Search catalog by title or code..." class="border rounded-lg px-3 py-1.5 text-sm w-64" />
+                    <div class="relative">
+                        <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                        <input v-model="search" type="text" placeholder="Search catalog by title or code..." class="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-64" />
+                    </div>
                 </div>
 
                 <table class="w-full text-sm">
@@ -72,7 +78,7 @@ const statusClass = (status) => ({
                             <td class="py-3 px-3">
                                 <button v-if="course.status === 'enrolled'" @click="drop(course)" class="bg-red-100 text-red-600 px-4 py-1.5 rounded-lg text-xs font-medium">Drop</button>
                                 <button v-else-if="course.status !== 'completed'" @click="enroll(course)" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">Enroll</button>
-                                <span v-else class="text-green-600 text-xs font-medium">✓ Completed</span>
+                                <span v-else class="text-green-600 text-xs font-medium inline-flex items-center gap-1"><FileCheck2 :size="14" /> Completed</span>
                             </td>
                         </tr>
                     </tbody>
@@ -114,7 +120,7 @@ const statusClass = (status) => ({
                             <td class="py-4 px-3 text-right">
                                 <Link :href="course.launch_lesson_id ? `/lessons/${course.launch_lesson_id}` : '#'"
                                     class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700">
-                                    ▶
+                                    <ArrowBigRight :size="20" /> 
                                 </Link>
                             </td>
                             <td class="py-4 px-3 text-right">

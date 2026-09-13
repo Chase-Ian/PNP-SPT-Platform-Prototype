@@ -1,15 +1,11 @@
-<!-- resources/js/Pages/Admin/Students/Index.vue -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { Head, router } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { Eye, Lock, Unlock, Trash2 } from 'lucide-vue-next';
 
-const props = defineProps({
-    stats: Object,
-    students: Array,
-});
-
+const props = defineProps({ stats: Object, students: Array });
 const search = ref('');
 
 const filtered = computed(() => {
@@ -34,18 +30,15 @@ const toggleLock = (student) => {
         router.post(`/admin/students/${student.id}/toggle-lock`);
     }
 };
-
 </script>
 
 <template>
     <Head title="Monitor Officers" />
     <AdminLayout>
         <AdminPageBanner badge="👥 Personnel Training Roster • All Units" title="Monitor Officers"
-            subtitle="Track enrolled police trainees, module progress percentages, exam results, and certification status.">
-        </AdminPageBanner>
+            subtitle="Track enrolled police trainees, module progress percentages, exam results, and certification status." />
 
         <div class="space-y-4">
-
             <input v-model="search" type="text" placeholder="Search by name, email, or organization..."
                 class="w-full border rounded-lg px-3 py-2 text-sm" />
 
@@ -77,8 +70,7 @@ const toggleLock = (student) => {
                             <th class="py-2">Courses</th>
                             <th class="py-2">Progress</th>
                             <th class="py-2">Certificates</th>
-                            <th class="py-2">Status</th>
-                            <th class="py-2">Actions</th>
+                            <th class="py-2 min-w-[140px]">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -99,19 +91,24 @@ const toggleLock = (student) => {
                                 <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ s.certificates }}</span>
                             </td>
                             <td class="py-3">
-                            <div class="flex gap-3 items-center">
-                                <Link :href="`/admin/students/${s.id}`" class="text-blue-600 text-xs">👁</Link>
-                                <button @click="toggleLock(s)" :class="s.is_locked ? 'text-green-600' : 'text-orange-600'" class="text-xs">
-                                    {{ s.is_locked ? '🔓' : '🔒' }}
-                                </button>
-                                <button @click="remove(s)" class="text-red-600 text-xs">🗑</button>
-                            </div>
-                        </td>
+                                <div class="flex items-center justify-between gap-3">
+                                    <Link :href="`/admin/students/${s.id}`" class="text-blue-600 hover:text-blue-800" title="View Detail">
+                                        <Eye :size="16" />
+                                    </Link>
+                                    <button @click="toggleLock(s)" :class="s.is_locked ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'"
+                                        :title="s.is_locked ? 'Unlock Account' : 'Lock Account'">
+                                        <Unlock v-if="s.is_locked" :size="16" />
+                                        <Lock v-else :size="16" />
+                                    </button>
+                                    <button @click="remove(s)" class="text-red-600 hover:text-red-800" title="Delete">
+                                        <Trash2 :size="16" />
+                                    </button>
+                                </div>
+                            </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
-
         </div>
     </AdminLayout>
 </template>

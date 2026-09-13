@@ -1,20 +1,23 @@
-<!-- resources/js/Layouts/AdminLayout.vue -->
 <script setup>
 import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
+import {
+    Home, BookOpen, Users, ClipboardList, Award, BarChart3,
+    UserCog, X, Menu, LogOut, GraduationCap,
+} from 'lucide-vue-next';
 
 const page = usePage();
 const user = page.props.auth.user;
 const sidebarOpen = ref(true);
 
 const navItems = [
-    { label: 'Admin Dashboard', href: '/admin/dashboard', icon: '🏠', match: 'admin.dashboard' },
-    { label: 'Manage Courses & Modules', href: '/admin/courses', icon: '📖', match: 'admin.courses*' },
-    { label: 'Monitor Officers', href: '/admin/students', icon: '👥', match: 'admin.students*' },
-    { label: 'Certificates Log', href: '/admin/certificates', icon: '🏅', match: 'admin.certificates*' },
-    { label: 'Analytics', href: '/admin/analytics', icon: '📊', match: 'admin.analytics*' },
-    { label: 'Manage Staff', href: '/admin/staff', icon: '🧑‍✈️', match: 'admin.staff*' },
+    { label: 'Admin Dashboard', href: '/admin/dashboard', icon: Home, match: 'admin.dashboard' },
+    { label: 'Manage Courses & Modules', href: '/admin/courses', icon: BookOpen, match: 'admin.courses*' },
+    { label: 'Monitor Officers', href: '/admin/students', icon: Users, match: 'admin.students*' },
+    { label: 'Certificates Log', href: '/admin/certificates', icon: Award, match: 'admin.certificates*' },
+    { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: 'admin.analytics*' },
+    { label: 'Manage Staff', href: '/admin/staff', icon: UserCog, match: 'admin.staff*' },
 ];
 
 const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase();
@@ -25,7 +28,9 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
 
         <aside v-show="sidebarOpen" class="w-64 bg-white border-r flex flex-col shrink-0">
             <div class="p-5 border-b flex items-center gap-2">
-                <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white">🎓</div>
+                <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                    <GraduationCap :size="18" />
+                </div>
                 <div>
                     <p class="font-bold text-sm leading-tight">PNP LMS</p>
                     <p class="text-xs text-orange-500 leading-tight">Command Admin</p>
@@ -36,7 +41,10 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 <Link v-for="item in navItems" :key="item.href" :href="item.href"
                     :class="route().current(item.match) ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
                     class="flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium">
-                    <span class="flex items-center gap-2"><span>{{ item.icon }}</span>{{ item.label }}</span>
+                    <span class="flex items-center gap-2">
+                        <component :is="item.icon" :size="16" />
+                        {{ item.label }}
+                    </span>
                     <span v-if="route().current(item.match)" class="w-1.5 h-1.5 rounded-full bg-white"></span>
                 </Link>
             </nav>
@@ -54,7 +62,8 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 <button @click="sidebarOpen = !sidebarOpen"
                     class="w-8 h-8 rounded-full flex items-center justify-center border"
                     :class="sidebarOpen ? 'text-red-500 border-red-200 hover:bg-red-50' : 'text-gray-500 border-gray-200 hover:bg-gray-50'">
-                    {{ sidebarOpen ? '✕' : '☰' }}
+                    <X v-if="sidebarOpen" :size="16" />
+                    <Menu v-else :size="16" />
                 </button>
                 <div class="flex-1"></div>
                 <div class="text-right">
@@ -65,7 +74,9 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                     <p class="text-xs text-gray-400 truncate max-w-xs">{{ user.unit_office || 'NHQ Camp Crame - Directorate for Human Resource' }}</p>
                 </div>
                 <NotificationBell />
-                <Link :href="route('logout')" method="post" as="button" class="text-sm text-gray-500 hover:text-gray-700">↪ Log out</Link>
+                <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+                    <LogOut :size="14" /> Log out
+                </Link>
             </header>
 
             <main class="flex-1 p-6 space-y-6 overflow-x-hidden">

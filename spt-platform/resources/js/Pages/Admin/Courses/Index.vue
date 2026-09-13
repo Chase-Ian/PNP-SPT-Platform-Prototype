@@ -1,6 +1,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { BookOpen } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
@@ -32,7 +33,7 @@ const remove = (course) => {
 <template>
     <Head title="Manage Courses" />
     <AdminLayout>
-        <AdminPageBanner badge="📖 Course Content Management • Course Catalog"
+        <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Course Catalog"
             title="Manage Courses"
             subtitle="Create new courses, then manage their modules, lessons, and quizzes.">
             <template #actions>

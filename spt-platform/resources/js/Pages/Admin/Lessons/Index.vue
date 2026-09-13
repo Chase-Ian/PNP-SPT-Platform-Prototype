@@ -2,6 +2,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { BookOpenCheck } from 'lucide-vue-next';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
@@ -150,7 +151,8 @@ const submitQuestion = (lessonId) => {
             <Link :href="`/admin/courses/${module.course_id}/modules`" class="text-sm font-medium text-blue-600">← Back to Modules</Link>
         </div>
 
-        <AdminPageBanner badge="📚 Lesson Authoring • Module Content" :title="`Lessons — ${module.title}`"
+        <AdminPageBanner :icon="BookOpenCheck" badge-text="Lesson Authoring • Module Content"
+            :title="`Lessons — ${module.title}`"
             subtitle="Build sequential lesson content with text blocks, or import from an existing PowerPoint file.">
             <template #actions>
                 <button @click="openCreateForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Add New Lesson</button>

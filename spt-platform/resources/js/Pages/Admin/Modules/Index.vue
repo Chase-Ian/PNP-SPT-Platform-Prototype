@@ -3,6 +3,7 @@ import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { BookOpen } from 'lucide-vue-next';
 
 const props = defineProps({ course: Object, modules: Array });
 const showForm = ref(false);
@@ -34,7 +35,7 @@ const fileBadgeClass = (type) => ({
     <AdminLayout>
         <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
 
-        <AdminPageBanner badge="📖 Course Content Management • Module & File Operations"
+        <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Module & File Operations"
             :title="`Modules — ${course.title}`"
             subtitle="Add, update, or delete course modules. Upload actual PDF, PowerPoint, or Video files.">
             <template #actions>

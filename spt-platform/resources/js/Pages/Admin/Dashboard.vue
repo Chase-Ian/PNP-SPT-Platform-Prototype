@@ -2,6 +2,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { ShieldCheck } from 'lucide-vue-next';
 import { Head, Link } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -27,10 +28,11 @@ const filtered = computed(() => {
 <template>
     <Head title="Admin Dashboard" />
     <AdminLayout>
-        <AdminPageBanner badge="🛡 Command Admin Portal • Live Personnel Oversight" title="Admin Command Center"
+        <AdminPageBanner :icon="ShieldCheck" badge-text="Command Admin Portal • Live Personnel Oversight"
+            title="Admin Command Center"
             subtitle="Monitor police personnel training progress, configure course modules, and adjust final exam parameters.">
             <template #actions>
-                <Link href="/admin/modules" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Manage Courses & Modules</Link>
+                <Link href="/admin/courses" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Manage Courses & Modules</Link>
             </template>
         </AdminPageBanner>
 

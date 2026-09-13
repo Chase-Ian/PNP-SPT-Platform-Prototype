@@ -1,6 +1,7 @@
 <script setup>
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
+import { ArrowLeft, Award, Eye, Download, ShieldCheck } from 'lucide-vue-next';
 
 const props = defineProps({ certificates: Array });
 </script>
@@ -9,11 +10,13 @@ const props = defineProps({ certificates: Array });
     <Head title="My Certificates" />
     <TraineeLayout>
         <div class="space-y-4">
-            <Link href="/dashboard" class="inline-flex items-center gap-1 text-sm font-medium">← Back to Home</Link>
+            <Link href="/dashboard" class="inline-flex items-center gap-1 text-sm font-medium">
+                <ArrowLeft :size="14" /> Back to Home
+            </Link>
 
             <div class="bg-white rounded-xl border p-6 flex justify-between items-center">
                 <div>
-                    <h3 class="font-bold text-lg flex items-center gap-2">🏅 My Certificates</h3>
+                    <h3 class="font-bold text-lg flex items-center gap-2"><Award :size="18" /> My Certificates</h3>
                     <p class="text-xs text-gray-500">View, verify, and download your earned PNP training credentials.</p>
                 </div>
                 <span class="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs font-medium">{{ certificates.length }} Certificates Earned</span>
@@ -25,7 +28,9 @@ const props = defineProps({ certificates: Array });
 
             <div v-for="cert in certificates" :key="cert.id" class="bg-white rounded-xl border p-5 flex justify-between items-center">
                 <div class="flex gap-3">
-                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">🏅</div>
+                    <div class="w-10 h-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                        <Award :size="18" />
+                    </div>
                     <div>
                         <p class="font-semibold">{{ cert.title }}</p>
                         <p class="text-xs text-gray-500">Instructor: <span class="font-medium">{{ cert.instructor_name }}</span></p>
@@ -34,13 +39,17 @@ const props = defineProps({ certificates: Array });
                 </div>
                 <div class="flex gap-2 items-center">
                     <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">✓ Issued</span>
-                    <a :href="`/certificates/${cert.id}/view`" target="_blank" class="border px-3 py-1.5 rounded-lg text-xs font-medium">👁 View</a>
-                    <a :href="`/certificates/${cert.id}/download`" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">⬇ Download</a>
+                    <a :href="`/certificates/${cert.id}/view`" target="_blank" class="border px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1">
+                        <Eye :size="14" /> View
+                    </a>
+                    <a :href="`/certificates/${cert.id}/download`" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700 flex items-center gap-1">
+                        <Download :size="14" /> Download
+                    </a>
                 </div>
             </div>
 
             <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 text-xs text-gray-600 space-y-1">
-                <p class="font-medium text-blue-900">🛡 About Your PNP Certificates</p>
+                <p class="font-medium text-blue-900 flex items-center gap-1"><ShieldCheck :size="14" /> About Your PNP Certificates</p>
                 <p>• Certificates are automatically generated when you complete a course and pass its final quiz.</p>
                 <p>• Each certificate includes a unique verification code for official authenticity checks.</p>
                 <p>• All certificates are digitally signed and can be verified anytime on the PNP Verification page.</p>

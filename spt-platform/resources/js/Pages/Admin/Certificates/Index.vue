@@ -2,6 +2,7 @@
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import { Award } from 'lucide-vue-next';
 import { Head } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 
@@ -45,11 +46,12 @@ const isExpanded = (station) => {
 </script>
 
 <template>
-    <Head title="Certificates Log" />
+    <Head title="Monitor Officer Certificates" />
     <AdminLayout>
-        <AdminPageBanner badge="🏅 Official Credentials Registry • Audited Log" title="Monitor Certificates"
-            subtitle="Audit, verify, and download official PNP certificates issued to personnel across regional commands.">
-        </AdminPageBanner>
+        <AdminPageBanner :icon="Award" badge-text="Official Credentials Registry • Audited Log"
+            title="Monitor Certificates"
+            subtitle="Audit, verify, and download official PNP certificates issued to personnel across regional commands." />
+
 
         <div class="space-y-4">
 
