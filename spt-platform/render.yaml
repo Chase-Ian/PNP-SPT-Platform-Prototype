@@ -33,3 +33,13 @@ services:
         value: file
       - key: QUEUE_CONNECTION
         value: sync
+      - key: FILESYSTEM_DISK
+        value: s3
+      - key: AWS_ACCESS_KEY_ID
+        sync: false
+      - key: AWS_SECRET_ACCESS_KEY
+        sync: false
+      - key: AWS_DEFAULT_REGION
+        value: ap-southeast-2
+      - key: AWS_BUCKET
+        sync: false
