@@ -54,10 +54,14 @@ return [
             'region' => env('AWS_DEFAULT_REGION'),
             'bucket' => env('AWS_BUCKET'),
             'url' => env('AWS_URL'),
-            'endpoint' => env('AWS_ENDPOINT'),
+            'endpoint' => env('AWS_ENDPOINT_URL') ?: null,
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => false,
             'report' => false,
+            // SSL CA bundle — required on Windows where PHP has no system cert store
+            'http' => [
+                'verify' => env('AWS_CA_BUNDLE', true),
+            ],
         ],
 
     ],
