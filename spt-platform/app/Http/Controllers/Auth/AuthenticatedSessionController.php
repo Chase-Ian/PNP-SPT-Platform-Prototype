@@ -32,8 +32,9 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $user = $request->user();
+
         if ($user->is_locked) {
-            \Illuminate\Support\Facades\Auth::logout();
+            Auth::logout();
             $request->session()->invalidate();
             $request->session()->regenerateToken();
 
@@ -44,7 +45,14 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route('dashboard', absolute: false));
+        // Determine target route based on user role
+        $targetRoute = match ($user->role) {
+            'admin' => 'admin.dashboard',
+            'supervisor' => 'supervisor.dashboard',
+            default => 'dashboard',
+        };
+
+        return redirect()->intended(route($targetRoute, absolute: false));
     }
 
     /**
