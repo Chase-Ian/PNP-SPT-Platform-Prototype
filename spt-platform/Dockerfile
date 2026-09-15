@@ -1,4 +1,15 @@
-# Stage 1: Build frontend assets
+# Stage 1: Install PHP dependencies (needed for Ziggy's generated routes file)
+FROM composer:2 AS composer-build
+
+WORKDIR /app
+
+COPY composer.json composer.lock ./
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+COPY . .
+RUN composer dump-autoload --optimize
+
+# Stage 2: Build frontend assets
 FROM node:20-alpine AS node-build
 
 WORKDIR /app
@@ -7,12 +18,12 @@ COPY package*.json ./
 RUN npm ci
 
 COPY . .
+COPY --from=composer-build /app/vendor ./vendor
 RUN npm run build
 
-# Stage 2: PHP app
+# Stage 3: PHP app
 FROM php:8.2-fpm-alpine
 
-# Install system dependencies
 RUN apk add --no-cache \
     nginx \
     supervisor \
@@ -36,32 +47,24 @@ RUN apk add --no-cache \
     zip \
     opcache
 
-# Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
-# Copy application files
 COPY . .
+
+# Bring in the already-installed vendor/ from the composer stage (avoids reinstalling)
+COPY --from=composer-build /app/vendor ./vendor
 
 # Copy built frontend assets from node stage
 COPY --from=node-build /app/public/build ./public/build
 
-# Install PHP dependencies
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Set permissions
 RUN chown -R www-data:www-data /var/www/html \
     && chmod -R 755 /var/www/html/storage \
     && chmod -R 755 /var/www/html/bootstrap/cache
 
-# Nginx config
 COPY docker/nginx.conf /etc/nginx/http.d/default.conf
-
-# Supervisor config
 COPY docker/supervisord.conf /etc/supervisord.conf
-
-# Startup script
 COPY docker/start.sh /start.sh
 RUN chmod +x /start.sh
 
