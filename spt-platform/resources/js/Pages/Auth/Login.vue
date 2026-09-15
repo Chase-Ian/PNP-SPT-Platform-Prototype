@@ -119,21 +119,6 @@ const quickLogin = (type) => {
                 </button>
             </form>
 
-            <div class="mt-6 pt-4 border-t">
-                <div class="flex justify-between items-center mb-2">
-                    <p class="text-xs font-semibold text-gray-500">QUICK DEMO LOGINS</p>
-                    <span class="text-blue-500 text-sm">✓</span>
-                </div>
-                <div class="grid grid-cols-3 gap-2">
-                    <button v-for="(acct, key) in demoAccounts" :key="key" type="button" @click="quickLogin(key)"
-                        :class="selectedRole === key ? 'bg-blue-50 border-blue-300' : 'border-gray-200'"
-                        class="border rounded-lg p-2 text-left">
-                        <p class="text-xs font-semibold">{{ acct.label }}</p>
-                        <p class="text-xs text-gray-400 truncate">{{ acct.email }}</p>
-                    </button>
-                </div>
-            </div>
-
             <p class="text-center text-sm mt-4 pt-4 border-t">
                 Don't have an account yet?
                 <Link :href="route('register')" class="text-blue-600 font-medium">Register New Account →</Link>

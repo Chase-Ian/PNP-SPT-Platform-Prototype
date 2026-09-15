@@ -25,34 +25,6 @@ use App\Http\Controllers\LessonViewController;
 use App\Http\Controllers\LessonQuizController;
 use App\Http\Controllers\Admin\StudentController;
 
-if (app()->environment(['local', 'staging'])) {
-    Route::post('/dev/quick-login/{type}', function (string $type) {
-        abort_unless(in_array($type, ['trainee', 'supervisor', 'admin']), 404);
-
-        $emails = [
-            'trainee' => 'maria.cruz@pnp.gov.ph',
-            'supervisor' => 'supervisor.demo@pnp.gov.ph',
-            'admin' => 'admin.demo@pnp.gov.ph',
-        ];
-
-        $user = User::where('email', $emails[$type])->firstOrFail();
-
-        if ($user->is_locked) {
-            return redirect()->route('login')->withErrors([
-                'email' => 'This account has been locked. Please contact your administrator.',
-            ]);
-        }
-
-        Auth::login($user);
-
-        return redirect(match ($type) {
-            'admin' => '/admin/dashboard',
-            'supervisor' => '/supervisor/dashboard',
-            default => '/dashboard',
-        });
-    })->name('dev.quick-login');
-}
-
 Route::get('/', function () {
     return redirect('/login');
 });
