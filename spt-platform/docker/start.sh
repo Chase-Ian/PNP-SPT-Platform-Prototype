@@ -1,4 +1,11 @@
 #!/bin/sh
+#!/bin/sh
+
+# Clear and rebuild caches on startup
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
 set -e
 
 echo "Running Laravel startup tasks..."
