@@ -1,7 +1,15 @@
-# Stage 1: Install PHP dependencies (needed for Ziggy's generated routes file)
+# Stage 1: Install PHP dependencies
 FROM composer:2 AS composer-build
 
 WORKDIR /app
+
+# Install system dependencies & compile GD extension for Composer's platform check
+RUN apk add --no-cache \
+    freetype-dev \
+    libjpeg-turbo-dev \
+    libpng-dev \
+    && docker-php-ext-configure gd --with-freetype --with-jpeg \
+    && docker-php-ext-install gd
 
 COPY composer.json composer.lock ./
 RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
@@ -21,13 +29,14 @@ COPY . .
 COPY --from=composer-build /app/vendor ./vendor
 RUN npm run build
 
-# Stage 3: PHP app
+# Stage 3: PHP app runtime
 FROM php:8.2-fpm-alpine
 
 RUN apk add --no-cache \
     nginx \
     supervisor \
     curl \
+    ca-certificates \
     zip \
     unzip \
     git \
@@ -36,6 +45,7 @@ RUN apk add --no-cache \
     freetype-dev \
     libzip-dev \
     oniguruma-dev \
+    && update-ca-certificates \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
     && docker-php-ext-install \
     pdo_mysql \
@@ -47,16 +57,20 @@ RUN apk add --no-cache \
     zip \
     opcache
 
+# Download the standalone ISRG Root X1 CA certificate for TiDB Cloud
+RUN mkdir -p /etc/ssl/certs/tidb \
+    && curl -fsSL https://letsencrypt.org/certs/isrgrootx1.pem -o /etc/ssl/certs/tidb/isrgrootx1.pem
+
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
 WORKDIR /var/www/html
 
 COPY . .
 
-# Bring in the already-installed vendor/ from the composer stage (avoids reinstalling)
+# Copy vendor dependencies from Stage 1
 COPY --from=composer-build /app/vendor ./vendor
 
-# Copy built frontend assets from node stage
+# Copy compiled assets from Stage 2
 COPY --from=node-build /app/public/build ./public/build
 
 RUN chown -R www-data:www-data /var/www/html \
