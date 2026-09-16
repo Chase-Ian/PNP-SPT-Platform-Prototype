@@ -64,12 +64,12 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 <div class="flex-1"></div>
 
                 <div class="text-right">
-                    <div class="flex items-center gap-2 justify-end">
-                        <span class="text-sm font-medium">{{ user.email }}</span>
-                        <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded uppercase">{{ user.role }}</span>
+                        <Link href="/profile" class="flex items-center gap-2 justify-end hover:opacity-75">
+                            <span class="text-sm font-medium">{{ user.email }}</span>
+                            <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded uppercase">{{ user.role }}</span>
+                        </Link>
+                        <p class="text-xs text-gray-400">{{ user.unit_office || '—' }}</p>
                     </div>
-                    <p class="text-xs text-gray-400">{{ user.unit_office || '—' }}</p>
-                </div>
                 <NotificationBell />
                 <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
                     <LogOut :size="14" /> Log out

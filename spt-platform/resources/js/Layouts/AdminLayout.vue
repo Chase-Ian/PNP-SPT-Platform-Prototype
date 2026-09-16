@@ -67,11 +67,11 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 </button>
                 <div class="flex-1"></div>
                 <div class="text-right">
-                    <div class="flex items-center gap-2 justify-end">
+                    <Link href="/profile" class="flex items-center gap-2 justify-end hover:opacity-75">
                         <span class="text-sm font-medium">{{ user.email }}</span>
-                        <span class="bg-orange-100 text-orange-700 text-xs font-semibold px-2 py-0.5 rounded uppercase">{{ user.role }}</span>
-                    </div>
-                    <p class="text-xs text-gray-400 truncate max-w-xs">{{ user.unit_office || 'NHQ Camp Crame - Directorate for Human Resource' }}</p>
+                        <span class="bg-blue-100 text-blue-700 text-xs font-semibold px-2 py-0.5 rounded uppercase">{{ user.role }}</span>
+                    </Link>
+                    <p class="text-xs text-gray-400">{{ user.unit_office || '—' }}</p>
                 </div>
                 <NotificationBell />
                 <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
