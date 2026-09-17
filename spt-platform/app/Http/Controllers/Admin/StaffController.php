@@ -22,15 +22,24 @@ class StaffController extends Controller
     ];
 
     private const REGIONS = [
-        'PRO NCR - National Capital Region (NCR)', 'PRO 1 - Region 1 - Ilocos Region',
-        'PRO 2 - Region 2 - Cagayan Valley', 'PRO 3 - Region 3 - Central Luzon',
-        'PRO 4A - Region 4A - CALABARZON', 'PRO 4B - Region 4B - MIMAROPA',
-        'PRO 5 - Region 5 - Bicol Region', 'PRO 6 - Region 6 - Western Visayas',
-        'PRO 7 - Region 7 - Central Visayas', 'PRO 8 - Region 8 - Eastern Visayas',
-        'PRO 9 - Region 9 - Zamboanga Peninsula', 'PRO 10 - Region 10 - Northern Mindanao',
-        'PRO 11 - Region 11 - Davao Region', 'PRO 12 - Region 12 - SOCCSKSARGEN',
-        'PRO 13 - Region 13 - Caraga Region', 'PRO BARMM - Bangsamoro Autonomous Region (BARMM)',
-        'PRO CAR - Cordillera Administrative Region (CAR)', 'NHQ Camp Crame - PNP National Headquarters',
+        'PRO NCR - National Capital Region (NCR)',
+        'PRO 1 - Region 1 - Ilocos Region',
+        'PRO 2 - Region 2 - Cagayan Valley',
+        'PRO 3 - Region 3 - Central Luzon',
+        'PRO 4A - Region 4A - CALABARZON',
+        'PRO 4B - Region 4B - MIMAROPA',
+        'PRO 5 - Region 5 - Bicol Region',
+        'PRO 6 - Region 6 - Western Visayas',
+        'PRO 7 - Region 7 - Central Visayas',
+        'PRO 8 - Region 8 - Eastern Visayas',
+        'PRO 9 - Region 9 - Zamboanga Peninsula',
+        'PRO 10 - Region 10 - Northern Mindanao',
+        'PRO 11 - Region 11 - Davao Region',
+        'PRO 12 - Region 12 - SOCCSKSARGEN',
+        'PRO 13 - Region 13 - Caraga Region',
+        'PRO BARMM - Bangsamoro Autonomous Region (BARMM)',
+        'PRO CAR - Cordillera Administrative Region (CAR)',
+        'NHQ Camp Crame - PNP National Headquarters',
     ];
 
     public function index()
