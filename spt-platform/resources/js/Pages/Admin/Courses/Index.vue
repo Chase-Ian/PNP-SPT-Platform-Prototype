@@ -17,17 +17,40 @@ const form = useForm({
     lesson_count: 5,
 });
 
-const submit = () => {
-    form.post('/admin/courses', {
-        onSuccess: () => { form.reset(); showForm.value = false; },
-    });
-};
-
 const remove = (course) => {
     if (confirm(`Delete "${course.title}"? This also deletes all its modules and lessons.`)) {
         router.delete(`/admin/courses/${course.id}`);
     }
 };
+
+const editingCourseId = ref(null);
+
+const openEditCourse = (course) => {
+    editingCourseId.value = course.id;
+    form.activity_code = course.activity_code;
+    form.title = course.title;
+    form.description = course.description;
+    form.instructor_name = course.instructor_name;
+    form.duration_hours = course.duration_hours;
+    form.lesson_count = course.lesson_count;
+    showForm.value = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const cancelCourseForm = () => {
+    showForm.value = false;
+    editingCourseId.value = null;
+    form.reset();
+};
+
+const submit = () => {
+    if (editingCourseId.value) {
+        form.put(`/admin/courses/${editingCourseId.value}`, { onSuccess: cancelCourseForm });
+    } else {
+        form.post('/admin/courses', { onSuccess: cancelCourseForm });
+    }
+};
+
 </script>
 
 <template>
@@ -72,7 +95,10 @@ const remove = (course) => {
                     <input v-model="form.lesson_count" type="number" min="1" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
                 </div>
             </div>
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Save Course</button>
+            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                {{ editingCourseId ? 'Save Changes' : 'Save Course' }}
+            </button>
+            <button v-if="editingCourseId" type="button" @click="cancelCourseForm" class="text-xs text-gray-400 ml-3">Cancel Edit</button>
         </form>
 
         <div class="bg-white rounded-xl border p-6">
@@ -97,7 +123,8 @@ const remove = (course) => {
                             <div class="flex items-center gap-4">
                                 <Link :href="`/admin/courses/${course.id}/modules`" class="text-blue-600 text-xs font-medium">Manage Modules</Link>
                                 <Link :href="`/admin/courses/${course.id}/exam-questions`" class="text-blue-600 text-xs font-medium">Manage Final Exam</Link>
-                                <button @click="remove(course)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50 ml-auto">🗑 Delete</button>
+                                <button @click="openEditCourse(course)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
+                                <button @click="remove(course)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
                             </div>
                         </td>
                     </tr>

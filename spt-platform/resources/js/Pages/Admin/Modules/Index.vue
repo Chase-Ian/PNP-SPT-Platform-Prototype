@@ -11,10 +11,37 @@ const showForm = ref(false);
 const form = useForm({ title: '', description: '', duration_minutes: 20, file: null });
 
 const submit = () => {
-    form.post(`/admin/courses/${props.course.id}/modules`, {
-        forceFormData: true,
-        onSuccess: () => { form.reset(); showForm.value = false; },
-    });
+    if (editingModuleId.value) {
+        form.post(`/admin/modules/${editingModuleId.value}`, {
+            forceFormData: true,
+            onSuccess: cancelModuleForm,
+            // Laravel needs this to treat a multipart POST as a PUT
+            headers: { 'X-HTTP-Method-Override': 'PUT' },
+        });
+    } else {
+        form.post(`/admin/courses/${props.course.id}/modules`, {
+            forceFormData: true,
+            onSuccess: cancelModuleForm,
+        });
+    }
+};
+
+const editingModuleId = ref(null);
+
+const openEditModule = (module) => {
+    editingModuleId.value = module.id;
+    form.title = module.title;
+    form.description = module.description;
+    form.duration_minutes = module.duration_minutes;
+    form.file = null; // leaving this null means "keep existing file" on update
+    showForm.value = true;
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const cancelModuleForm = () => {
+    showForm.value = false;
+    editingModuleId.value = null;
+    form.reset();
 };
 
 const remove = (module) => {
@@ -28,6 +55,7 @@ const fileBadgeClass = (type) => ({
     pptx: 'bg-orange-100 text-orange-600',
     mp4: 'bg-blue-100 text-blue-600',
 }[type] ?? 'bg-gray-100 text-gray-500');
+
 </script>
 
 <template>
@@ -57,9 +85,9 @@ const fileBadgeClass = (type) => ({
                 <input v-model="form.duration_minutes" type="number" min="1" class="mt-1 w-32 border rounded-lg px-3 py-2 text-sm" required />
             </div>
             <div>
-                <label class="text-sm font-medium">File (PDF, PPTX, or MP4)</label>
-                <input type="file" accept=".pdf,.pptx,.mp4" @change="form.file = $event.target.files[0]" class="mt-1 w-full text-sm" required />
-                <div v-if="form.errors.file" class="text-red-600 text-xs mt-1">{{ form.errors.file }}</div>
+                <label class="text-sm font-medium">File (PDF, PPTX, or MP4) — optional</label>
+                <input type="file" accept=".pdf,.pptx,.mp4" @change="form.file = $event.target.files[0]" class="mt-1 w-full text-sm" />
+                <p v-if="editingModuleId" class="text-xs text-gray-400 mt-1">Leave empty to keep the current file.</p>
             </div>
             <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Save Module</button>
         </form>
@@ -89,8 +117,10 @@ const fileBadgeClass = (type) => ({
                         </td>
                         <td class="py-3">{{ m.duration_minutes }} mins</td>
                         <td class="py-3">
-                            <div class="flex items-center justify-between gap-6">
+                            <div class="flex items-center gap-3">
+                                <a v-if="m.file_type" :href="`/admin/modules/${m.id}/view-file`" target="_blank" class="text-blue-600 text-xs font-medium">👁 View File</a>
                                 <Link :href="`/admin/modules/${m.id}/lessons`" class="text-blue-600 text-xs font-medium">Manage Lessons</Link>
+                                <button @click="openEditModule(m)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
                                 <button @click="remove(m)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
                             </div>
                         </td>

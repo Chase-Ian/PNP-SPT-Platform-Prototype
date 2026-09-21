@@ -121,6 +121,11 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/staff/{staff}/toggle-lock', [StaffController::class, 'toggleLock'])->name('admin.staff.toggle-lock');
     Route::post('/students/{student}/toggle-lock', [StudentController::class, 'toggleLock'])->name('admin.students.toggle-lock');
     Route::get('/students/{student}', [StudentController::class, 'show'])->name('admin.students.show');
+
+    Route::put('/courses/{course}', [AdminCourseController::class, 'update'])->name('admin.courses.update');
+
+    Route::put('/modules/{module}', [AdminModuleController::class, 'update'])->name('admin.modules.update');
+    Route::get('/modules/{module}/view-file', [AdminModuleController::class, 'viewFile'])->name('admin.modules.view-file');
     });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---
