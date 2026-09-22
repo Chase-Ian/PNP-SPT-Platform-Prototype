@@ -4,6 +4,7 @@ import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { BookOpen } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { BookOpen, Pencil, Trash2, X } from 'lucide-vue-next';
 
 const props = defineProps({ courses: Array });
 const showForm = ref(false);
@@ -95,10 +96,12 @@ const submit = () => {
                     <input v-model="form.lesson_count" type="number" min="1" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
                 </div>
             </div>
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                {{ editingCourseId ? 'Save Changes' : 'Save Course' }}
-            </button>
-            <button v-if="editingCourseId" type="button" @click="cancelCourseForm" class="text-xs text-gray-400 ml-3">Cancel Edit</button>
+                <div class="flex justify-between items-center mb-3">
+                    <h3 class="font-semibold">{{ editingCourseId ? 'Edit Course' : 'New Course' }}</h3>
+                    <button type="button" @click="cancelCourseForm" class="text-xs text-gray-400 flex items-center gap-1">
+                        <X :size="14" /> Cancel
+                    </button>
+                </div>
         </form>
 
         <div class="bg-white rounded-xl border p-6">
@@ -121,11 +124,14 @@ const submit = () => {
                         <td class="py-3">{{ course.modules_count }}</td>
                         <td class="py-3">
                             <div class="flex items-center gap-4">
-                                <Link :href="`/admin/courses/${course.id}/modules`" class="text-blue-600 text-xs font-medium">Manage Modules</Link>
-                                <Link :href="`/admin/courses/${course.id}/exam-questions`" class="text-blue-600 text-xs font-medium">Manage Final Exam</Link>
-                                <button @click="openEditCourse(course)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
-                                <button @click="remove(course)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
-                            </div>
+                            <Link :href="`/admin/courses/${course.id}/modules`" class="text-blue-600 text-xs font-medium">Manage Modules</Link>
+                            <button @click="openEditCourse(course)" class="text-green-600 hover:text-green-800" title="Edit">
+                                <Pencil :size="16" />
+                            </button>
+                            <button @click="remove(course)" class="text-red-600 hover:text-red-800" title="Delete">
+                                <Trash2 :size="16" />
+                            </button>
+                        </div>
                         </td>
                     </tr>
                 </tbody>

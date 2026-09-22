@@ -1,39 +1,29 @@
 <script setup>
-import { Head, useForm, router, Link } from '@inertiajs/vue3';
-import { ref } from 'vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { BookOpen } from 'lucide-vue-next';
+import { BookOpen, Eye, Pencil, Trash2, X } from 'lucide-vue-next';
+import { Head, useForm, router, Link } from '@inertiajs/vue3';
+import { ref } from 'vue';
 
 const props = defineProps({ course: Object, modules: Array });
 const showForm = ref(false);
+const editingModuleId = ref(null);
 
 const form = useForm({ title: '', description: '', duration_minutes: 20, file: null });
 
-const submit = () => {
-    if (editingModuleId.value) {
-        form.post(`/admin/modules/${editingModuleId.value}`, {
-            forceFormData: true,
-            onSuccess: cancelModuleForm,
-            // Laravel needs this to treat a multipart POST as a PUT
-            headers: { 'X-HTTP-Method-Override': 'PUT' },
-        });
-    } else {
-        form.post(`/admin/courses/${props.course.id}/modules`, {
-            forceFormData: true,
-            onSuccess: cancelModuleForm,
-        });
-    }
+const openCreateForm = () => {
+    editingModuleId.value = null;
+    form.reset();
+    form.duration_minutes = 20;
+    showForm.value = true;
 };
-
-const editingModuleId = ref(null);
 
 const openEditModule = (module) => {
     editingModuleId.value = module.id;
     form.title = module.title;
     form.description = module.description;
     form.duration_minutes = module.duration_minutes;
-    form.file = null; // leaving this null means "keep existing file" on update
+    form.file = null;
     showForm.value = true;
     window.scrollTo({ top: 0, behavior: 'smooth' });
 };
@@ -42,6 +32,21 @@ const cancelModuleForm = () => {
     showForm.value = false;
     editingModuleId.value = null;
     form.reset();
+};
+
+const submit = () => {
+    if (editingModuleId.value) {
+        form.post(`/admin/modules/${editingModuleId.value}`, {
+            forceFormData: true,
+            headers: { 'X-HTTP-Method-Override': 'PUT' },
+            onSuccess: cancelModuleForm,
+        });
+    } else {
+        form.post(`/admin/courses/${props.course.id}/modules`, {
+            forceFormData: true,
+            onSuccess: cancelModuleForm,
+        });
+    }
 };
 
 const remove = (module) => {
@@ -55,7 +60,6 @@ const fileBadgeClass = (type) => ({
     pptx: 'bg-orange-100 text-orange-600',
     mp4: 'bg-blue-100 text-blue-600',
 }[type] ?? 'bg-gray-100 text-gray-500');
-
 </script>
 
 <template>
@@ -67,11 +71,18 @@ const fileBadgeClass = (type) => ({
             :title="`Modules — ${course.title}`"
             subtitle="Add, update, or delete course modules. Upload actual PDF, PowerPoint, or Video files.">
             <template #actions>
-                <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Insert New Module</button>
+                <button @click="openCreateForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Insert New Module</button>
             </template>
         </AdminPageBanner>
 
         <form v-if="showForm" @submit.prevent="submit" class="bg-white rounded-xl border p-6 space-y-3">
+            <div class="flex justify-between items-center">
+                <h3 class="font-semibold">{{ editingModuleId ? 'Edit Module' : 'New Module' }}</h3>
+                <button type="button" @click="cancelModuleForm" class="text-xs text-gray-400 flex items-center gap-1">
+                    <X :size="14" /> Cancel
+                </button>
+            </div>
+
             <div>
                 <label class="text-sm font-medium">Title</label>
                 <input v-model="form.title" type="text" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
@@ -88,8 +99,14 @@ const fileBadgeClass = (type) => ({
                 <label class="text-sm font-medium">File (PDF, PPTX, or MP4) — optional</label>
                 <input type="file" accept=".pdf,.pptx,.mp4" @change="form.file = $event.target.files[0]" class="mt-1 w-full text-sm" />
                 <p v-if="editingModuleId" class="text-xs text-gray-400 mt-1">Leave empty to keep the current file.</p>
+                <div v-if="form.errors.file" class="text-red-600 text-xs mt-1">{{ form.errors.file }}</div>
             </div>
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">Save Module</button>
+
+            <div class="flex items-center gap-3">
+                <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
+                    {{ editingModuleId ? 'Save Changes' : 'Save Module' }}
+                </button>
+            </div>
         </form>
 
         <div class="bg-white rounded-xl border p-6">
@@ -117,11 +134,17 @@ const fileBadgeClass = (type) => ({
                         </td>
                         <td class="py-3">{{ m.duration_minutes }} mins</td>
                         <td class="py-3">
-                            <div class="flex items-center gap-3">
-                                <a v-if="m.file_type" :href="`/admin/modules/${m.id}/view-file`" target="_blank" class="text-blue-600 text-xs font-medium">👁 View File</a>
+                            <div class="flex items-center gap-4">
+                                <a v-if="m.file_type" :href="`/admin/modules/${m.id}/view-file`" target="_blank" class="text-blue-600 hover:text-blue-800" title="View File">
+                                    <Eye :size="16" />
+                                </a>
                                 <Link :href="`/admin/modules/${m.id}/lessons`" class="text-blue-600 text-xs font-medium">Manage Lessons</Link>
-                                <button @click="openEditModule(m)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
-                                <button @click="remove(m)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
+                                <button @click="openEditModule(m)" class="text-green-600 hover:text-green-800" title="Edit">
+                                    <Pencil :size="16" />
+                                </button>
+                                <button @click="remove(m)" class="text-red-600 hover:text-red-800" title="Delete">
+                                    <Trash2 :size="16" />
+                                </button>
                             </div>
                         </td>
                     </tr>

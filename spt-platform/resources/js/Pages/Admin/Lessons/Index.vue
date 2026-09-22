@@ -6,6 +6,7 @@ import { BookOpenCheck } from 'lucide-vue-next';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
+import { BookOpenCheck, Eye, Pencil, Trash2, ClipboardList, X } from 'lucide-vue-next';
 
 const props = defineProps({ module: Object, lessons: Array });
 
@@ -239,13 +240,22 @@ const submitQuestion = (lessonId) => {
                         <p class="text-xs text-gray-400">{{ lesson.duration_minutes }} mins · {{ lesson.quiz_questions_count }} quiz questions</p>
                     </div>
                     <div class="flex items-center gap-4">
-                        <button @click="openEditForm(lesson)" class="text-green-600 text-xs font-medium">✏️ Manage Lesson</button>
-                        <button @click="toggleQuiz(lesson.id)" class="text-purple-600 text-xs font-medium">
-                            📝 {{ expandedQuiz === lesson.id ? 'Hide Quiz' : 'Manage Quiz' }}
-                        </button>
-                        <Link :href="`/admin/lessons/${lesson.id}/preview`" class="text-blue-600 text-xs font-medium">👁 Preview</Link>
-                        <button @click="deleteLesson(lesson)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
-                    </div>
+                    <button @click="openEditForm(lesson)" class="text-green-600 hover:text-green-800" title="Manage Lesson">
+                        <Pencil :size="16" />
+                    </button>
+                    <button @click="toggleQuiz(lesson.id)" class="text-purple-600 hover:text-purple-800" title="Manage Quiz">
+                        <ClipboardList :size="16" />
+                    </button>
+                    <button type="button" @click="cancelForm" class="text-xs text-gray-400 flex items-center gap-1">
+                        <X :size="14" /> Cancel
+                    </button>
+                    <Link :href="`/admin/lessons/${lesson.id}/preview`" class="text-blue-600 hover:text-blue-800" title="Preview">
+                        <Eye :size="16" />
+                    </Link>
+                    <button @click="deleteLesson(lesson)" class="text-red-600 hover:text-red-800" title="Delete">
+                        <Trash2 :size="16" />
+                    </button>
+                </div>
                 </div>
                         <div v-if="expandedQuiz === lesson.id" class="bg-gray-50 rounded-lg p-4 mb-3 space-y-3">
                 <div class="flex justify-between items-center">
