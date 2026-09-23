@@ -18,7 +18,40 @@ class ModuleController extends Controller
         ]);
     }
 
-        public function update(Request $request, Module $module)
+    public function store(Request $request, Course $course)
+    {
+        $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'duration_minutes' => 'required|integer|min:1',
+            'file' => 'nullable|file|max:51200',
+        ]);
+
+        $data = [
+            'order' => $course->modules()->max('order') + 1,
+            'title' => $request->title,
+            'description' => $request->description,
+            'duration_minutes' => $request->duration_minutes,
+        ];
+
+        if ($request->hasFile('file')) {
+            $fileType = $this->detectFileType($request->file('file'));
+
+            if (! $fileType) {
+                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
+            }
+
+            $filename = Str::random(40) . '.' . $fileType;
+            $data['file_path'] = $request->file('file')->storeAs('modules', $filename);
+            $data['file_type'] = $fileType;
+        }
+
+        $course->modules()->create($data);
+
+        return back();
+    }
+
+    public function update(Request $request, Module $module)
     {
         $request->validate([
             'title' => 'required|string|max:255',
@@ -30,69 +63,63 @@ class ModuleController extends Controller
         $data = $request->only('title', 'description', 'duration_minutes');
 
         if ($request->hasFile('file')) {
-            $mime = $request->file('file')->getMimeType();
-            $allowed = [
-                'application/pdf' => 'pdf',
-                'video/mp4' => 'mp4',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
-            ];
+            $fileType = $this->detectFileType($request->file('file'));
 
-            if (! array_key_exists($mime, $allowed)) {
+            if (! $fileType) {
                 return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
             }
 
-            // Replace the old file
             if ($module->file_path) {
                 Storage::delete($module->file_path);
             }
 
-            $filename = Str::random(40) . '.' . $allowed[$mime];
+            $filename = Str::random(40) . '.' . $fileType;
             $data['file_path'] = $request->file('file')->storeAs('modules', $filename);
-            $data['file_type'] = $allowed[$mime];
+            $data['file_type'] = $fileType;
         }
 
         $module->update($data);
 
         return back();
-    }
+}
+
 
      // Make store() require the file optionally too, matching update()'s behavior
-    public function store(Request $request, Course $course)
+    private function detectFileType($file): ?string
     {
-        $request->validate([
-            'title' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'duration_minutes' => 'required|integer|min:1',
-            'file' => 'nullable|file|max:51200', // now optional
-        ]);
+        $mime = $file->getMimeType();
 
-        $data = [
-            'order' => $course->modules()->max('order') + 1,
-            'title' => $request->title,
-            'description' => $request->description,
-            'duration_minutes' => $request->duration_minutes,
+        $allowed = [
+            'application/pdf' => 'pdf',
+            'video/mp4' => 'mp4',
+            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
         ];
 
-        if ($request->hasFile('file')) {
-            $mime = $request->file('file')->getMimeType();
-            $allowed = [
-                'application/pdf' => 'pdf',
-                'video/mp4' => 'mp4',
-                'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
-            ];
-
-            if (! array_key_exists($mime, $allowed)) {
-                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
-            }
-
-            $filename = Str::random(40) . '.' . $allowed[$mime];
-            $data['file_path'] = $request->file('file')->storeAs('modules', $filename);
-            $data['file_type'] = $allowed[$mime];
+        if (array_key_exists($mime, $allowed)) {
+            return $allowed[$mime];
         }
 
-        $course->modules()->create($data);
+        // Fallback: some PPTX files get misdetected as generic binary/zip data
+        // on Windows. Verify by checking for the OOXML presentation marker file
+        // inside the ZIP structure rather than trusting finfo's MIME guess.
+        if (in_array($mime, ['application/octet-stream', 'application/zip']) && $this->isRealPptx($file->getRealPath())) {
+            return 'pptx';
+        }
 
-        return back();
+        return null;
+    }
+
+    private function isRealPptx(string $path): bool
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) {
+            return false;
+        }
+
+        $hasMarker = $zip->locateName('ppt/presentation.xml') !== false;
+        $zip->close();
+
+        return $hasMarker;
     }
 
         // New: view the uploaded file
