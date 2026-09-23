@@ -23,7 +23,7 @@ class CourseSeeder extends Seeder
         foreach ($courses as $data) {
             $course = Course::firstOrCreate(['activity_code' => $data['activity_code']], [
                 ...$data,
-                'is_published' => true,
+                'is_published'    => true,
                 'instructor_name' => 'Insp. Maria Lopez',
             ]);
 
@@ -32,14 +32,30 @@ class CourseSeeder extends Seeder
                 ['title' => 'Introduction to ' . $data['title'], 'duration_minutes' => 20]
             );
 
+            // Uses the restructured exam_questions schema: type + answer_data (JSON)
             $questions = [
-                ['question' => 'What is the primary goal of AI ethics?', 'choices' => ['Speed', 'Fairness and safety', 'Cost reduction', 'Automation'], 'correct_choice' => 'Fairness and safety'],
-                ['question' => 'Which law governs data privacy in the Philippines?', 'choices' => ['RA 10173', 'RA 9262', 'RA 7610', 'RA 8792'], 'correct_choice' => 'RA 10173'],
+                [
+                    'question'    => 'What is the primary goal of AI ethics?',
+                    'type'        => 'multiple_choice',
+                    'answer_data' => [
+                        'choices'        => ['Speed', 'Fairness and safety', 'Cost reduction', 'Automation'],
+                        'correct_choice' => 'Fairness and safety',
+                    ],
+                ],
+                [
+                    'question'    => 'Which law governs data privacy in the Philippines?',
+                    'type'        => 'multiple_choice',
+                    'answer_data' => [
+                        'choices'        => ['RA 10173', 'RA 9262', 'RA 7610', 'RA 8792'],
+                        'correct_choice' => 'RA 10173',
+                    ],
+                ],
             ];
+
             foreach ($questions as $q) {
                 ExamQuestion::firstOrCreate(
                     ['course_id' => $course->id, 'question' => $q['question']],
-                    ['choices' => $q['choices'], 'correct_choice' => $q['correct_choice']]
+                    ['type' => $q['type'], 'answer_data' => $q['answer_data']]
                 );
             }
 
