@@ -127,19 +127,20 @@ class ModuleController extends Controller
     {
         abort_unless($module->file_path && Storage::exists($module->file_path), 404, 'No file attached to this module.');
 
-        $file = Storage::get($module->file_path);
         $mime = match ($module->file_type) {
             'pdf' => 'application/pdf',
             'mp4' => 'video/mp4',
+            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
             default => 'application/octet-stream',
         };
 
-        // PPTX can't be viewed inline by browsers — force download instead
         $disposition = $module->file_type === 'pptx' ? 'attachment' : 'inline';
+        $filename = basename($module->file_path);
 
-        return response($file, 200)
-            ->header('Content-Type', $mime)
-            ->header('Content-Disposition', "{$disposition}; filename=\"" . basename($module->file_path) . '"');
+        return Storage::response($module->file_path, $filename, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
+        ]);
     }
 
 
