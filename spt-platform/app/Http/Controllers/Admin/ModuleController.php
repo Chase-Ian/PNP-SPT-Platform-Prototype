@@ -111,15 +111,22 @@ class ModuleController extends Controller
         return $hasMarker;
     }
 
-        // New: view the uploaded file
     public function viewFile(Module $module)
     {
+        // 1. Verify file exists on S3
         abort_unless($module->file_path && Storage::exists($module->file_path), 404, 'No file attached to this module.');
 
-        $mime = $module->file_type === 'mp4' ? 'video/mp4' : 'application/pdf';
+        // 2. Determine correct MIME type
+        $mime = match ($module->file_type) {
+            'mp4'  => 'video/mp4',
+            'pdf'  => 'application/pdf',
+            default => Storage::mimeType($module->file_path) ?? 'application/pdf',
+        };
 
-        return response()->file(Storage::path($module->file_path), [
+        // 3. Stream file directly from AWS S3 using inline disposition
+        return Storage::response($module->file_path, null, [
             'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . basename($module->file_path) . '"',
         ]);
     }
 
