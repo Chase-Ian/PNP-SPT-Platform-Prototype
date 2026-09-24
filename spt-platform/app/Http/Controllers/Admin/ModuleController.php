@@ -21,11 +21,11 @@ class ModuleController extends Controller
 
     public function store(Request $request, Course $course)
     {
-        $request->validate([
+       $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'duration_minutes' => 'required|integer|min:1',
-            'file' => 'nullable|file|max:51200',
+            'file' => 'nullable|file|mimes:pdf,mp4|max:51200', // mimes rule makes custom detection optional
         ]);
 
         $data = [
@@ -67,7 +67,7 @@ class ModuleController extends Controller
             $fileType = $this->detectFileType($request->file('file'));
 
             if (! $fileType) {
-                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
+                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, and MP4 files are allowed.'])->withInput();
             }
 
             if ($module->file_path) {
@@ -93,21 +93,9 @@ class ModuleController extends Controller
         $allowed = [
             'application/pdf' => 'pdf',
             'video/mp4' => 'mp4',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
         ];
 
-        if (array_key_exists($mime, $allowed)) {
-            return $allowed[$mime];
-        }
-
-        // Fallback: some PPTX files get misdetected as generic binary/zip data
-        // on Windows. Verify by checking for the OOXML presentation marker file
-        // inside the ZIP structure rather than trusting finfo's MIME guess.
-        if (in_array($mime, ['application/octet-stream', 'application/zip']) && $this->isRealPptx($file->getRealPath())) {
-            return 'pptx';
-        }
-
-        return null;
+        return $allowed[$mime] ?? null;
     }
 
     private function isRealPptx(string $path): bool
@@ -128,19 +116,10 @@ class ModuleController extends Controller
     {
         abort_unless($module->file_path && Storage::exists($module->file_path), 404, 'No file attached to this module.');
 
-        $mime = match ($module->file_type) {
-            'pdf' => 'application/pdf',
-            'mp4' => 'video/mp4',
-            'pptx' => 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
-            default => 'application/octet-stream',
-        };
+        $mime = $module->file_type === 'mp4' ? 'video/mp4' : 'application/pdf';
 
-        $disposition = $module->file_type === 'pptx' ? 'attachment' : 'inline';
-        $filename = basename($module->file_path);
-
-        return Storage::response($module->file_path, $filename, [
+        return response()->file(Storage::path($module->file_path), [
             'Content-Type' => $mime,
-            'Content-Disposition' => "{$disposition}; filename=\"{$filename}\"",
         ]);
     }
 
