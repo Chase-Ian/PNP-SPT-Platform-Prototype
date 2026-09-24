@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Module;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ModuleController extends Controller
@@ -125,7 +126,7 @@ class ModuleController extends Controller
         // New: view the uploaded file
     public function viewFile(Module $module)
     {
-        abort_unless($module->file_path && \Storage::exists($module->file_path), 404, 'No file attached to this module.');
+        abort_unless($module->file_path && Storage::exists($module->file_path), 404, 'No file attached to this module.');
 
         $mime = match ($module->file_type) {
             'pdf' => 'application/pdf',
@@ -147,7 +148,7 @@ class ModuleController extends Controller
     public function destroy(Module $module)
     {
         if ($module->file_path) {
-            \Illuminate\Support\Facades\Storage::delete($module->file_path);
+            Storage::delete($module->file_path);
         }
         $module->delete();
 
