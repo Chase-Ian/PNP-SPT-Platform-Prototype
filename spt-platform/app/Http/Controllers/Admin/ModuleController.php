@@ -125,7 +125,7 @@ class ModuleController extends Controller
         // New: view the uploaded file
     public function viewFile(Module $module)
     {
-        abort_unless($module->file_path && Storage::exists($module->file_path), 404, 'No file attached to this module.');
+        abort_unless($module->file_path && \Storage::exists($module->file_path), 404, 'No file attached to this module.');
 
         $mime = match ($module->file_type) {
             'pdf' => 'application/pdf',
