@@ -50,7 +50,7 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
             </nav>
 
             <div class="p-3 border-t">
-                <Link href="/dashboard" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                <Link href="/dashboard?view=officer" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
                     <div class="w-8 h-8 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium">{{ initials() }}</div>
                     Switch to Officer View
                 </Link>

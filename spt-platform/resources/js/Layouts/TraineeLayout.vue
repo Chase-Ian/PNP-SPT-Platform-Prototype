@@ -48,7 +48,7 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 <div class="w-8 h-8 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium">
                     {{ initials() }}
                 </div>
-                <p class="text-xs text-gray-500">Officer Standard Access</p>
+                <Link v-if="user.role !== 'trainee'" href="/admin/dashboard" class="text-xs text-gray-500">Officer Standard Access</Link>
             </div>
         </aside>
 

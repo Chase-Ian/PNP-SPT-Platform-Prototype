@@ -29,9 +29,18 @@ Route::get('/', function () {
     return redirect('/login');
 });
 
-Route::get('/dashboard', [DashboardController::class, 'index'])
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+Route::get('/dashboard', function () {
+    $user = auth()->user();
+
+    if ($user->role === 'admin' && ! request()->has('view')) {
+        return redirect()->route('admin.dashboard');
+    }
+    if ($user->role === 'supervisor' && ! request()->has('view')) {
+        return redirect()->route('supervisor.dashboard');
+    }
+
+    return app(DashboardController::class)->index(request());
+})->middleware(['auth', 'verified'])->name('dashboard');
 
 // --- General authenticated routes (trainee + supervisor + admin all use these) ---
 Route::middleware('auth')->group(function () {
