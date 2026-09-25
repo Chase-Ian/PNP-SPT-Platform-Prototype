@@ -11,7 +11,7 @@ class Certificate extends Model
 
     protected $fillable = [
         'user_id', 'course_id', 'serial_id',
-        'verification_hash', 'pdf_path', 'issued_at',
+        'training_ctrl_no', 'verification_hash', 'pdf_path', 'issued_at',
     ];
 
     protected $casts = ['issued_at' => 'datetime'];
@@ -24,5 +24,13 @@ class Certificate extends Model
     public function course()
     {
         return $this->belongsTo(Course::class);
+    }
+
+    /**
+     * Returns the public URL that can be used to verify this certificate.
+     */
+    public function getVerificationUrlAttribute(): string
+    {
+        return url('/verify/' . $this->serial_id);
     }
 }

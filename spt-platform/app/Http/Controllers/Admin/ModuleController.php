@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Module;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ModuleController extends Controller
@@ -20,11 +21,11 @@ class ModuleController extends Controller
 
     public function store(Request $request, Course $course)
     {
-        $request->validate([
+       $request->validate([
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'duration_minutes' => 'required|integer|min:1',
-            'file' => 'nullable|file|max:51200',
+            'file' => 'nullable|file|mimes:pdf,mp4|max:51200', // mimes rule makes custom detection optional
         ]);
 
         $data = [
@@ -66,7 +67,7 @@ class ModuleController extends Controller
             $fileType = $this->detectFileType($request->file('file'));
 
             if (! $fileType) {
-                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
+                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, and MP4 files are allowed.'])->withInput();
             }
 
             if ($module->file_path) {
@@ -92,21 +93,9 @@ class ModuleController extends Controller
         $allowed = [
             'application/pdf' => 'pdf',
             'video/mp4' => 'mp4',
-            'application/vnd.openxmlformats-officedocument.presentationml.presentation' => 'pptx',
         ];
 
-        if (array_key_exists($mime, $allowed)) {
-            return $allowed[$mime];
-        }
-
-        // Fallback: some PPTX files get misdetected as generic binary/zip data
-        // on Windows. Verify by checking for the OOXML presentation marker file
-        // inside the ZIP structure rather than trusting finfo's MIME guess.
-        if (in_array($mime, ['application/octet-stream', 'application/zip']) && $this->isRealPptx($file->getRealPath())) {
-            return 'pptx';
-        }
-
-        return null;
+        return $allowed[$mime] ?? null;
     }
 
     private function isRealPptx(string $path): bool
@@ -122,31 +111,30 @@ class ModuleController extends Controller
         return $hasMarker;
     }
 
-        // New: view the uploaded file
     public function viewFile(Module $module)
     {
+        // 1. Verify file exists on S3
         abort_unless($module->file_path && Storage::exists($module->file_path), 404, 'No file attached to this module.');
 
-        $file = Storage::get($module->file_path);
+        // 2. Determine correct MIME type
         $mime = match ($module->file_type) {
-            'pdf' => 'application/pdf',
-            'mp4' => 'video/mp4',
-            default => 'application/octet-stream',
+            'mp4'  => 'video/mp4',
+            'pdf'  => 'application/pdf',
+            default => Storage::mimeType($module->file_path) ?? 'application/pdf',
         };
 
-        // PPTX can't be viewed inline by browsers — force download instead
-        $disposition = $module->file_type === 'pptx' ? 'attachment' : 'inline';
-
-        return response($file, 200)
-            ->header('Content-Type', $mime)
-            ->header('Content-Disposition', "{$disposition}; filename=\"" . basename($module->file_path) . '"');
+        // 3. Stream file directly from AWS S3 using inline disposition
+        return Storage::response($module->file_path, null, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="' . basename($module->file_path) . '"',
+        ]);
     }
 
 
     public function destroy(Module $module)
     {
         if ($module->file_path) {
-            \Illuminate\Support\Facades\Storage::delete($module->file_path);
+            Storage::delete($module->file_path);
         }
         $module->delete();
 

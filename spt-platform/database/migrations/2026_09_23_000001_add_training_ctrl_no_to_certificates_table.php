@@ -11,8 +11,9 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // SQLite does not support MODIFY ENUM — just run the data migration.
-        DB::statement("UPDATE users SET role = 'trainee' WHERE role = 'officer'");
+        Schema::table('certificates', function (Blueprint $table) {
+            $table->string('training_ctrl_no')->nullable()->after('serial_id');
+        });
     }
 
     /**
@@ -20,7 +21,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        // SQLite does not support MODIFY ENUM — just reverse the data migration.
-        DB::statement("UPDATE users SET role = 'officer' WHERE role = 'trainee'");
+        Schema::table('certificates', function (Blueprint $table) {
+            $table->dropColumn('training_ctrl_no');
+        });
     }
 };

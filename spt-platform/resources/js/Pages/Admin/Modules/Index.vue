@@ -69,7 +69,7 @@ const fileBadgeClass = (type) => ({
 
         <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Module & File Operations"
             :title="`Modules — ${course.title}`"
-            subtitle="Add, update, or delete course modules. Upload actual PDF, PowerPoint, or Video files.">
+            subtitle="Add, update, or delete course modules. Upload actual PDF, or Video files.">
             <template #actions>
                 <button @click="openCreateForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Insert New Module</button>
             </template>
@@ -96,8 +96,8 @@ const fileBadgeClass = (type) => ({
                 <input v-model="form.duration_minutes" type="number" min="1" class="mt-1 w-32 border rounded-lg px-3 py-2 text-sm" required />
             </div>
             <div>
-                <label class="text-sm font-medium">File (PDF, PPTX, or MP4) — optional</label>
-                <input type="file" accept=".pdf,.pptx,.mp4" @change="form.file = $event.target.files[0]" class="mt-1 w-full text-sm" />
+                <label class="text-sm font-medium">File (PDF or MP4) — optional</label>
+                <input type="file" accept=".pdf,.mp4" @change="form.file = $event.target.files[0]" class="mt-1 w-full text-sm" />
                 <p v-if="editingModuleId" class="text-xs text-gray-400 mt-1">Leave empty to keep the current file.</p>
                 <div v-if="form.errors.file" class="text-red-600 text-xs mt-1">{{ form.errors.file }}</div>
             </div>
