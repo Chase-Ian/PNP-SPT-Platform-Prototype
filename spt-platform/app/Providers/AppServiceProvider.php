@@ -2,13 +2,31 @@
 
 namespace App\Providers;
 
+//use Illuminate\Support\Facades\Vite; local development
+use Illuminate\Support\ServiceProvider;
+use Illuminate\Support\Facades\URL;
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
-use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
 {
-    public function boot(): void
+    /**
+     * Register any application services.
+     */
+    public function register(): void
+    {
+        //
+    }
+
+    /**
+     * Bootstrap any application services.
+     */
+    //public function boot(): void
+    //{
+    //    Vite::prefetch(concurrency: 3);
+    //}
+
+   public function boot(): void
     {
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
             $url = url(route('password.reset', [
@@ -28,4 +46,5 @@ class AppServiceProvider extends ServiceProvider
                 ->line('Note: This is an automated email. Please do not reply directly to this message.');
         });
     }
+
 }
