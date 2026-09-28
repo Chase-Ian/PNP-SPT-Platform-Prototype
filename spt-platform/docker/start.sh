@@ -1,21 +1,19 @@
 #!/bin/sh
-#!/bin/sh
-
-# Clear and rebuild caches on startup
-php artisan config:clear
-php artisan route:clear
-php artisan view:clear
-
 set -e
 
 echo "Running Laravel startup tasks..."
 
-# Cache config/routes/views for production
+# Clear stale caches from previous builds
+php artisan config:clear
+php artisan route:clear
+php artisan view:clear
+
+# Cache config/routes/views with live Render environment variables
 php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-# Run migrations
+# Run database migrations
 php artisan migrate --force
 
 echo "Starting services..."
