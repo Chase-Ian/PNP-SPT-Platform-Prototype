@@ -2,10 +2,10 @@
 
 namespace App\Providers;
 
-//use Illuminate\Support\Facades\Vite; local development
 use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 
 class AppServiceProvider extends ServiceProvider
@@ -21,19 +21,17 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    //public function boot(): void
-    //{
-    //    Vite::prefetch(concurrency: 3);
-    //}
-
     public function boot(): void
     {
-        // 1. Force HTTPS on non-local environments
+        // 1. Vite Asset Prefetching (standard for Laravel 11 + Inertia)
+        Vite::prefetch(concurrency: 3);
+
+        // 2. Force HTTPS on Render / Production environments
         if (config('app.env') !== 'local' || env('FORCE_HTTPS', false)) {
             URL::forceScheme('https');
         }
 
-        // 2. Custom Password Reset Notification
+        // 3. Custom Password Reset Mail Notification
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
             $url = route('password.reset', [
                 'token' => $token,
@@ -50,5 +48,4 @@ class AppServiceProvider extends ServiceProvider
                 ->salutation('PNP SPT Platform');
         });
     }
-
 }
