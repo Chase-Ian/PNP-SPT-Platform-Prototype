@@ -2,33 +2,30 @@
 
 namespace App\Providers;
 
-//use Illuminate\Support\Facades\Vite; local development
+use Illuminate\Auth\Notifications\ResetPassword;
+use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL;
 
 class AppServiceProvider extends ServiceProvider
 {
-    /**
-     * Register any application services.
-     */
-    public function register(): void
-    {
-        //
-    }
-
-    /**
-     * Bootstrap any application services.
-     */
-    //public function boot(): void
-    //{
-    //    Vite::prefetch(concurrency: 3);
-    //}
-
     public function boot(): void
     {
-        if (config('app.env') !== 'local' || env('FORCE_HTTPS', false)) {
-            URL::forceScheme('https');
-        }
-    }
+        ResetPassword::toMailUsing(function (object $notifiable, string $token) {
+            $url = url(route('password.reset', [
+                'token' => $token,
+                'email' => $notifiable->getEmailForPasswordReset(),
+            ], false));
 
+            return (new MailMessage)
+                ->subject('PNP-SPT Platform: Password Reset Request')
+                ->greeting('Hello ' . $notifiable->first_name . '!')
+                ->line('You are receiving this email because we received a password reset request for your account.')
+                ->action('Reset Password', $url)
+                ->line('This password reset link will expire in 60 minutes.')
+                ->line('If you did not request a password reset, no further action is required.')
+                ->salutation('Regards, PNP-SPT Platform Team')
+                ->line('---')
+                ->line('Note: This is an automated email. Please do not reply directly to this message.');
+        });
+    }
 }
