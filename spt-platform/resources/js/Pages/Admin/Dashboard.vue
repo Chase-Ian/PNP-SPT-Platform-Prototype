@@ -31,9 +31,6 @@ const filtered = computed(() => {
         <AdminPageBanner :icon="ShieldCheck" badge-text="Command Admin Portal • Live Personnel Oversight"
             title="Admin Command Center"
             subtitle="Monitor police personnel training progress, configure course modules, and adjust final exam parameters.">
-            <template #actions>
-                <Link href="/admin/courses" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Manage Courses & Modules</Link>
-            </template>
         </AdminPageBanner>
 
         <div>

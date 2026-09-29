@@ -1,5 +1,5 @@
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { BookOpen, Eye, Pencil, Trash2, X } from 'lucide-vue-next';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
@@ -64,7 +64,7 @@ const fileBadgeClass = (type) => ({
 
 <template>
     <Head :title="`Modules — ${course.title}`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
 
         <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Module & File Operations"
@@ -151,5 +151,5 @@ const fileBadgeClass = (type) => ({
                 </tbody>
             </table>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

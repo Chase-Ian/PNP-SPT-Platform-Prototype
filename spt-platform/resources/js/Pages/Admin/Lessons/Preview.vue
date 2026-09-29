@@ -1,5 +1,5 @@
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 import LessonContentRenderer from '@/Components/LessonContentRenderer.vue';
 
@@ -8,7 +8,7 @@ const props = defineProps({ lesson: Object });
 
 <template>
     <Head :title="`Preview — ${lesson.title}`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <div class="space-y-4">
             <Link :href="`/admin/modules/${lesson.module_id}/lessons`" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
                 ← Back to Lesson List
@@ -25,5 +25,5 @@ const props = defineProps({ lesson: Object });
                 <LessonContentRenderer :blocks="lesson.content" />
             </div>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

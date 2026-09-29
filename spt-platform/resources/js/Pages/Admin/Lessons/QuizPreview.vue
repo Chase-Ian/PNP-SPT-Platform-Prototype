@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Lessons/QuizPreview.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({ lesson: Object, questions: Array });
@@ -8,7 +8,7 @@ const props = defineProps({ lesson: Object, questions: Array });
 
 <template>
     <Head :title="`Quiz Preview — ${lesson.title}`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <div class="space-y-4 max-w-2xl mx-auto">
             <Link :href="`/admin/modules/${lesson.module_id}/lessons`" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
                 ← Back to Lesson List
@@ -42,5 +42,5 @@ const props = defineProps({ lesson: Object, questions: Array });
                 Submit Quiz (disabled in preview)
             </button>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

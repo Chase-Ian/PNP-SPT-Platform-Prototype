@@ -1,7 +1,7 @@
 <!-- Admin/Lessons/Index.vue -->
 <script setup>
 import { BookOpen, Pencil, Trash2, X } from 'lucide-vue-next';
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { BookOpenCheck } from 'lucide-vue-next';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
@@ -145,7 +145,7 @@ const submitQuestion = (lessonId) => {
 
 <template>
     <Head :title="`Lessons — ${module.title}`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <div class="flex gap-4 mb-2">
             <Link href="/admin/dashboard" class="text-sm font-medium text-blue-600">← Back to Dashboard</Link>
             <span class="text-gray-300">|</span>
@@ -284,5 +284,5 @@ const submitQuestion = (lessonId) => {
                 </div>
             </div>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

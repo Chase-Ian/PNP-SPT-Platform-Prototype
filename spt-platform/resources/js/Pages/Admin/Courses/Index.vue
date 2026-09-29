@@ -1,5 +1,5 @@
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { BookOpen } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
@@ -55,7 +55,7 @@ const submit = () => {
 
 <template>
     <Head title="Manage Courses" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Course Catalog"
             title="Manage Courses"
             subtitle="Create new courses, then manage their modules, lessons, and quizzes.">
@@ -131,5 +131,5 @@ const submit = () => {
                 </tbody>
             </table>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

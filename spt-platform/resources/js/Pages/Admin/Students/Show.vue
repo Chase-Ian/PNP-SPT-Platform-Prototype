@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Students/Show.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 defineProps({ student: Object, enrollments: Array, certificates: Array, examAttempts: Array });
@@ -8,7 +8,7 @@ defineProps({ student: Object, enrollments: Array, certificates: Array, examAtte
 
 <template>
     <Head :title="`${student.first_name} ${student.last_name}`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <div class="space-y-4">
             <Link href="/admin/students" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">← Back to Officer Directory</Link>
 
@@ -49,5 +49,5 @@ defineProps({ student: Object, enrollments: Array, certificates: Array, examAtte
                 </div>
             </div>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

@@ -1,0 +1,77 @@
+<script setup>
+import { Link, usePage } from '@inertiajs/vue3';
+import { ref } from 'vue';
+import NotificationBell from '@/Components/NotificationBell.vue';
+import { Home, BookOpen, X, Menu, LogOut, GraduationCap } from 'lucide-vue-next';
+
+const page = usePage();
+const user = page.props.auth.user;
+const sidebarOpen = ref(true);
+
+const navItems = [
+    { label: 'Dashboard', href: '/supervisor/dashboard', icon: Home, match: 'supervisor.dashboard' },
+    { label: 'Manage Courses & Modules', href: '/admin/courses', icon: BookOpen, match: 'admin.courses*|admin.modules*|admin.lessons*|admin.exam-questions*' },
+];
+
+const isActive = (matchPattern) => matchPattern.split('|').some(p => route().current(p));
+const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase();
+</script>
+
+<template>
+    <div class="min-h-screen bg-gray-50 flex">
+        <aside v-show="sidebarOpen" class="w-64 bg-white border-r flex flex-col shrink-0">
+            <div class="p-5 border-b flex items-center gap-2">
+                <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white">
+                    <GraduationCap :size="18" />
+                </div>
+                <div>
+                    <p class="font-bold text-sm leading-tight">PNP LMS</p>
+                    <p class="text-xs text-purple-600 leading-tight">Training Supervisor</p>
+                </div>
+            </div>
+
+            <nav class="flex-1 p-3 space-y-1">
+                <Link v-for="item in navItems" :key="item.href" :href="item.href"
+                    :class="isActive(item.match) ? 'bg-blue-600 text-white' : 'text-gray-600 hover:bg-gray-100'"
+                    class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium">
+                    <component :is="item.icon" :size="16" />
+                    {{ item.label }}
+                </Link>
+            </nav>
+
+            <div class="p-3 border-t">
+                <Link href="/dashboard" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                    <div class="w-8 h-8 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium">{{ initials() }}</div>
+                    Switch to Officer View
+                </Link>
+            </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col min-w-0">
+            <header class="bg-white border-b h-16 flex items-center px-6 gap-4">
+                <button @click="sidebarOpen = !sidebarOpen"
+                    class="w-8 h-8 rounded-full flex items-center justify-center border"
+                    :class="sidebarOpen ? 'text-red-500 border-red-200 hover:bg-red-50' : 'text-gray-500 border-gray-200 hover:bg-gray-50'">
+                    <X v-if="sidebarOpen" :size="16" />
+                    <Menu v-else :size="16" />
+                </button>
+                <div class="flex-1"></div>
+                <div class="text-right">
+                    <div class="flex items-center gap-2 justify-end">
+                        <span class="text-sm font-medium">{{ user.email }}</span>
+                        <span class="bg-purple-100 text-purple-700 text-xs font-semibold px-2 py-0.5 rounded uppercase">{{ user.role }}</span>
+                    </div>
+                    <p class="text-xs text-gray-400 truncate max-w-xs">{{ user.unit_office || '—' }}</p>
+                </div>
+                <NotificationBell />
+                <Link :href="route('logout')" method="post" as="button" class="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+                    <LogOut :size="14" /> Log out
+                </Link>
+            </header>
+
+            <main class="flex-1 p-6 space-y-6 overflow-x-hidden">
+                <slot />
+            </main>
+        </div>
+    </div>
+</template>
