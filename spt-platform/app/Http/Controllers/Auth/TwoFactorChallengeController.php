@@ -3,12 +3,11 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
-use Laravel\Fortify\TwoFactorAuthenticationProvider;
+use Laravel\Fortify\Http\Requests\TwoFactorLoginRequest;
 
 class TwoFactorChallengeController extends Controller
 {
@@ -19,34 +18,19 @@ class TwoFactorChallengeController extends Controller
         return Inertia::render('Auth/TwoFactorChallenge');
     }
 
-    public function store(Request $request)
+    public function store(TwoFactorLoginRequest $request)
     {
-        $request->validate([
-            'code' => 'nullable|string',
-            'recovery_code' => 'nullable|string',
-        ]);
-
-        abort_unless($request->session()->has('login.id'), 403);
-
-        $user = User::findOrFail($request->session()->get('login.id'));
-        $valid = false;
-
-        if ($request->filled('code')) {
-            $valid = app(TwoFactorAuthenticationProvider::class)
-                ->verify($user->twoFactorAuthenticationSecret(), $request->code);
-        } elseif ($request->filled('recovery_code')) {
-            $codes = $user->recoveryCodes();
-            if (in_array($request->recovery_code, $codes, true)) {
-                $user->replaceRecoveryCode($request->recovery_code);
-                $valid = true;
-            }
+        if (! $request->hasChallengedUser()) {
+            abort(403);
         }
 
-        if (! $valid) {
+        if (! $request->hasValidCode() && ! $request->validRecoveryCode()) {
             throw ValidationException::withMessages([
                 'code' => 'The provided two-factor authentication code was invalid.',
             ]);
         }
+
+        $user = $request->challengedUser();
 
         Auth::login($user, $request->session()->pull('login.remember', false));
         $request->session()->forget('login.id');
