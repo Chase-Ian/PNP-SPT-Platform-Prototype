@@ -7,11 +7,12 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\CustomResetPassword;
+use Laravel\Fortify\TwoFactorAuthenticatable;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
-
+    use HasFactory, Notifiable, TwoFactorAuthenticatable;
+    
     protected $fillable = [
         'first_name', 'last_name', 'rank', 'email', 'password',
         'unit_office', 'region', 'two_factor_verified', 'role', 'poa_user_id',

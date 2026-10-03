@@ -11,6 +11,7 @@
         "doctrine/dbal": "^4.4",
         "endroid/qr-code": "^6.0",
         "inertiajs/inertia-laravel": "^2.0",
+        "laravel/fortify": "^1.40",
         "laravel/framework": "^11.44",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",

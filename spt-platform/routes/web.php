@@ -25,6 +25,7 @@ use App\Http\Controllers\LessonViewController;
 use App\Http\Controllers\LessonQuizController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
+use App\Http\Controllers\Auth\TwoFactorChallengeController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -68,6 +69,9 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/lessons/{lesson}/quiz', [LessonQuizController::class, 'show'])->name('lessons.quiz.show');
     Route::post('/lessons/{lesson}/quiz', [LessonQuizController::class, 'submit'])->name('lessons.quiz.submit');
+
+    Route::get('/two-factor-challenge', [TwoFactorChallengeController::class, 'create'])->name('two-factor.login');
+    Route::post('/two-factor-challenge', [TwoFactorChallengeController::class, 'store']);
     });
 
 // --- Supervisor routes ---

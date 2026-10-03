@@ -22,3 +22,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Local SSL Certificates
+/storage/certs/*
+!/storage/certs/.gitkeep

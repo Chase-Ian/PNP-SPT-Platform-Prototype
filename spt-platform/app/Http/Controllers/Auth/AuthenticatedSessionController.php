@@ -4,68 +4,76 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
+use App\Models\User;
 use Illuminate\Http\RedirectResponse;
-use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
-use Inertia\Response;
+use Illuminate\Support\Facades\RateLimiter;
 
 class AuthenticatedSessionController extends Controller
 {
-    /**
-     * Display the login view.
-     */
-    public function create(): Response
+    public function create()
     {
-        return Inertia::render('Auth/Login', [
+        return inertia('Auth/Login', [
             'canResetPassword' => Route::has('password.request'),
             'status' => session('status'),
         ]);
     }
 
-    /**
-     * Handle an incoming authentication request.
-     */
     public function store(LoginRequest $request): RedirectResponse
     {
-        $request->authenticate();
+        $request->ensureIsNotRateLimited();
 
-        $user = $request->user();
+        if (! Auth::validate($request->only('email', 'password'))) {
+            RateLimiter::hit($request->throttleKey());
 
+            return back()->withErrors(['email' => trans('auth.failed')]);
+        }
+
+        $user = Auth::getLastAttempted();
+
+        // Lock check happens before any 2FA detour — a locked account
+        // should never reach the 2FA challenge at all.
         if ($user->is_locked) {
-            Auth::logout();
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
             return redirect()->route('login')->withErrors([
                 'email' => 'This account has been locked. Please contact your administrator.',
             ]);
         }
 
+        RateLimiter::clear($request->throttleKey());
+
+        // 2FA detour: don't log in yet. Stash identity in the session and
+        // redirect to the challenge; Auth::login() only happens once that
+        // challenge is passed, in TwoFactorChallengeController::store().
+        if ($user->two_factor_confirmed_at) {
+            $request->session()->put([
+                'login.id' => $user->getKey(),
+                'login.remember' => $request->boolean('remember'),
+            ]);
+
+            return redirect()->route('two-factor.login');
+        }
+
+        Auth::login($user, $request->boolean('remember'));
         $request->session()->regenerate();
 
-        // Determine target route based on user role
-        $targetRoute = match ($user->role) {
-            'admin' => 'admin.dashboard',
-            'supervisor' => 'supervisor.dashboard',
-            default => 'dashboard',
-        };
-
-        return redirect()->intended(route($targetRoute, absolute: false));
+        return redirect()->intended($this->redirectPathForRole($user));
     }
 
-    /**
-     * Destroy an authenticated session.
-     */
     public function destroy(Request $request): RedirectResponse
     {
         Auth::guard('web')->logout();
-
         $request->session()->invalidate();
-
         $request->session()->regenerateToken();
 
         return redirect('/');
+    }
+
+    private function redirectPathForRole(User $user): string
+    {
+        return match ($user->role) {
+            'admin' => route('admin.dashboard'),
+            'supervisor' => route('supervisor.dashboard'),
+            default => route('dashboard'),
+        };
     }
 }
