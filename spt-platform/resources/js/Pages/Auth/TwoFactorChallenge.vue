@@ -11,7 +11,7 @@ const useRecoveryCode = ref(false);
 const form = useForm({ code: '', recovery_code: '' });
 
 const submit = () => {
-    form.post(route('two-factor.login.store'), {
+    form.post(route('two-factor.login'), {
         onFinish: () => form.reset(),
     });
 };
