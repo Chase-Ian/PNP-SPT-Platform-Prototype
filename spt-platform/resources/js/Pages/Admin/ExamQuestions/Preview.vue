@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/ExamQuestions/Preview.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({ course: Object, questions: Array, settings: Object });
@@ -8,7 +8,7 @@ const props = defineProps({ course: Object, questions: Array, settings: Object }
 
 <template>
     <Head :title="`Preview — ${course.title} Final Exam`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <div class="space-y-4">
             <Link :href="`/admin/courses/${course.id}/exam-questions`" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
                 ← Back to Question Bank
@@ -60,5 +60,5 @@ const props = defineProps({ course: Object, questions: Array, settings: Object }
                 Submit Exam (disabled in preview)
             </button>
         </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>

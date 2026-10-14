@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/ExamQuestions/Index.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { ClipboardList } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
@@ -80,7 +80,7 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
 
 <template>
     <Head :title="`Final Exam — ${course.title}`" />
-    <AdminLayout>
+    <AdminOrSupervisorLayout>
         <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
 
         <AdminPageBanner :icon="ClipboardList" badge-text="Final Assessment • Question Bank & Settings"
@@ -207,5 +207,5 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
                     </div>
                 </div>
             </div>
-    </AdminLayout>
+    </AdminOrSupervisorLayout>
 </template>
