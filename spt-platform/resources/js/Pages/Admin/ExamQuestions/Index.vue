@@ -5,6 +5,7 @@ import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { ClipboardList } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { ClipboardList, Eye, Plus, Pencil, X, ArrowLeft, ArrowLeftRight } from 'lucide-vue-next';
 
 const props = defineProps({ course: Object, questions: Array, settings: Object, liveQuestionCount: Number });
 
@@ -81,14 +82,20 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
 <template>
     <Head :title="`Final Exam — ${course.title}`" />
     <AdminOrSupervisorLayout>
-        <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
+        <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">
+            <ArrowLeft :size="14" /> Back to Courses
+        </Link>
 
         <AdminPageBanner :icon="ClipboardList" badge-text="Final Assessment • Question Bank & Settings"
             :title="`Final Exam — ${course.title}`"
             subtitle="Configure exam duration, passing threshold, and manage the question bank all in one place.">
             <template #actions>
-                <Link :href="`/admin/courses/${course.id}/exam-questions/preview`" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">👁 Preview Exam</Link>
-                <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Add Question</button>
+            <Link :href="`/admin/courses/${course.id}/exam-questions/preview`" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
+                <Eye :size="14" /> Preview Exam
+            </Link>
+            <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
+                <Plus :size="14" /> Add Question
+            </button>
             </template>
         </AdminPageBanner>
 
@@ -144,9 +151,9 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
                 <label class="text-sm font-medium">Choices</label>
                 <div v-for="(c, i) in form.answer_data.choices" :key="i" class="flex gap-2">
                     <input v-model="form.answer_data.choices[i]" type="text" :placeholder="`Choice ${i + 1}`" class="flex-1 border rounded px-2 py-1.5 text-sm" required />
-                    <button type="button" @click="removeChoice(i)" class="text-red-600 text-xs">✕</button>
+                    <button type="button" @click="removeChoice(i)" aria-label="Remove choice" class="text-red-600 hover:text-red-700"><X :size="14" /></button>
                 </div>
-                <button type="button" @click="addChoice" class="text-blue-600 text-xs font-medium">+ Add Choice</button>
+                <button type="button" @click="addChoice" class="text-blue-600 text-xs font-medium inline-flex items-center gap-1"><Plus :size="12" /> Add Choice</button>
 
                 <label class="text-sm font-medium block mt-2">Correct Answer</label>
                 <select v-model="form.answer_data.correct_choice" class="w-full border rounded px-2 py-1.5 text-sm" required>
@@ -170,14 +177,14 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
 
             <!-- Matching -->
             <div v-if="selectedType === 'matching'" class="space-y-2">
-                <label class="text-sm font-medium">Pairs (Column A ↔ Column B)</label>
+                <label class="text-sm font-medium">Pairs (Column A matches Column B)</label>
                 <div v-for="(pair, i) in form.answer_data.pairs" :key="i" class="flex gap-2">
                     <input v-model="pair.left" type="text" placeholder="Column A" class="flex-1 border rounded px-2 py-1.5 text-sm" required />
-                    <span class="self-center text-gray-400">↔</span>
+                    <ArrowLeftRight :size="14" class="self-center text-gray-400" />
                     <input v-model="pair.right" type="text" placeholder="Column B" class="flex-1 border rounded px-2 py-1.5 text-sm" required />
-                    <button type="button" @click="removePair(i)" class="text-red-600 text-xs">✕</button>
+                    <button type="button" @click="removePair(i)" aria-label="Remove pair" class="text-red-600 hover:text-red-700"><X :size="14" /></button>
                 </div>
-                <button type="button" @click="addPair" class="text-blue-600 text-xs font-medium">+ Add Pair</button>
+                <button type="button" @click="addPair" class="text-blue-600 text-xs font-medium inline-flex items-center gap-1"><Plus :size="12" /> Add Pair</button>
             </div>
 
             <!-- Identification -->
@@ -202,7 +209,7 @@ const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'Tru
                         <p class="text-sm mt-1">{{ q.question }}</p>
                     </div>
                     <div class="flex items-center gap-4 shrink-0">
-                        <button @click="openEditQuestion(q)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
+                        <button @click="openEditQuestion(q)" class="text-green-600 text-xs font-medium inline-flex items-center gap-1"><Pencil :size="12" /> Edit</button>
                         <button @click="remove(q)" class="text-red-600 text-xs font-medium">Delete</button>
                     </div>
                 </div>

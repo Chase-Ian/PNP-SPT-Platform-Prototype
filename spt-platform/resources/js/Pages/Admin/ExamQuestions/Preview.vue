@@ -1,6 +1,8 @@
 <!-- resources/js/Pages/Admin/ExamQuestions/Preview.vue -->
 <script setup>
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
+import MatchingDropdown from '@/Components/MatchingDropdown.vue';
+import { Eye, ArrowLeft, ArrowLeftRight } from 'lucide-vue-next';
 import { Head, Link } from '@inertiajs/vue3';
 
 const props = defineProps({ course: Object, questions: Array, settings: Object });
@@ -11,11 +13,12 @@ const props = defineProps({ course: Object, questions: Array, settings: Object }
     <AdminOrSupervisorLayout>
         <div class="space-y-4">
             <Link :href="`/admin/courses/${course.id}/exam-questions`" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">
-                ← Back to Question Bank
+                <ArrowLeft :size="14" /> Back to Question Bank
             </Link>
 
-            <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 text-xs text-blue-700 font-medium">
-                🔍 Preview Mode — this is how trainees will see and take this exam. Answers are not saved here.
+            <div class="bg-blue-50 border border-blue-100 rounded-lg px-4 py-2 text-xs text-blue-700 font-medium flex items-center gap-2">
+                <Eye :size="14" class="shrink-0" />
+                Preview Mode — this is how trainees will see and take this exam. Answers are not saved here.
             </div>
 
             <div class="flex justify-between items-center">
@@ -50,7 +53,7 @@ const props = defineProps({ course: Object, questions: Array, settings: Object }
                 <div v-else-if="q.type === 'matching'" class="space-y-2">
                     <div v-for="pair in q.pairs" :key="pair.left" class="flex items-start gap-3">
                         <span class="flex-1 text-sm font-medium pt-2 break-words">{{ pair.left }}</span>
-                        <span class="text-gray-400 pt-2">↔</span>
+                        <ArrowLeftRight :size="14" class="self-center text-gray-400" />
                         <MatchingDropdown model-value="" :options="q.right_options" disabled />
                     </div>
                 </div>
