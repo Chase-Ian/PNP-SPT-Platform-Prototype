@@ -2,7 +2,6 @@
 <script setup>
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { ClipboardList } from 'lucide-vue-next';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
 import { ClipboardList, Eye, Plus, Pencil, X, ArrowLeft, ArrowLeftRight } from 'lucide-vue-next';
