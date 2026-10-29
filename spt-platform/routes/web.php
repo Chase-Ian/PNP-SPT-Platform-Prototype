@@ -95,7 +95,8 @@ Route::middleware(['auth', 'role:admin,supervisor'])->prefix('admin')->group(fun
     Route::post('/lessons/{lesson}/questions', [LessonController::class, 'storeQuestion'])->name('admin.lessons.questions.store');
     Route::put('/questions/{question}', [LessonController::class, 'updateQuestion'])->name('admin.lessons.questions.update');
     Route::delete('/questions/{question}', [LessonController::class, 'destroyQuestion'])->name('admin.lessons.questions.destroy');
-    Route::post('/lessons/extract-pptx', [LessonController::class, 'extractPptx'])->name('admin.lessons.extract-pptx');
+    Route::post('/lessons/extract-pptx', [LessonController::class, 'extractPptx'])
+    ->middleware('throttle:10,1')->name('admin.lessons.extract-pptx');
     Route::get('/lessons/{lesson}/preview', [LessonController::class, 'show'])->name('admin.lessons.preview');
     Route::get('/lessons/{lesson}/quiz-preview', [LessonController::class, 'previewQuiz'])->name('admin.lessons.quiz-preview');
 

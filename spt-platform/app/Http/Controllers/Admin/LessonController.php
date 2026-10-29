@@ -89,9 +89,13 @@ class LessonController extends Controller
 
     public function extractPptx(Request $request)
     {
-        $request->validate(['file' => 'required|file|mimes:pptx|max:51200']);
+        $request->validate(['file' => 'required|file|max:20480']); // 20 MB
 
-        $blocks = (new \App\Services\PptxTextExtractor())->extract($request->file('file')->getRealPath());
+        try {
+            $blocks = (new \App\Services\PptxTextExtractor())->extract($request->file('file')->getRealPath());
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
 
         return response()->json(['blocks' => $blocks]);
     }
