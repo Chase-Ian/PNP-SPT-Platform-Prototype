@@ -117,7 +117,7 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/students/{student}/toggle-lock', [StudentController::class, 'toggleLock'])->name('admin.students.toggle-lock');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
     Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
-    Route::get('/analytics', fn () => Inertia::render('Admin/Analytics/Index'))->name('admin.analytics.index');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
     Route::get('/staff', [StaffController::class, 'index'])->name('admin.staff.index');
     Route::post('/staff', [StaffController::class, 'store'])->name('admin.staff.store');
     Route::post('/staff/{staff}/toggle-lock', [StaffController::class, 'toggleLock'])->name('admin.staff.toggle-lock');
