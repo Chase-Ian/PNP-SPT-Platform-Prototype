@@ -15,7 +15,7 @@ const navItems = [
     { label: 'Admin Dashboard', href: '/admin/dashboard', icon: Home, match: 'admin.dashboard' },
     { label: 'Manage Courses & Modules', href: '/admin/courses', icon: BookOpen, match: 'admin.courses*' },
     { label: 'Monitor Officers', href: '/admin/students', icon: Users, match: 'admin.students*' },
-    { label: 'Certificates Log', href: '/admin/certificates', icon: Award, match: 'admin.certificates*' },
+    { label: 'Monitor Certificates', href: '/admin/certificates', icon: Award, match: 'admin.certificates*' },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: 'admin.analytics*' },
     { label: 'Manage Staff', href: '/admin/staff', icon: UserCog, match: 'admin.staff*' },
 ];
