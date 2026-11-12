@@ -1,6 +1,6 @@
 <!-- Admin/Lessons/Index.vue -->
 <script setup>
-import { BookOpen, Pencil, Trash2, X } from 'lucide-vue-next';
+import { BookOpen, Pencil, Trash2, X, ImagePlus, Info, TriangleAlert, ShieldAlert } from 'lucide-vue-next';
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { BookOpenCheck } from 'lucide-vue-next';
@@ -27,6 +27,8 @@ const addBlock = (type) => {
         bullet_list: { type: 'bullet_list', items: [{ bold: '', text: '' }] },
         video: { type: 'video', file_path: '' },
         youtube: { type: 'youtube', url: '' },
+        image: { type: 'image', path: '', alt: '', caption: '', align: 'center', size: 'medium' },
+        callout: { type: 'callout', variant: 'info', text: '' },
     };
     form.blocks.push({ ...templates[type] });
 };
@@ -42,6 +44,25 @@ const addBulletItem = (block) => block.items.push({ bold: '', text: '' });
 const removeBulletItem = (block, i) => block.items.splice(i, 1);
 const canAddVideo = () => !form.blocks.some(b => b.type === 'video');
 
+const uploadingImageIndex = ref(null);
+
+const uploadImage = async (block, index, event) => {
+    const file = event.target.files[0];
+    event.target.value = ''; // allow re-selecting the same file
+    if (!file) return;
+    uploadingImageIndex.value = index;
+    const data = new FormData();
+    data.append('image', file);
+    try {
+        const { data: result } = await axios.post('/admin/lessons/upload-image', data);
+        block.path = result.path;
+    } catch (e) {
+        alert(e.response?.data?.message || e.response?.data?.errors?.image?.[0] || 'Could not upload that image.');
+    } finally {
+        uploadingImageIndex.value = null;
+    }
+};
+
 const importFromPptx = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -52,7 +73,7 @@ const importFromPptx = async (event) => {
         const { data: result } = await axios.post('/admin/lessons/extract-pptx', data);
         form.blocks.push(...result.blocks);
     } catch (e) {
-        alert('Could not extract text from that PPTX file.');
+        alert(e.response?.data?.message || e.response?.data?.errors?.file?.[0] || 'Could not extract text from that PPTX file.');
     } finally {
         uploading.value = false;
     }
@@ -82,15 +103,44 @@ const cancelForm = () => {
     form.reset();
 };
 
+// Returns a message describing the first problem found, or null if the blocks look fine.
+const firstBlockProblem = () => {
+    for (let i = 0; i < form.blocks.length; i++) {
+        const b = form.blocks[i];
+        const n = i + 1;
+        if (b.type === 'image') {
+            if (!b.path) return `Image block #${n} has no image. Please upload an image or remove the block.`;
+            if (!b.alt || !b.alt.trim()) return `Image block #${n} needs alt text (a short description for screen readers).`;
+        }
+        if (b.type === 'callout' && (!b.text || !b.text.trim())) {
+            return `Callout block #${n} is empty. Add some text or remove the block.`;
+        }
+    }
+    return null;
+};
+
+const showErrorPopup = (errors) => {
+    const first = Object.values(errors)[0];
+    if (first) alert(first);
+};
+
 const submit = () => {
+    const problem = firstBlockProblem();
+    if (problem) {
+        alert(problem);
+        return;
+    }
+
+    const options = {
+        onSuccess: () => cancelForm(),
+        onError: showErrorPopup,
+        preserveScroll: true,
+    };
+
     if (editingLessonId.value) {
-        form.put(`/admin/lessons/${editingLessonId.value}`, {
-            onSuccess: () => cancelForm(),
-        });
+        form.put(`/admin/lessons/${editingLessonId.value}`, options);
     } else {
-        form.post(`/admin/modules/${props.module.id}/lessons`, {
-            onSuccess: () => cancelForm(),
-        });
+        form.post(`/admin/modules/${props.module.id}/lessons`, options);
     }
 };
 
@@ -213,6 +263,46 @@ const submitQuestion = (lessonId) => {
                     <input v-if="block.type === 'youtube'" v-model="block.url" type="text"
                         placeholder="https://www.youtube.com/watch?v=..." class="w-full border rounded px-2 py-1.5 text-sm" />
                     <p v-if="block.type === 'youtube'" class="text-xs text-gray-400">Position must be first or last block.</p>
+
+                    <div v-if="block.type === 'image'" class="space-y-2">
+                        <div v-if="block.path" class="flex items-start gap-3">
+                            <img :src="`/${block.path}`" :alt="block.alt" class="h-24 w-auto rounded border bg-white" />
+                            <label class="text-xs text-blue-600 font-medium cursor-pointer">
+                                Replace image
+                                <input type="file" accept="image/jpeg,image/png" class="hidden" @change="uploadImage(block, i, $event)" />
+                            </label>
+                        </div>
+                        <label v-else class="flex items-center gap-2 border border-dashed rounded-lg px-3 py-3 text-sm text-gray-500 cursor-pointer hover:bg-white">
+                            <ImagePlus :size="16" />
+                            {{ uploadingImageIndex === i ? 'Uploading…' : 'Choose an image (JPG or PNG, up to 5 MB)' }}
+                            <input type="file" accept="image/jpeg,image/png" class="hidden" @change="uploadImage(block, i, $event)" />
+                        </label>
+                        <input v-model="block.alt" type="text" maxlength="255" placeholder="Alt text (required) — describe the image for screen readers"
+                            class="w-full border rounded px-2 py-1.5 text-sm" />
+                        <input v-model="block.caption" type="text" maxlength="255" placeholder="Caption (optional)"
+                            class="w-full border rounded px-2 py-1.5 text-sm" />
+                        <div class="flex gap-3">
+                            <select v-model="block.align" class="border rounded px-2 py-1 text-sm">
+                                <option value="left">Align left</option>
+                                <option value="center">Align center</option>
+                                <option value="full">Full width</option>
+                            </select>
+                            <select v-model="block.size" :disabled="block.align === 'full'" class="border rounded px-2 py-1 text-sm disabled:opacity-40">
+                                <option value="small">Small</option>
+                                <option value="medium">Medium</option>
+                                <option value="large">Large</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div v-if="block.type === 'callout'" class="space-y-2">
+                        <select v-model="block.variant" class="border rounded px-2 py-1 text-sm">
+                            <option value="info">Info / Tip</option>
+                            <option value="warning">Warning</option>
+                            <option value="important">Important</option>
+                        </select>
+                        <textarea v-model="block.text" rows="2" maxlength="2000" placeholder="Callout text" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
+                    </div>
                 </div>
 
                 <div class="flex gap-2 flex-wrap">
@@ -221,7 +311,13 @@ const submitQuestion = (lessonId) => {
                     <button type="button" @click="addBlock('bullet_list')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Bullet List</button>
                     <button type="button" @click="addBlock('video')" :disabled="!canAddVideoType()" class="border rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-40">+ Video</button>
                     <button type="button" @click="addBlock('youtube')" :disabled="!canAddVideoType()" class="border rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-40">+ YouTube</button>
+                    <button type="button" @click="addBlock('image')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Image</button>
+                    <button type="button" @click="addBlock('callout')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Callout</button>
                 </div>
+            </div>
+
+            <div v-if="Object.keys(form.errors).length" class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 space-y-0.5">
+                <p v-for="(msg, key) in form.errors" :key="key">{{ msg }}</p>
             </div>
 
             <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium">

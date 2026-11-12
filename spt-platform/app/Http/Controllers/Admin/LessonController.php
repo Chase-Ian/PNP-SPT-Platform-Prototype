@@ -6,7 +6,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Module;
 use App\Models\Lesson;
 use App\Models\LessonQuizQuestion;
+use App\Services\LessonImageProcessor;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class LessonController extends Controller
@@ -25,10 +28,11 @@ class LessonController extends Controller
             'title' => 'required|string|max:255',
             'duration_minutes' => 'required|integer|min:1',
             'blocks' => 'required|array|min:1',
-            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video,youtube',
+            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video,youtube,image,callout',
         ]);
 
         $blocks = $this->resolveYoutubeBlocks($request->blocks);
+        $blocks = $this->normalizeRichBlocks($blocks);
         $this->validateBlockStructure($blocks);
 
         $module->lessons()->create([
@@ -44,7 +48,10 @@ class LessonController extends Controller
 
     public function destroy(Lesson $lesson)
     {
+        $images = LessonImageProcessor::pathsIn($lesson->content);
         $lesson->delete();
+        $this->deleteImages($images);
+
         return back();
     }
 
@@ -100,6 +107,86 @@ class LessonController extends Controller
         return response()->json(['blocks' => $blocks]);
     }
 
+    public function uploadImage(Request $request)
+    {
+        $request->validate(['image' => 'required|file|max:5120']); // 5 MB
+
+        try {
+            $path = (new LessonImageProcessor())->store($request->file('image'));
+        } catch (\InvalidArgumentException $e) {
+            return response()->json(['message' => $e->getMessage()], 422);
+        }
+
+        return response()->json(['path' => $path]);
+    }
+
+    /** Streams a stored lesson image (any signed-in user; same private-disk pattern as module files). */
+    public function showImage(string $filename)
+    {
+        $path = LessonImageProcessor::DIRECTORY . '/' . $filename;
+        abort_unless(preg_match(LessonImageProcessor::PATH_REGEX, $path) && Storage::exists($path), 404);
+
+        return Storage::response($path, null, [
+            'Content-Type' => str_ends_with($path, '.png') ? 'image/png' : 'image/jpeg',
+            'Cache-Control' => 'private, max-age=86400',
+            'X-Content-Type-Options' => 'nosniff',
+        ]);
+    }
+
+    /**
+     * Whitelist the fields of image/callout blocks so only known, validated data
+     * is ever stored (unknown keys are dropped).
+     */
+    private function normalizeRichBlocks(array $blocks): array
+    {
+        return array_map(function ($block, $i) {
+            $n = $i + 1;
+
+            if ($block['type'] === 'image') {
+                $path = $block['path'] ?? '';
+                if (! (is_string($path) && preg_match(LessonImageProcessor::PATH_REGEX, $path) && Storage::exists($path))) {
+                    throw ValidationException::withMessages(["blocks.$i.path" => "Image block #$n has no image. Please upload an image or remove the block."]);
+                }
+
+                $alt = trim((string) ($block['alt'] ?? ''));
+                if ($alt === '') {
+                    throw ValidationException::withMessages(["blocks.$i.alt" => "Image block #$n needs alt text (a short description for screen readers)."]);
+                }
+
+                return [
+                    'type' => 'image',
+                    'path' => $path,
+                    'alt' => mb_substr($alt, 0, 255),
+                    'caption' => mb_substr(trim((string) ($block['caption'] ?? '')), 0, 255),
+                    'align' => in_array($block['align'] ?? '', ['left', 'center', 'full'], true) ? $block['align'] : 'center',
+                    'size' => in_array($block['size'] ?? '', ['small', 'medium', 'large'], true) ? $block['size'] : 'medium',
+                ];
+            }
+
+            if ($block['type'] === 'callout') {
+                $text = trim((string) ($block['text'] ?? ''));
+                if ($text === '') {
+                    throw ValidationException::withMessages(["blocks.$i.text" => "Callout block #$n is empty. Add some text or remove the block."]);
+                }
+
+                return [
+                    'type' => 'callout',
+                    'variant' => in_array($block['variant'] ?? '', ['info', 'warning', 'important'], true) ? $block['variant'] : 'info',
+                    'text' => mb_substr($text, 0, 2000),
+                ];
+            }
+
+            return $block;
+        }, $blocks, array_keys($blocks));
+    }
+
+    private function deleteImages(iterable $paths): void
+    {
+        foreach ($paths as $path) {
+            Storage::delete($path);
+        }
+    }
+
     private function extractYoutubeId(string $url): ?string
     {
         if (preg_match('/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|embed\/))([a-zA-Z0-9_-]{11})/', $url, $matches)) {
@@ -114,13 +201,17 @@ class LessonController extends Controller
             ->filter(fn ($i) => in_array($blocks[$i]['type'], ['video', 'youtube']))
             ->values();
 
-        abort_if($videoTypeIndexes->count() > 1, 422, 'Only one video (uploaded or YouTube) is allowed per lesson.');
+        if ($videoTypeIndexes->count() > 1) {
+            throw ValidationException::withMessages(['blocks' => 'Only one video (uploaded or YouTube) is allowed per lesson.']);
+        }
 
         if ($videoTypeIndexes->count() === 1) {
             $index = $videoTypeIndexes->first();
             $isTop = $index === 0;
             $isBottom = $index === count($blocks) - 1;
-            abort_unless($isTop || $isBottom, 422, 'The video block must be the first or last block in the lesson.');
+            if (! ($isTop || $isBottom)) {
+                throw ValidationException::withMessages(['blocks' => 'The video block must be the first or last block in the lesson.']);
+            }
         }
     }
 
@@ -130,11 +221,14 @@ class LessonController extends Controller
             'title' => 'required|string|max:255',
             'duration_minutes' => 'required|integer|min:1',
             'blocks' => 'required|array|min:1',
-            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video,youtube',
+            'blocks.*.type' => 'required|in:heading,paragraph,bullet_list,video,youtube,image,callout',
         ]);
 
         $blocks = $this->resolveYoutubeBlocks($request->blocks);
+        $blocks = $this->normalizeRichBlocks($blocks);
         $this->validateBlockStructure($blocks);
+
+        $oldImages = LessonImageProcessor::pathsIn($lesson->content);
 
         $lesson->update([
             'title' => $request->title,
@@ -142,20 +236,25 @@ class LessonController extends Controller
             'duration_minutes' => $request->duration_minutes,
         ]);
 
+        // Remove images the author took out of the lesson.
+        $this->deleteImages(array_diff($oldImages, LessonImageProcessor::pathsIn($blocks)));
+
         return back();
     }
 
     private function resolveYoutubeBlocks(array $blocks): array
     {
-        return array_map(function ($block) {
+        return array_map(function ($block, $i) {
             if ($block['type'] === 'youtube') {
                 $id = $this->extractYoutubeId($block['url'] ?? '');
-                abort_if(! $id, 422, 'That does not look like a valid YouTube URL.');
+                if (! $id) {
+                    throw ValidationException::withMessages(["blocks.$i.url" => 'Block #' . ($i + 1) . ': that does not look like a valid YouTube URL.']);
+                }
                 $block['video_id'] = $id;
                 unset($block['url']); // don't store the raw pasted URL, only the validated ID
             }
             return $block;
-        }, $blocks);
+        }, $blocks, array_keys($blocks));
     }
 
     public function previewQuiz(Lesson $lesson)

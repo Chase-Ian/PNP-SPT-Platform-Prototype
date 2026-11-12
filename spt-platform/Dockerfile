@@ -30,7 +30,8 @@ COPY --from=composer-build /app/vendor ./vendor
 RUN npm run build
 
 # Stage 3: PHP app runtime
-FROM php:8.2-fpm-alpine
+FROM php:8.2.35-fpm-alpine
+RUN php -v
 
 RUN apk add --no-cache \
     nginx \
@@ -56,6 +57,9 @@ RUN apk add --no-cache \
     gd \
     zip \
     opcache
+
+# PHP defaults (2 MB upload / 8 MB POST) are too small for image uploads (5 MB) and PPTX import (20 MB)
+RUN printf "upload_max_filesize=20M\npost_max_size=25M\n" > /usr/local/etc/php/conf.d/uploads.ini
 
 # Download the standalone ISRG Root X1 CA certificate for TiDB Cloud
 RUN mkdir -p /etc/ssl/certs/tidb \

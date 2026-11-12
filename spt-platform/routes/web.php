@@ -65,9 +65,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/exams/result/{attempt}', [ExamController::class, 'result'])->name('exams.result');
 
     Route::get('/lessons/{lesson}', [LessonViewController::class, 'show'])->name('lessons.show');
+    Route::get('/lesson-images/{filename}', [LessonController::class, 'showImage'])
+    ->where('filename', '[0-9a-f\-]{36}\.(jpg|png)')->name('lessons.images.show');
 
     Route::get('/lessons/{lesson}/quiz', [LessonQuizController::class, 'show'])->name('lessons.quiz.show');
     Route::post('/lessons/{lesson}/quiz', [LessonQuizController::class, 'submit'])->name('lessons.quiz.submit');
+    
+    Route::get('/lesson-images/{filename}', [LessonController::class, 'showImage'])
+    ->where('filename', '[0-9a-f\-]{36}\.(jpg|png)')->name('lessons.images.show');
     });
 
 // --- Supervisor routes ---
@@ -97,6 +102,8 @@ Route::middleware(['auth', 'role:admin,supervisor'])->prefix('admin')->group(fun
     Route::delete('/questions/{question}', [LessonController::class, 'destroyQuestion'])->name('admin.lessons.questions.destroy');
     Route::post('/lessons/extract-pptx', [LessonController::class, 'extractPptx'])
     ->middleware('throttle:10,1')->name('admin.lessons.extract-pptx');
+    Route::post('/lessons/upload-image', [LessonController::class, 'uploadImage'])
+    ->middleware('throttle:30,1')->name('admin.lessons.upload-image');
     Route::get('/lessons/{lesson}/preview', [LessonController::class, 'show'])->name('admin.lessons.preview');
     Route::get('/lessons/{lesson}/quiz-preview', [LessonController::class, 'previewQuiz'])->name('admin.lessons.quiz-preview');
 
