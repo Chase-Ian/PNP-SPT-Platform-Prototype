@@ -23,6 +23,7 @@ use App\Http\Controllers\Admin\CourseController as AdminCourseController;
 use App\Http\Controllers\Admin\ExamQuestionController;
 use App\Http\Controllers\LessonViewController;
 use App\Http\Controllers\LessonQuizController;
+use App\Http\Controllers\LessonAssistantController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
 
@@ -70,6 +71,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/lessons/{lesson}/quiz', [LessonQuizController::class, 'show'])->name('lessons.quiz.show');
     Route::post('/lessons/{lesson}/quiz', [LessonQuizController::class, 'submit'])->name('lessons.quiz.submit');
+    Route::post('/lessons/{lesson}/assistant', [LessonAssistantController::class, 'ask'])
+    ->middleware('role:trainee')->name('lessons.assistant.ask');
     
     Route::get('/lesson-images/{filename}', [LessonController::class, 'showImage'])
     ->where('filename', '[0-9a-f\-]{36}\.(jpg|png)')->name('lessons.images.show');
