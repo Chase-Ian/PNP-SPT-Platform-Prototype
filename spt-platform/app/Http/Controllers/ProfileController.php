@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Services\TwoFactorPolicy;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -18,23 +19,34 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $policy = app(TwoFactorPolicy::class);
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
+            'mustVerifyEmail' => $user instanceof MustVerifyEmail,
             'status' => session('status'),
+            'twoFactor' => [
+                'setUp' => $policy->isSetUp($user),
+                'required' => $policy->isRequiredFor($user),
+            ],
+            'emailRequests' => $user->emailChangeRequests()->latest()->limit(5)->get()
+                ->map(fn ($r) => [
+                    'id' => $r->id,
+                    'new_email' => $r->new_email,
+                    'status' => $r->status,
+                    'admin_note' => $r->admin_note,
+                    'created_at' => $r->created_at->format('Y-m-d'),
+                ]),
         ]);
     }
 
     /**
-     * Update the user's profile information.
+     * Update the user's profile information. Email is not part of this:
+     * see EmailChangeRequestController.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
         $request->user()->fill($request->validated());
-
-        if ($request->user()->isDirty('email')) {
-            $request->user()->email_verified_at = null;
-        }
-
         $request->user()->save();
 
         return Redirect::route('profile.edit');

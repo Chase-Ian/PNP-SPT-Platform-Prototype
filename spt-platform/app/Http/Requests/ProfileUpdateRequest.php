@@ -48,14 +48,9 @@ class ProfileUpdateRequest extends FormRequest
             'PRO CAR - Cordillera Administrative Region (CAR)',
             'NHQ Camp Crame - PNP National Headquarters',
         ]),
-            'email' => ['required', 'string', 'lowercase', 'email', 'max:255', Rule::unique(User::class)->ignore($this->user()->id)],
+            // Email is intentionally not editable here: it is the account's
+            // recovery route. Changes go through an admin-reviewed request
+            // (EmailChangeRequestController). Any 'email' sent is ignored.
         ];
     }
-
-       protected function prepareForValidation(): void
-        {
-            $this->merge([
-                'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $this->input('email')),
-            ]);
-        }
 }

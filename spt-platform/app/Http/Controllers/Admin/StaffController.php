@@ -45,7 +45,7 @@ class StaffController extends Controller
     public function index()
     {
         $staff = User::whereIn('role', ['supervisor', 'admin'])
-            ->select('id', 'first_name', 'last_name', 'rank', 'email', 'role', 'unit_office', 'region', 'is_locked', 'created_at')
+            ->select('id', 'first_name', 'last_name', 'rank', 'email', 'role', 'unit_office', 'region', 'is_locked', 'two_factor_confirmed_at', 'created_at')
             ->latest()
             ->get();
 
@@ -73,7 +73,7 @@ class StaffController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
-        User::create([
+        $staff = User::create([
             'role' => $request->role,
             'first_name' => $request->first_name,
             'last_name' => $request->last_name,
@@ -84,6 +84,9 @@ class StaffController extends Controller
             'password' => Hash::make($request->password),
             'two_factor_verified' => true,
         ]);
+
+        // Staff confirm their own address on first sign-in, like trainees.
+        $staff->sendEmailVerificationNotification();
 
         return back();
     }

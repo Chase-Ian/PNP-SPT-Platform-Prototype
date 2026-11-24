@@ -1,4 +1,5 @@
 <script setup>
+import SecurityReminder from '@/Components/SecurityReminder.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
@@ -81,6 +82,7 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
             </header>
 
             <main class="flex-1 p-6 overflow-x-hidden">
+                <SecurityReminder />
                 <slot />
             </main>
         </div>

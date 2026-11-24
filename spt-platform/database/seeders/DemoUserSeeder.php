@@ -51,6 +51,11 @@ class DemoUserSeeder extends Seeder
             ]
         );
 
+        // Demo accounts skip the email step so live demos work offline.
+        User::whereIn('email', ['maria.cruz@pnp.gov.ph', 'admin.demo@pnp.gov.ph', 'supervisor.demo@pnp.gov.ph'])
+            ->whereNull('email_verified_at')
+            ->update(['email_verified_at' => now()]);
+
         if ($maria) {
             DB::table('notifications')->insert([
                 [

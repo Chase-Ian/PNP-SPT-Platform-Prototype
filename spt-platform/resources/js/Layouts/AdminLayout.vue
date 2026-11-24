@@ -1,10 +1,11 @@
 <script setup>
+import SecurityReminder from '@/Components/SecurityReminder.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
 import {
     Home, BookOpen, Users, ClipboardList, Award, BarChart3,
-    UserCog, X, Menu, LogOut, GraduationCap,
+    UserCog, X, Menu, LogOut, GraduationCap, MailCheck,
 } from 'lucide-vue-next';
 
 const page = usePage();
@@ -18,6 +19,7 @@ const navItems = [
     { label: 'Monitor Certificates', href: '/admin/certificates', icon: Award, match: 'admin.certificates*' },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: 'admin.analytics*' },
     { label: 'Manage Staff', href: '/admin/staff', icon: UserCog, match: 'admin.staff*' },
+    { label: 'Email Change Requests', href: '/admin/email-requests', icon: MailCheck, match: 'admin.email-requests*' },
 ];
 
 const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''}`.toUpperCase();
@@ -80,6 +82,7 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
             </header>
 
             <main class="flex-1 p-6 space-y-6 overflow-x-hidden">
+                <SecurityReminder />
                 <slot />
             </main>
         </div>

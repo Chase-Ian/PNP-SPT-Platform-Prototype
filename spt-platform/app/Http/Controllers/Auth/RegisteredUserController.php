@@ -94,6 +94,7 @@ $request->validate([
         event(new Registered($user));
         Auth::login($user);
 
-        return redirect(route('dashboard', absolute: false));
+        // Step 1 of the account gate: verify email (then 2FA setup if required).
+        return redirect()->route('verification.notice');
     }
 }

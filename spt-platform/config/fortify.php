@@ -168,7 +168,8 @@ return [
         //Features::updateProfileInformation(),
         //Features::updatePasswords(),
         Features::twoFactorAuthentication([
-            //'confirm' => true,
+            // 2FA only counts once the user proves the authenticator works.
+            'confirm' => true,
             'confirmPassword' => true,
             'window' => 1,
         ]),

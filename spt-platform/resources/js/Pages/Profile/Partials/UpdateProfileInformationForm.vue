@@ -36,7 +36,6 @@ const form = useForm({
     rank: user.rank,
     unit_office: user.unit_office,
     region: user.region,
-    email: user.email,
 });
 </script>
 
@@ -87,8 +86,9 @@ const form = useForm({
 
             <div>
                 <InputLabel for="email" value="Email" />
-                <TextInput id="email" v-model="form.email" type="email" class="mt-1 block w-full" required autocomplete="username" />
-                <InputError class="mt-2" :message="form.errors.email" />
+                <!-- Read-only: email is the account's recovery route. Changes go through an admin request below. -->
+                <TextInput id="email" :model-value="user.email" type="email" class="mt-1 block w-full bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled autocomplete="username" />
+                <p class="mt-1 text-xs text-gray-500">For security, your email can only be changed by an administrator. Use "Request email change" below.</p>
 
                 <div v-if="mustVerifyEmail && user.email_verified_at === null">
                     <p class="text-sm mt-2 text-gray-800">

@@ -2,14 +2,14 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use App\Notifications\CustomResetPassword;
 use Laravel\Fortify\TwoFactorAuthenticatable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasFactory, Notifiable, TwoFactorAuthenticatable;
     
@@ -19,7 +19,9 @@ class User extends Authenticatable
         'is_locked', 'locked_at', 
     ];
 
-    protected $hidden = ['password', 'remember_token'];
+    // auth.user is shared with every Inertia page, so 2FA secrets and
+    // recovery codes must never be serialized.
+    protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
 
     // Makes ->name available in PHP AND included in Inertia's JSON serialization
     protected $appends = ['name'];
@@ -33,6 +35,8 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'two_factor_confirmed_at' => 'datetime',
+            'two_factor_codes_acknowledged_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -60,6 +64,11 @@ class User extends Authenticatable
     public function courses()
     {
         return $this->belongsToMany(Course::class, 'enrollments')->withPivot('status')->withTimestamps();
+    }
+
+    public function emailChangeRequests()
+    {
+        return $this->hasMany(EmailChangeRequest::class);
     }
 
     public function sendPasswordResetNotification($token): void

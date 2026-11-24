@@ -34,6 +34,23 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'flash' => [
+                'status' => fn () => $request->session()->get('status'),
+            ],
+            // Grace-period reminder before 2FA becomes mandatory for this user.
+            'security' => function () use ($request) {
+                $user = $request->user();
+                if (! $user) {
+                    return null;
+                }
+                $policy = app(\App\Services\TwoFactorPolicy::class);
+
+                return [
+                    'twoFactorReminderUntil' => $policy->shouldRemind($user)
+                        ? $policy->graceEndsAt($user)?->toDateString()
+                        : null,
+                ];
+            },
         ];
     }
 }

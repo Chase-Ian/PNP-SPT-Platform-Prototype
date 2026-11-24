@@ -1,4 +1,5 @@
 <script setup>
+import SecurityReminder from '@/Components/SecurityReminder.vue';
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -208,6 +209,7 @@ const dashboardActive = computed(() => {
 
             <!-- Page Content -->
             <main>
+                <SecurityReminder />
                 <slot />
             </main>
         </div>

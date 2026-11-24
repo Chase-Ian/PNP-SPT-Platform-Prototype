@@ -25,6 +25,9 @@ use App\Http\Controllers\LessonViewController;
 use App\Http\Controllers\LessonQuizController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
+use App\Http\Controllers\Admin\TwoFactorResetController;
+use App\Http\Controllers\Admin\EmailChangeRequestController as AdminEmailChangeRequestController;
+use App\Http\Controllers\EmailChangeRequestController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -48,6 +51,12 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Email can't be edited directly; users ask an admin to change it.
+    Route::post('/profile/email-change-request', [EmailChangeRequestController::class, 'store'])
+        ->middleware('throttle:5,60')->name('profile.email-request.store');
+    Route::delete('/profile/email-change-request/{emailChangeRequest}', [EmailChangeRequestController::class, 'destroy'])
+        ->name('profile.email-request.destroy');
 
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
@@ -129,6 +138,12 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/staff', [StaffController::class, 'store'])->name('admin.staff.store');
     Route::post('/staff/{staff}/toggle-lock', [StaffController::class, 'toggleLock'])->name('admin.staff.toggle-lock');
     Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('admin.staff.destroy');
+
+    // Account recovery
+    Route::post('/users/{user}/reset-two-factor', [TwoFactorResetController::class, 'store'])->name('admin.users.reset-two-factor');
+    Route::get('/email-requests', [AdminEmailChangeRequestController::class, 'index'])->name('admin.email-requests.index');
+    Route::post('/email-requests/{emailChangeRequest}/approve', [AdminEmailChangeRequestController::class, 'approve'])->name('admin.email-requests.approve');
+    Route::post('/email-requests/{emailChangeRequest}/reject', [AdminEmailChangeRequestController::class, 'reject'])->name('admin.email-requests.reject');
 });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

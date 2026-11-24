@@ -60,7 +60,11 @@ class StudentController extends Controller
         $student->load(['enrollments.course', 'certificates.course', 'examAttempts.course', 'moduleCompletions']);
 
         return Inertia::render('Admin/Students/Show', [
-            'student' => $student->only('id', 'first_name', 'last_name', 'rank', 'email', 'unit_office', 'region', 'is_locked'),
+            'student' => [
+                ...$student->only('id', 'first_name', 'last_name', 'rank', 'email', 'unit_office', 'region', 'is_locked'),
+                'two_factor_enabled' => $student->two_factor_confirmed_at !== null,
+            ],
+            'canResetTwoFactor' => request()->user()->role === 'admin',
             'enrollments' => $student->enrollments->map(fn ($e) => [
                 'course_title' => $e->course->title,
                 'status' => $e->status,

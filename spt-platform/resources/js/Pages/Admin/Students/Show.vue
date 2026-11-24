@@ -1,9 +1,15 @@
 <!-- resources/js/Pages/Admin/Students/Show.vue -->
 <script setup>
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, router } from '@inertiajs/vue3';
 
-defineProps({ student: Object, enrollments: Array, certificates: Array, examAttempts: Array });
+const props = defineProps({ student: Object, enrollments: Array, certificates: Array, examAttempts: Array, canResetTwoFactor: Boolean });
+
+const resetTwoFactor = () => {
+    if (confirm(`Reset two-factor authentication for ${props.student.first_name} ${props.student.last_name}? Their authenticator and recovery codes stop working and they must set it up again at next sign-in.`)) {
+        router.post(route('admin.users.reset-two-factor', props.student.id), {}, { preserveScroll: true });
+    }
+};
 </script>
 
 <template>
@@ -18,8 +24,15 @@ defineProps({ student: Object, enrollments: Array, certificates: Array, examAtte
                     <p class="text-sm text-gray-500">{{ student.email }}</p>
                     <p class="text-xs text-gray-400 mt-1">{{ student.unit_office }} · {{ student.region }}</p>
                 </div>
-                <span v-if="student.is_locked" class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">🔒 Locked</span>
-                <span v-else class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>
+                <div class="flex flex-col items-end gap-2">
+                    <span v-if="student.is_locked" class="bg-red-100 text-red-700 px-3 py-1 rounded-full text-xs font-medium">🔒 Locked</span>
+                    <span v-else class="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-medium">Active</span>
+                    <span class="text-xs" :class="student.two_factor_enabled ? 'text-green-700' : 'text-gray-400'">
+                        2FA {{ student.two_factor_enabled ? 'enabled' : 'not set up' }}
+                    </span>
+                    <button v-if="canResetTwoFactor && student.two_factor_enabled" @click="resetTwoFactor"
+                        class="text-xs font-medium text-blue-600 hover:text-blue-800">Reset 2FA (lost device)</button>
+                </div>
             </div>
 
             <div class="bg-white rounded-xl border p-6">

@@ -3,12 +3,15 @@ import DeleteUserForm from './Partials/DeleteUserForm.vue';
 import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
 import TwoFactorForm from './Partials/TwoFactorForm.vue';
+import EmailChangeRequestForm from './Partials/EmailChangeRequestForm.vue';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 
 defineProps({
     mustVerifyEmail: Boolean,
     status: String,
+    twoFactor: Object,
+    emailRequests: Array,
 });
 </script>
 
@@ -31,7 +34,11 @@ defineProps({
                 </div>
 
                 <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
-                    <TwoFactorForm class="max-w-xl" />
+                    <EmailChangeRequestForm :requests="emailRequests" :status="status" class="max-w-xl" />
+                </div>
+
+                <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
+                    <TwoFactorForm :two-factor="twoFactor" class="max-w-xl" />
                 </div>
 
                 <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">

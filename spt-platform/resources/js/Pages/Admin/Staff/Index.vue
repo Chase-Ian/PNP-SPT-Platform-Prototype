@@ -3,7 +3,7 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { UserCog } from 'lucide-vue-next';
-import { Head, useForm, router } from '@inertiajs/vue3';
+import { Head, useForm, router, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 
 const props = defineProps({ staff: Array, rankOptions: Array, regionOptions: Array });
@@ -31,6 +31,14 @@ const submit = () => {
 const remove = (person) => {
     if (confirm(`Remove ${person.first_name} ${person.last_name} (${person.role})? This cannot be undone.`)) {
         router.delete(`/admin/staff/${person.id}`);
+    }
+};
+
+const authUserId = usePage().props.auth.user.id;
+
+const resetTwoFactor = (person) => {
+    if (confirm(`Reset two-factor authentication for ${person.first_name} ${person.last_name}? Their authenticator and recovery codes stop working and they must set it up again at next sign-in.`)) {
+        router.post(route('admin.users.reset-two-factor', person.id), {}, { preserveScroll: true });
     }
 };
 
@@ -153,6 +161,7 @@ const toggleLock = (person) => {
                                 <button @click="toggleLock(person)" :class="person.is_locked ? 'text-green-600' : 'text-orange-600'" class="text-xs font-medium">
                                     {{ person.is_locked ? '🔓 Unlock' : '🔒 Lock' }}
                                 </button>
+                                <button v-if="person.two_factor_confirmed_at && person.id !== authUserId" @click="resetTwoFactor(person)" class="text-blue-600 text-xs font-medium">Reset 2FA</button>
                                 <button @click="remove(person)" class="text-red-600 text-xs font-medium">Delete</button>
                             </div>
                         </td>
