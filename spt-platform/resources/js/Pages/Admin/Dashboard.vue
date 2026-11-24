@@ -3,10 +3,12 @@
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { ShieldCheck } from 'lucide-vue-next';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { greetingFor } from '@/greeting';
 
 const props = defineProps({ stats: Object, officers: Array });
+const user = usePage().props.auth.user;
 
 const search = ref('');
 const regionFilter = ref('All Police Regions (PRO)');
@@ -29,7 +31,7 @@ const filtered = computed(() => {
     <Head title="Admin Dashboard" />
     <AdminLayout>
         <AdminPageBanner :icon="ShieldCheck" badge-text="Command Admin Portal • Live Personnel Oversight"
-            title="Admin Command Center"
+            :title="greetingFor(user.role)"
             subtitle="Monitor police personnel training progress, configure course modules, and adjust final exam parameters.">
         </AdminPageBanner>
 
@@ -38,7 +40,7 @@ const filtered = computed(() => {
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white rounded-xl border p-5 text-center">
                     <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mx-auto mb-2">👥</div>
-                    <p class="text-xs text-gray-400 uppercase">Active PNP Officers</p>
+                    <p class="text-xs text-gray-400 uppercase">Active Trainees</p>
                     <p class="text-2xl font-bold">{{ stats.activeOfficers }}</p>
                 </div>
                 <div class="bg-white rounded-xl border p-5 text-center">
@@ -62,11 +64,11 @@ const filtered = computed(() => {
         <div class="bg-white rounded-xl border p-6">
             <div class="flex justify-between items-start mb-4">
                 <div>
-                    <h3 class="font-semibold flex items-center gap-1">👥 Officer Progress Monitoring</h3>
+                    <h3 class="font-semibold flex items-center gap-1">👥 Trainee Progress Monitoring</h3>
                     <p class="text-xs text-gray-500">Real-time monitoring of personnel completion rates, module progress, and exam scores across all units.</p>
                 </div>
                 <div class="flex gap-2">
-                    <input v-model="search" type="text" placeholder="Search officer, rank, station..." class="border rounded-lg px-3 py-1.5 text-sm w-56" />
+                    <input v-model="search" type="text" placeholder="Search trainee, rank, station..." class="border rounded-lg px-3 py-1.5 text-sm w-56" />
                     <select v-model="regionFilter" class="border rounded-lg px-3 py-1.5 text-sm">
                         <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
                     </select>
@@ -76,7 +78,7 @@ const filtered = computed(() => {
             <table class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                        <th class="py-2 px-3">Officer Personnel</th>
+                        <th class="py-2 px-3">Trainee</th>
                         <th class="py-2 px-3">Assigned Unit / Station</th>
                         <th class="py-2 px-3">Enrolled Course</th>
                         <th class="py-2 px-3">Modules</th>

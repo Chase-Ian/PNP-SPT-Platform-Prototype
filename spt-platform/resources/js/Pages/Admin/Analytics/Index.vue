@@ -18,13 +18,13 @@ defineProps({
     <AdminLayout>
         <AdminPageBanner :icon="BarChart3" badge-text="Executive Analytics • Command Reporting"
             title="Command Analytics"
-            subtitle="System-wide performance metrics, regional compliance rates, and officer exam completion statistics." />
+            subtitle="System-wide performance metrics, regional compliance rates, and trainee exam completion statistics." />
 
         <div class="space-y-4">
 
             <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Total Enrolled Officers</p>
+                    <p class="text-xs text-gray-500">Total Enrolled Trainees</p>
                     <p class="text-2xl font-bold text-blue-900">{{ stats.totalEnrolled }}</p>
                 </div>
                 <div class="bg-white rounded-xl border p-4">
@@ -64,7 +64,7 @@ defineProps({
                             <p class="text-sm font-medium">{{ c.title }}</p>
                             <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">{{ c.pass_rate }}% Pass Rate</span>
                         </div>
-                        <p class="text-xs text-gray-400">Enrolled Personnel: {{ c.enrollments_count }} Officers · Avg Score: {{ c.avg_score }}</p>
+                        <p class="text-xs text-gray-400">Enrolled Personnel: {{ c.enrollments_count }} Trainees · Avg Score: {{ c.avg_score }}</p>
                     </div>
                 </div>
 

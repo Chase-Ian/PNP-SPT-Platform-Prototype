@@ -2,10 +2,12 @@
 import SupervisorLayout from '@/Layouts/SupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { ShieldCheck } from 'lucide-vue-next';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
+import { greetingFor } from '@/greeting';
 
 const props = defineProps({ stats: Object, officers: Array });
+const user = usePage().props.auth.user;
 const search = ref('');
 
 const filtered = computed(() => {
@@ -19,7 +21,7 @@ const filtered = computed(() => {
     <Head title="Supervisor Dashboard" />
     <SupervisorLayout>
         <AdminPageBanner :icon="ShieldCheck" badge-text="Supervisor Portal • Training Oversight"
-            title="Supervisor Dashboard"
+            :title="greetingFor(user.role)"
             subtitle="Monitor trainee performance and manage training content." />
 
         <div class="grid grid-cols-2 md:grid-cols-4 gap-4">

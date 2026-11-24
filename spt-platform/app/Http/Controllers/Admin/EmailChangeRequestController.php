@@ -89,7 +89,7 @@ class EmailChangeRequestController extends Controller
         abort_if($r->user_id === $request->user()->id, 403, 'Another administrator must review your own request.');
 
         $request->validate(['admin_note' => ['required', 'string', 'max:500']], [
-            'admin_note.required' => 'Give the officer a reason for the rejection.',
+            'admin_note.required' => 'Give the requester a reason for the rejection.',
         ]);
 
         $r->update([

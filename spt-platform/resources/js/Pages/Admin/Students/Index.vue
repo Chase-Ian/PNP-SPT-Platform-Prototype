@@ -33,9 +33,9 @@ const toggleLock = (student) => {
 </script>
 
 <template>
-    <Head title="Monitor Officers" />
+    <Head title="Monitor Trainees" />
     <AdminLayout>
-        <AdminPageBanner badge="👥 Personnel Training Roster • All Units" title="Monitor Officers"
+        <AdminPageBanner badge="👥 Personnel Training Roster • All Units" title="Monitor Trainees"
             subtitle="Track enrolled police trainees, module progress percentages, exam results, and certification status." />
 
         <div class="space-y-4">

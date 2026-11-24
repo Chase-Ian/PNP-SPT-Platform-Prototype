@@ -1,9 +1,14 @@
 <script setup>
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
-import { Head, Link } from '@inertiajs/vue3';
+import { Head, Link, usePage } from '@inertiajs/vue3';
 import { BookOpen, Clock, CheckCircle2, Award, Search, TrendingUp, Target } from 'lucide-vue-next';
+import { greetingFor } from '@/greeting';
 
 const props = defineProps({ stats: Object, recentExams: Array });
+
+// Staff can open this page with "Switch to Trainee View", so greet by the
+// viewer's own role rather than always saying "Trainee".
+const user = usePage().props.auth.user;
 </script>
 
 <template>
@@ -15,7 +20,7 @@ const props = defineProps({ stats: Object, recentExams: Array });
                 <span class="bg-white/20 text-xs font-medium px-3 py-1 rounded-full">
                     ⚡ {{ stats.newModulesCount }} new modules available this week
                 </span>
-                <h1 class="text-3xl font-bold mt-4">Welcome Officer</h1>
+                <h1 class="text-3xl font-bold mt-4">{{ greetingFor(user.role) }}</h1>
                 <p class="text-blue-100 mt-1">Continue your professional development with our training modules and certification programs.</p>
             </div>
 

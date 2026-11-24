@@ -181,6 +181,53 @@ class AccountSecurityTest extends TestCase
             ->missing('auth.user.two_factor_recovery_codes'));
     }
 
+    // ---------- login code ----------
+
+    public function test_wrong_login_codes_are_limited_to_five_a_minute(): void
+    {
+        $user = $this->withTwoFactor($this->makeUser());
+
+        for ($i = 0; $i < 5; $i++) {
+            $this->withSession(['login.id' => $user->id])
+                ->post('/two-factor-challenge', ['code' => '000000'])
+                ->assertSessionHasErrors(['code' => 'The provided two-factor authentication code was invalid.']);
+        }
+
+        // The sixth try is refused even with the right code, and the code isn't used up.
+        $this->withSession(['login.id' => $user->id])
+            ->post('/two-factor-challenge', ['code' => $this->currentCode($user)])
+            ->assertSessionHasErrors('code');
+        $this->assertStringStartsWith('Too many incorrect codes', session('errors')->first('code'));
+        $this->assertGuest();
+
+        // Recovery codes count toward the same limit.
+        $this->withSession(['login.id' => $user->id])
+            ->post('/two-factor-challenge', ['recovery_code' => 'code-one'])
+            ->assertSessionHasErrors('code');
+        $this->assertGuest();
+
+        $this->travel(61)->seconds();
+
+        $this->withSession(['login.id' => $user->id])
+            ->post('/two-factor-challenge', ['code' => $this->currentCode($user)])
+            ->assertRedirect(route('dashboard'));
+        $this->assertAuthenticatedAs($user);
+    }
+
+    public function test_a_correct_login_code_resets_the_count(): void
+    {
+        $user = $this->withTwoFactor($this->makeUser());
+
+        for ($i = 0; $i < 4; $i++) {
+            $this->withSession(['login.id' => $user->id])->post('/two-factor-challenge', ['recovery_code' => 'wrong-code']);
+        }
+        $this->withSession(['login.id' => $user->id])
+            ->post('/two-factor-challenge', ['recovery_code' => 'code-one'])
+            ->assertRedirect(route('dashboard'));
+
+        $this->assertTrue(\Illuminate\Support\Facades\RateLimiter::attempts('two-factor-challenge|'.$user->id) === 0);
+    }
+
     // ---------- recovery ----------
 
     public function test_admin_can_reset_another_users_two_factor(): void

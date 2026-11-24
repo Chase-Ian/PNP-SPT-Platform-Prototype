@@ -89,6 +89,9 @@ $request->validate([
             'unit_office' => $request->unit_office,
             'region' => $request->region,
             'password' => Hash::make($request->password),
+            // Self-registration is for trainees only. Supervisor and Admin
+            // accounts are created by an Admin in Manage Staff.
+            'role' => 'trainee',
         ]);
 
         event(new Registered($user));

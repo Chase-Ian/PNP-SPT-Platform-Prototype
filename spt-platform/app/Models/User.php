@@ -23,6 +23,11 @@ class User extends Authenticatable implements MustVerifyEmail
     // recovery codes must never be serialized.
     protected $hidden = ['password', 'remember_token', 'two_factor_secret', 'two_factor_recovery_codes'];
 
+    // The database column still defaults to the retired 'officer' role from
+    // the first migration, so set the default here for any account created
+    // without an explicit role.
+    protected $attributes = ['role' => 'trainee'];
+
     // Makes ->name available in PHP AND included in Inertia's JSON serialization
     protected $appends = ['name'];
 

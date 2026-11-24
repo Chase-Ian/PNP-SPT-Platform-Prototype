@@ -15,7 +15,7 @@ const sidebarOpen = ref(true);
 const navItems = [
     { label: 'Admin Dashboard', href: '/admin/dashboard', icon: Home, match: 'admin.dashboard' },
     { label: 'Manage Courses & Modules', href: '/admin/courses', icon: BookOpen, match: 'admin.courses*' },
-    { label: 'Monitor Officers', href: '/admin/students', icon: Users, match: 'admin.students*' },
+    { label: 'Monitor Trainees', href: '/admin/students', icon: Users, match: 'admin.students*' },
     { label: 'Monitor Certificates', href: '/admin/certificates', icon: Award, match: 'admin.certificates*' },
     { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: 'admin.analytics*' },
     { label: 'Manage Staff', href: '/admin/staff', icon: UserCog, match: 'admin.staff*' },
@@ -52,9 +52,9 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
             </nav>
 
             <div class="p-3 border-t">
-                <Link href="/dashboard?view=officer" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
+                <Link href="/dashboard?view=trainee" class="flex items-center gap-2 text-sm text-gray-500 hover:text-gray-700">
                     <div class="w-8 h-8 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium">{{ initials() }}</div>
-                    Switch to Officer View
+                    Switch to Trainee View
                 </Link>
             </div>
         </aside>

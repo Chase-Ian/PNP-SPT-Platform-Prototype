@@ -37,7 +37,7 @@ const badge = { approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 t
     <AdminLayout>
         <AdminPageBanner :icon="MailCheck" badge-text="Account Security • Email Changes"
             title="Email Change Requests"
-            subtitle="Officers and staff can't edit their own email, since it's how their account is recovered. Review their requests here. After approval, the new address has to be verified before the account can be used." />
+            subtitle="Trainees and staff can't edit their own email, since it's how their account is recovered. Review their requests here. After approval, the new address has to be verified before the account can be used." />
 
         <div v-if="errors.request" class="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">{{ errors.request }}</div>
 
@@ -65,7 +65,7 @@ const badge = { approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 t
 
                 <form v-if="reviewing?.id === r.id" @submit.prevent="submit" class="mt-4 pt-4 border-t space-y-2">
                     <label class="block text-xs font-semibold text-gray-500">
-                        {{ reviewing.action === 'approve' ? 'NOTE (OPTIONAL)' : 'REASON FOR REJECTION (SHOWN TO THE OFFICER)' }}
+                        {{ reviewing.action === 'approve' ? 'NOTE (OPTIONAL)' : 'REASON FOR REJECTION (SHOWN TO THE REQUESTER)' }}
                     </label>
                     <textarea v-model="form.admin_note" rows="2" maxlength="500"
                         class="w-full border-gray-300 rounded-md text-sm"
@@ -92,7 +92,7 @@ const badge = { approved: 'bg-green-100 text-green-700', rejected: 'bg-red-100 t
             <table v-else class="w-full text-sm">
                 <thead>
                     <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                        <th class="py-2 px-3">Officer</th>
+                        <th class="py-2 px-3">Requested by</th>
                         <th class="py-2 px-3">Change</th>
                         <th class="py-2 px-3">Decision</th>
                         <th class="py-2 px-3">Reviewed</th>

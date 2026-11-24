@@ -29,7 +29,7 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 </div>
                 <div>
                     <p class="font-bold text-sm leading-tight">PNP LMS</p>
-                    <p class="text-xs text-blue-600 leading-tight">Officer Portal</p>
+                    <p class="text-xs text-blue-600 leading-tight">Trainee Portal</p>
                 </div>
             </div>
 
@@ -49,7 +49,8 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
                 <div class="w-8 h-8 rounded-full bg-gray-800 text-white text-xs flex items-center justify-center font-medium">
                     {{ initials() }}
                 </div>
-                <Link v-if="user.role !== 'trainee'" href="/admin/dashboard" class="text-xs text-gray-500">Officer Standard Access</Link>
+                <Link v-if="user.role === 'admin'" href="/admin/dashboard" class="text-xs text-gray-500 hover:text-gray-700">Switch to Admin View</Link>
+                <Link v-else-if="user.role === 'supervisor'" href="/supervisor/dashboard" class="text-xs text-gray-500 hover:text-gray-700">Switch to Supervisor View</Link>
             </div>
         </aside>
 

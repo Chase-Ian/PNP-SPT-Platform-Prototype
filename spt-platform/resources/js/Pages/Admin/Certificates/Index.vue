@@ -46,7 +46,7 @@ const isExpanded = (station) => {
 </script>
 
 <template>
-    <Head title="Monitor Officer Certificates" />
+    <Head title="Monitor Trainee Certificates" />
     <AdminLayout>
         <AdminPageBanner :icon="Award" badge-text="Official Credentials Registry • Audited Log"
             title="Monitor Certificates"
@@ -62,7 +62,7 @@ const isExpanded = (station) => {
                 </div>
                 <div class="bg-white rounded-xl border p-4">
                     <p class="text-xs text-gray-500">Trainee Personnel</p>
-                    <p class="text-2xl font-bold text-blue-900">{{ stats.traineePersonnel }} Officers</p>
+                    <p class="text-2xl font-bold text-blue-900">{{ stats.traineePersonnel }} Trainees</p>
                 </div>
                 <div class="bg-white rounded-xl border p-4">
                     <p class="text-xs text-gray-500">Total Issued Certificates</p>
@@ -74,11 +74,11 @@ const isExpanded = (station) => {
                 </div>
             </div>
 
-            <input v-model="search" type="text" placeholder="Search certificate by officer name or police station..."
+            <input v-model="search" type="text" placeholder="Search certificate by trainee name or police station..."
                 class="w-full border rounded-lg px-3 py-2 text-sm" />
 
             <div v-if="filteredStations.length === 0" class="bg-white rounded-xl border p-6 text-sm text-gray-400 text-center">
-                No matching officers or stations found.
+                No matching trainees or stations found.
             </div>
 
             <div v-for="group in filteredStations" :key="group.station" class="bg-white rounded-xl border">
@@ -88,7 +88,7 @@ const isExpanded = (station) => {
                         <p class="text-xs text-gray-400">NCR</p>
                     </div>
                     <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">
-                        {{ group.officers.length }} Officers Certified
+                        {{ group.officers.length }} Trainees Certified
                     </span>
                 </button>
 

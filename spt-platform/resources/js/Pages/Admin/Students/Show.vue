@@ -16,7 +16,7 @@ const resetTwoFactor = () => {
     <Head :title="`${student.first_name} ${student.last_name}`" />
     <AdminOrSupervisorLayout>
         <div class="space-y-4">
-            <Link href="/admin/students" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">← Back to Officer Directory</Link>
+            <Link href="/admin/students" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600">← Back to Trainee Directory</Link>
 
             <div class="bg-white rounded-xl border p-6 flex justify-between items-start">
                 <div>

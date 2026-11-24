@@ -21,7 +21,7 @@ class CertificateLogController extends Controller
                     'station' => $station,
                     'officers' => $users->map(fn ($u) => [
                         'name' => $u->name,
-                        'rank_or_role' => 'Patrol Officer', // no rank field yet — placeholder
+                        'rank_or_role' => $u->rank ?: 'Trainee',
                         'certificates' => $u->certificates->map(fn ($c) => [
                             'title' => $c->course->title,
                             'issued_at' => $c->issued_at->format('Y-m-d'),
