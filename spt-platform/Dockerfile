@@ -3,16 +3,13 @@ FROM composer:2 AS composer-build
 
 WORKDIR /app
 
-# Install system dependencies & compile GD extension for Composer's platform check
-RUN apk add --no-cache \
-    freetype-dev \
-    libjpeg-turbo-dev \
-    libpng-dev \
-    && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install gd
-
 COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts
+
+# GD is only needed when the app runs, and Stage 3 installs it. This stage
+# used to compile GD with apk just to satisfy Composer's platform check, which
+# broke when Alpine's python3 packages clashed in the composer image
+# (python3-ndbm vs python3). Skipping that one check removes the apk step.
+RUN composer install --no-dev --optimize-autoloader --no-interaction --no-scripts --ignore-platform-req=ext-gd
 
 COPY . .
 RUN composer dump-autoload --optimize
