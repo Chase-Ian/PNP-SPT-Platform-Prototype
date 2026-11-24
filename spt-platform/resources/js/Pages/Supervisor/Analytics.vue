@@ -1,6 +1,6 @@
 <!-- resources/js/Pages/Admin/Analytics/Index.vue -->
 <script setup>
-import AdminLayout from '@/Layouts/AdminLayout.vue';
+import SupervisorLayout from '@/Layouts/SupervisorLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
 import { BarChart3 } from 'lucide-vue-next';
 import { Head } from '@inertiajs/vue3';
@@ -15,7 +15,7 @@ defineProps({
 
 <template>
     <Head title="Command Analytics" />
-    <AdminLayout>
+    <SupervisorLayout>
         <AdminPageBanner :icon="BarChart3" badge-text="Executive Analytics • Command Reporting"
             title="Command Analytics"
             subtitle="System-wide performance metrics, regional compliance rates, and trainee exam completion statistics." />
@@ -71,5 +71,5 @@ defineProps({
             </div>
 
         </div>
-    </AdminLayout>
+    </SupervisorLayout>
 </template>

@@ -26,6 +26,7 @@ class CertificateLogController extends Controller
                             'title' => $c->course->title,
                             'issued_at' => $c->issued_at->format('Y-m-d'),
                             'serial_id' => $c->serial_id,
+                            'archived' => $c->archived_at !== null,
                         ]),
                     ])->filter(fn ($u) => $u['certificates']->isNotEmpty())->values(),
                 ];

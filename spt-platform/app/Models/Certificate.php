@@ -11,10 +11,12 @@ class Certificate extends Model
 
     protected $fillable = [
         'user_id', 'course_id', 'serial_id',
-        'training_ctrl_no', 'verification_hash', 'pdf_path', 'issued_at',
+        'training_ctrl_no', 'verification_hash', 'pdf_path', 'issued_at', 'archived_at',
     ];
 
-    protected $casts = ['issued_at' => 'datetime'];
+    // archived_at: issued for an earlier version of a course whose results a
+    // supervisor archived. Still genuine and verifiable, just no longer current.
+    protected $casts = ['issued_at' => 'datetime', 'archived_at' => 'datetime'];
 
     public function user()
     {

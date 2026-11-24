@@ -4,49 +4,38 @@ namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Course;
-use App\Models\User;
+use App\Models\ExamAttempt;
+use App\Services\TrainingStatus;
 use Inertia\Inertia;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(TrainingStatus $status)
     {
-        $trainees = User::where('role', 'trainee')
-            ->with(['enrollments.course', 'certificates', 'examAttempts', 'moduleCompletions'])
-            ->get();
+        $summary = $status->summary($status->rows());
 
-        $officers = $trainees->map(function ($t) {
-            $total = $t->enrollments->count();
-            $completed = $t->enrollments->where('status', 'completed')->count();
-
-            $status = match (true) {
-                $total === 0 => 'Not Enrolled',
-                $completed === $total => 'Completed',
-                $completed > 0 => 'In Progress',
-                default => 'Enrolled',
-            };
-
-            $latestExam = $t->examAttempts->last();
-
-            return [
-                'id' => $t->id,
-                'name' => $t->name,
-                'unit_office' => $t->unit_office,
-                'course_progress' => $total > 0 ? "{$completed}/{$total} Courses" : '—',
-                'course_status' => $status,
-                'exam_result' => $latestExam ? ($latestExam->passed ? 'Passed (' . $latestExam->score . ')' : 'Failed') : 'Pending',
-                'certificate_status' => $t->certificates->isNotEmpty() ? 'Issued' : 'Pending',
-            ];
-        });
+        // The latest final exam submissions that still count (not archived).
+        $recent = ExamAttempt::whereNull('archived_at')
+            ->whereHas('user', fn ($q) => $q->where('role', 'trainee'))
+            ->with(['user:id,first_name,last_name,unit_office', 'course:id,title'])
+            ->latest()->limit(8)->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'trainee_id' => $a->user_id,
+                'name' => $a->user->name,
+                'unit_office' => $a->user->unit_office,
+                'course_title' => $a->course->title,
+                'result' => $a->passed ? 'Passed' : 'Failed',
+                'score' => $a->score,
+                'submitted_at' => $a->created_at->format('Y-m-d'),
+            ]);
 
         return Inertia::render('Supervisor/Dashboard', [
             'stats' => [
-                'totalTrainees' => $trainees->count(),
+                ...$summary,
                 'coursesPublished' => Course::where('is_published', true)->count(),
-                'inProgress' => $officers->where('course_status', 'In Progress')->count(),
-                'completed' => $officers->where('course_status', 'Completed')->count(),
             ],
-            'officers' => $officers->values(),
+            'recent' => $recent,
         ]);
     }
 }

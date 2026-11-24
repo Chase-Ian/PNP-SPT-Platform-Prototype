@@ -21,7 +21,10 @@ class CertificateIssuer
 {
     public function issue(User $user, Course $course): Certificate
     {
-        $existing = Certificate::where('user_id', $user->id)->where('course_id', $course->id)->first();
+        // Archived certificates belong to an earlier version of the course, so a
+        // trainee who redoes it after an archive gets a new one.
+        $existing = Certificate::where('user_id', $user->id)->where('course_id', $course->id)
+            ->whereNull('archived_at')->first();
         if ($existing) {
             return $existing;
         }

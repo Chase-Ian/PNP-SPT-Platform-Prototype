@@ -69,7 +69,7 @@ function copyLink(cert) {
                                 <Award :size="22" />
                             </div>
                             <div class="min-w-0">
-                                <p class="font-bold text-[#0a1a4e] text-base leading-tight">{{ cert.title }}</p>
+                                <p class="font-bold text-[#0a1a4e] text-base leading-tight">{{ cert.title }}<span v-if="cert.archived" class="ml-1 bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium align-middle">Earlier course version</span></p>
                                 <p class="text-xs text-gray-500 mt-0.5">Instructor: <span class="font-medium text-gray-700">{{ cert.instructor_name }}</span></p>
                                 <p class="text-xs text-gray-400 mt-1">Issued: <span class="font-medium text-gray-600">{{ cert.issued_at }}</span></p>
 

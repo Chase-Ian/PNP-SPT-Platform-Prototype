@@ -63,6 +63,23 @@ class CertificateIssuerTest extends TestCase
         $this->assertSame(1, Certificate::count());
     }
 
+    public function test_passing_again_after_an_archive_issues_a_new_certificate(): void
+    {
+        Storage::fake();
+        $course = Course::create(['activity_code' => 'SPT-103', 'title' => 'Updated course']);
+        $user = $this->trainee();
+
+        $old = app(CertificateIssuer::class)->issue($user, $course);
+        $old->update(['archived_at' => now()]); // a supervisor archived the course's results
+
+        $new = app(CertificateIssuer::class)->issue($user, $course);
+
+        $this->assertFalse($old->is($new));
+        $this->assertNotSame($old->serial_id, $new->serial_id);
+        $this->assertNull($new->archived_at);
+        $this->assertSame(2, Certificate::where('user_id', $user->id)->count());
+    }
+
     public function test_the_qr_code_is_drawn_locally(): void
     {
         $uri = app(CertificateIssuer::class)->qrDataUri('https://example.test/verify/PNP-SPT-CP-2026-000001');

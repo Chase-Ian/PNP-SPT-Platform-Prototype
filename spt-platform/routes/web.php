@@ -14,7 +14,7 @@ use App\Http\Controllers\Admin\ModuleController as AdminModuleController;
 use App\Http\Controllers\Admin\StudentController as AdminStudentController;
 use App\Http\Controllers\Admin\ExamSettingController as AdminExamSettingController;
 use App\Http\Controllers\Admin\CertificateLogController;
-use App\Http\Controllers\Admin\AnalyticsController;
+use App\Http\Controllers\Supervisor\AnalyticsController;
 use App\Http\Controllers\Supervisor\MonitoringController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\Admin\LessonController;
@@ -88,6 +88,12 @@ Route::middleware('auth')->group(function () {
 // --- Supervisor routes ---
 Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(function () {
     Route::get('/dashboard', [SupervisorDashboardController::class, 'index'])->name('supervisor.dashboard');
+
+    // Trainee monitoring belongs to supervisors (statuses from saved records only).
+    Route::get('/trainees', [MonitoringController::class, 'index'])->name('supervisor.trainees.index');
+    Route::get('/trainees/{student}', [MonitoringController::class, 'show'])->name('supervisor.trainees.show');
+    Route::post('/courses/{course}/archive-results', [MonitoringController::class, 'archive'])->name('supervisor.courses.archive-results');
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('supervisor.analytics.index');
 });
 
 // --- Admin routes ---
@@ -124,8 +130,6 @@ Route::middleware(['auth', 'role:admin,supervisor'])->prefix('admin')->group(fun
     Route::put('/courses/{course}/exam-settings', [ExamQuestionController::class, 'updateSettings'])->name('admin.exam-settings.settings.update');
     Route::get('/courses/{course}/exam-questions/preview', [ExamQuestionController::class, 'preview'])->name('admin.exam-questions.preview');
 
-    // Read-only detail page, viewable by both roles — see reasoning below
-    Route::get('/students/{student}', [StudentController::class, 'show'])->name('admin.students.show');
 });
 
 Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
@@ -134,7 +138,6 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::post('/students/{student}/toggle-lock', [StudentController::class, 'toggleLock'])->name('admin.students.toggle-lock');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
     Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
-    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('admin.analytics.index');
     Route::get('/staff', [StaffController::class, 'index'])->name('admin.staff.index');
     Route::post('/staff', [StaffController::class, 'store'])->name('admin.staff.store');
     Route::post('/staff/{staff}/toggle-lock', [StaffController::class, 'toggleLock'])->name('admin.staff.toggle-lock');

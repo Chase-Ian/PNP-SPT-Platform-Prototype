@@ -64,7 +64,7 @@ const twoFactorText = computed(() => ({
                 </tr>
                 <tr>
                     <td>Training records</td>
-                    <td>Enrolments, lesson progress, module completions, assessment attempts (your answers, score, and pass or fail), and certificates (serial number, control number and issue date)</td>
+                    <td>Enrolments, lesson progress, module completions, final exam attempts (your answers, score, pass or fail, and whether a supervisor archived them after a course change), and certificates (serial number, control number, issue date, and whether they are for an earlier course version)</td>
                     <td>The Platform, as you train</td>
                 </tr>
                 <tr>
@@ -93,7 +93,7 @@ const twoFactorText = computed(() => ({
             <li>to create and manage your account and to confirm who you are (email verification, two-factor authentication and account locks);</li>
             <li>to deliver training, track your progress and grade your assessments;</li>
             <li>to issue certificates and let others check that they are genuine;</li>
-            <li>to let Supervisors and Administrators monitor training completion and readiness;</li>
+            <li>to let Supervisors monitor training results and readiness;</li>
             <li>to handle your requests, such as email changes, and to send account emails such as verification links, password resets and security notices;</li>
             <li>to keep the Platform secure, investigate incidents and keep an audit trail;</li>
             <li>to produce training statistics, using combined data that does not identify you wherever possible;</li>
@@ -120,8 +120,8 @@ const twoFactorText = computed(() => ({
         <h2>Who can see your data</h2>
         <ul>
             <li><strong>You</strong> can see your own profile, progress, results and certificates.</li>
-            <li><strong>Supervisors</strong> can see trainees' names, units, progress, assessment results and certificate status.</li>
-            <li><strong>Administrators</strong> can see account details and status, training records and email change requests. They can lock accounts and reset two-factor authentication.</li>
+            <li><strong>Supervisors</strong> can see trainees' names, units, course status (not submitted, submitted or archived), final exam results and certificate status. After a major course change, they can archive a course's results so trainees redo it.</li>
+            <li><strong>Administrators</strong> can see account details and status (including whether your email is verified and two-factor authentication is set up), issued certificates, overall statistics and email change requests. They can lock and delete accounts and reset two-factor authentication. They do not monitor individual training results.</li>
             <li>
                 <strong>Anyone with a certificate's serial number or QR code</strong> can see, on the public verification page,
                 the holder's name, the course, the issue date, the holder's unit or office and region, and the certificate's

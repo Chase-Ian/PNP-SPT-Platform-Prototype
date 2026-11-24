@@ -4,7 +4,7 @@ import SecurityReminder from '@/Components/SecurityReminder.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
-import { Home, BookOpen, X, Menu, LogOut, GraduationCap } from 'lucide-vue-next';
+import { Home, BookOpen, Users, BarChart3, X, Menu, LogOut, GraduationCap } from 'lucide-vue-next';
 
 const page = usePage();
 const user = page.props.auth.user;
@@ -12,6 +12,8 @@ const sidebarOpen = ref(true);
 
 const navItems = [
     { label: 'Dashboard', href: '/supervisor/dashboard', icon: Home, match: 'supervisor.dashboard' },
+    { label: 'Monitor Trainees', href: '/supervisor/trainees', icon: Users, match: 'supervisor.trainees*' },
+    { label: 'Analytics', href: '/supervisor/analytics', icon: BarChart3, match: 'supervisor.analytics*' },
     { label: 'Manage Courses & Modules', href: '/admin/courses', icon: BookOpen, match: 'admin.courses*|admin.modules*|admin.lessons*|admin.exam-questions*' },
 ];
 

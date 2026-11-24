@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\Supervisor;
 
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
@@ -64,7 +64,7 @@ class AnalyticsController extends Controller
                 ];
             });
 
-        return Inertia::render('Admin/Analytics/Index', [
+        return Inertia::render('Supervisor/Analytics', [
             'stats' => [
                 'totalEnrolled' => $totalEnrolled,
                 'avgPassRate' => $avgPassRate,

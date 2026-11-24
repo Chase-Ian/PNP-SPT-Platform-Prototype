@@ -1,106 +1,119 @@
+<!-- resources/js/Pages/Admin/Students/Index.vue
+     Trainee Accounts: account details and security status only. Training
+     results are monitored by supervisors (Supervisor/Trainees). -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { Eye, Lock, Unlock, Trash2 } from 'lucide-vue-next';
+import { Users, Lock, Unlock, KeyRound, Trash2 } from 'lucide-vue-next';
 
-const props = defineProps({ stats: Object, students: Array });
+const props = defineProps({ stats: Object, accounts: Array });
 const search = ref('');
 
 const filtered = computed(() => {
-    if (!search.value) return props.students;
+    if (!search.value) return props.accounts;
     const q = search.value.toLowerCase();
-    return props.students.filter(s =>
-        s.name.toLowerCase().includes(q) ||
-        s.email.toLowerCase().includes(q) ||
-        s.organization.toLowerCase().includes(q)
+    return props.accounts.filter(a =>
+        a.name.toLowerCase().includes(q) ||
+        a.email.toLowerCase().includes(q) ||
+        (a.unit_office || '').toLowerCase().includes(q)
     );
 });
 
-const remove = (student) => {
-    if (confirm(`Remove ${student.name} from the system?`)) {
-        router.delete(`/admin/students/${student.id}`);
+const toggleLock = (a) => {
+    if (confirm(`${a.is_locked ? 'Unlock' : 'Lock'} ${a.name}'s account?${a.is_locked ? '' : ' They will be signed out right away.'}`)) {
+        router.post(`/admin/students/${a.id}/toggle-lock`, {}, { preserveScroll: true });
     }
 };
 
-const toggleLock = (student) => {
-    const action = student.is_locked ? 'unlock' : 'lock';
-    if (confirm(`${action === 'lock' ? 'Lock' : 'Unlock'} ${student.name}'s account?`)) {
-        router.post(`/admin/students/${student.id}/toggle-lock`);
+const resetTwoFactor = (a) => {
+    if (confirm(`Reset two-factor authentication for ${a.name}? Their authenticator and recovery codes stop working and they must set it up again.`)) {
+        router.post(route('admin.users.reset-two-factor', a.id), {}, { preserveScroll: true });
+    }
+};
+
+const remove = (a) => {
+    if (confirm(`Delete ${a.name}'s account? This permanently removes their training records and certificates and can't be undone.`)) {
+        router.delete(`/admin/students/${a.id}`, { preserveScroll: true });
     }
 };
 </script>
 
 <template>
-    <Head title="Monitor Trainees" />
+    <Head title="Trainee Accounts" />
     <AdminLayout>
-        <AdminPageBanner badge="👥 Personnel Training Roster • All Units" title="Monitor Trainees"
-            subtitle="Track enrolled police trainees, module progress percentages, exam results, and certification status." />
+        <AdminPageBanner :icon="Users" badge-text="Account Administration • Trainees"
+            title="Trainee Accounts"
+            subtitle="Lock, unlock, reset two-factor authentication or delete trainee accounts. Supervisors monitor training results." />
 
         <div class="space-y-4">
-            <input v-model="search" type="text" placeholder="Search by name, email, or organization..."
-                class="w-full border rounded-lg px-3 py-2 text-sm" />
-
-            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-3 gap-4">
                 <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Total Students</p>
-                    <p class="text-2xl font-bold text-blue-900">{{ stats.totalStudents }}</p>
+                    <p class="text-xs text-gray-500">Trainee accounts</p>
+                    <p class="text-2xl font-bold text-blue-900">{{ stats.total }}</p>
                 </div>
                 <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Total Enrollments</p>
-                    <p class="text-2xl font-bold text-blue-900">{{ stats.totalEnrollments }}</p>
+                    <p class="text-xs text-gray-500">Locked</p>
+                    <p class="text-2xl font-bold text-red-600">{{ stats.locked }}</p>
                 </div>
                 <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Courses Completed</p>
-                    <p class="text-2xl font-bold text-green-600">{{ stats.coursesCompleted }}</p>
-                </div>
-                <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Avg Progress</p>
-                    <p class="text-2xl font-bold text-blue-900">{{ stats.avgProgress }}%</p>
+                    <p class="text-xs text-gray-500">With 2FA set up</p>
+                    <p class="text-2xl font-bold text-green-600">{{ stats.withTwoFactor }}</p>
                 </div>
             </div>
 
+            <input v-model="search" type="text" placeholder="Search by name, email or station..."
+                class="w-full border rounded-lg px-3 py-2 text-sm" />
+
             <div class="bg-white rounded-xl border p-6">
-                <table class="w-full text-sm">
+                <p v-if="filtered.length === 0" class="text-sm text-gray-400">No trainee accounts found.</p>
+                <table v-else class="w-full text-sm">
                     <thead>
                         <tr class="text-left text-xs text-gray-400 uppercase border-b">
-                            <th class="py-2">Student</th>
-                            <th class="py-2">Organization</th>
-                            <th class="py-2">Courses</th>
-                            <th class="py-2">Progress</th>
-                            <th class="py-2">Certificates</th>
-                            <th class="py-2 min-w-[140px]">Actions</th>
+                            <th class="py-2">Trainee</th>
+                            <th class="py-2">Email</th>
+                            <th class="py-2">Unit / Region</th>
+                            <th class="py-2">Account</th>
+                            <th class="py-2">2FA</th>
+                            <th class="py-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
-                        <tr v-for="s in filtered" :key="s.id" class="border-b last:border-0">
+                        <tr v-for="a in filtered" :key="a.id" class="border-b last:border-0 align-top">
                             <td class="py-3">
-                                <p class="font-medium">{{ s.name }}</p>
-                                <p class="text-xs text-gray-400">{{ s.email }}</p>
-                            </td>
-                            <td class="py-3 text-gray-500">{{ s.organization }}</td>
-                            <td class="py-3">{{ s.courses }} complete</td>
-                            <td class="py-3">
-                                <div class="w-24 bg-gray-100 rounded-full h-2">
-                                    <div class="bg-blue-900 h-2 rounded-full" :style="{ width: s.progress_percent + '%' }"></div>
-                                </div>
-                                <span class="text-xs text-gray-400">{{ s.progress_percent }}% complete</span>
+                                <p class="font-medium">{{ a.name }}</p>
+                                <p class="text-xs text-gray-400">{{ a.rank }}</p>
                             </td>
                             <td class="py-3">
-                                <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ s.certificates }}</span>
+                                {{ a.email }}
+                                <p class="text-xs" :class="a.email_verified ? 'text-green-600' : 'text-amber-600'">
+                                    {{ a.email_verified ? 'Verified' : 'Not verified' }}
+                                </p>
+                            </td>
+                            <td class="py-3 text-gray-500">
+                                {{ a.unit_office || '—' }}
+                                <p class="text-xs text-gray-400">{{ a.region }}</p>
                             </td>
                             <td class="py-3">
-                                <div class="flex items-center justify-between gap-3">
-                                    <Link :href="`/admin/students/${s.id}`" class="text-blue-600 hover:text-blue-800" title="View Detail">
-                                        <Eye :size="16" />
-                                    </Link>
-                                    <button @click="toggleLock(s)" :class="s.is_locked ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'"
-                                        :title="s.is_locked ? 'Unlock Account' : 'Lock Account'">
-                                        <Unlock v-if="s.is_locked" :size="16" />
+                                <span :class="a.is_locked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
+                                    class="px-2 py-0.5 rounded-full text-xs font-medium">{{ a.is_locked ? 'Locked' : 'Active' }}</span>
+                            </td>
+                            <td class="py-3 text-xs" :class="a.two_factor_enabled ? 'text-green-700' : 'text-gray-400'">
+                                {{ a.two_factor_enabled ? 'Enabled' : 'Not set up' }}
+                            </td>
+                            <td class="py-3">
+                                <div class="flex items-center gap-3">
+                                    <button @click="toggleLock(a)" :title="a.is_locked ? 'Unlock account' : 'Lock account'"
+                                        :class="a.is_locked ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'">
+                                        <Unlock v-if="a.is_locked" :size="16" />
                                         <Lock v-else :size="16" />
                                     </button>
-                                    <button @click="remove(s)" class="text-red-600 hover:text-red-800" title="Delete">
+                                    <button v-if="a.two_factor_enabled" @click="resetTwoFactor(a)" title="Reset 2FA (lost device)"
+                                        class="text-blue-600 hover:text-blue-800">
+                                        <KeyRound :size="16" />
+                                    </button>
+                                    <button @click="remove(a)" title="Delete account" class="text-red-600 hover:text-red-800">
                                         <Trash2 :size="16" />
                                     </button>
                                 </div>

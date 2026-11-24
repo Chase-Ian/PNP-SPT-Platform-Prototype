@@ -1,38 +1,23 @@
-<!-- resources/js/Pages/Admin/Dashboard.vue -->
+<!-- resources/js/Pages/Admin/Dashboard.vue
+     System overview. Trainee monitoring is the supervisor's job
+     (Supervisor/Trainees), so there is no progress table here. -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { ShieldCheck } from 'lucide-vue-next';
+import { ShieldCheck, Lock, MailCheck } from 'lucide-vue-next';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
 import { greetingFor } from '@/greeting';
 
-const props = defineProps({ stats: Object, officers: Array });
+defineProps({ stats: Object });
 const user = usePage().props.auth.user;
-
-const search = ref('');
-const regionFilter = ref('All Police Regions (PRO)');
-
-const regions = computed(() => {
-    const unique = [...new Set(props.officers.map(o => o.region).filter(Boolean))];
-    return ['All Police Regions (PRO)', ...unique];
-});
-
-const filtered = computed(() => {
-    return props.officers.filter(o => {
-        const matchesSearch = !search.value || o.name.toLowerCase().includes(search.value.toLowerCase()) || (o.unit_office || '').toLowerCase().includes(search.value.toLowerCase());
-        const matchesRegion = regionFilter.value === 'All Police Regions (PRO)' || o.region === regionFilter.value;
-        return matchesSearch && matchesRegion;
-    });
-});
 </script>
 
 <template>
     <Head title="Admin Dashboard" />
     <AdminLayout>
-        <AdminPageBanner :icon="ShieldCheck" badge-text="Command Admin Portal • Live Personnel Oversight"
+        <AdminPageBanner :icon="ShieldCheck" badge-text="Command Admin Portal • Platform Administration"
             :title="greetingFor(user.role)"
-            subtitle="Monitor police personnel training progress, configure course modules, and adjust final exam parameters.">
+            subtitle="Manage trainee and staff accounts, course content and platform security. Supervisors monitor trainee results.">
         </AdminPageBanner>
 
         <div>
@@ -61,49 +46,30 @@ const filtered = computed(() => {
             </div>
         </div>
 
-        <div class="bg-white rounded-xl border p-6">
-            <div class="flex justify-between items-start mb-4">
-                <div>
-                    <h3 class="font-semibold flex items-center gap-1">👥 Trainee Progress Monitoring</h3>
-                    <p class="text-xs text-gray-500">Real-time monitoring of personnel completion rates, module progress, and exam scores across all units.</p>
-                </div>
-                <div class="flex gap-2">
-                    <input v-model="search" type="text" placeholder="Search trainee, rank, station..." class="border rounded-lg px-3 py-1.5 text-sm w-56" />
-                    <select v-model="regionFilter" class="border rounded-lg px-3 py-1.5 text-sm">
-                        <option v-for="r in regions" :key="r" :value="r">{{ r }}</option>
-                    </select>
-                </div>
+        <div>
+            <h3 class="font-semibold text-gray-700 mb-3">🔐 Accounts and Security</h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Link :href="route('admin.students.index')" class="bg-white rounded-xl border p-5 flex items-center justify-between hover:border-blue-300">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-red-100 text-red-600 rounded-full flex items-center justify-center"><Lock :size="18" /></div>
+                        <div>
+                            <p class="text-sm font-medium">Locked accounts</p>
+                            <p class="text-xs text-gray-500">Review in Trainee Accounts or Manage Staff</p>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold">{{ stats.lockedAccounts }}</p>
+                </Link>
+                <Link :href="route('admin.email-requests.index')" class="bg-white rounded-xl border p-5 flex items-center justify-between hover:border-blue-300">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center"><MailCheck :size="18" /></div>
+                        <div>
+                            <p class="text-sm font-medium">Email change requests waiting</p>
+                            <p class="text-xs text-gray-500">Approve or reject them</p>
+                        </div>
+                    </div>
+                    <p class="text-2xl font-bold">{{ stats.pendingEmailRequests }}</p>
+                </Link>
             </div>
-
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                        <th class="py-2 px-3">Trainee</th>
-                        <th class="py-2 px-3">Assigned Unit / Station</th>
-                        <th class="py-2 px-3">Enrolled Course</th>
-                        <th class="py-2 px-3">Modules</th>
-                        <th class="py-2 px-3">Exam Result</th>
-                        <th class="py-2 px-3">Certificate</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="(o, i) in filtered" :key="i" class="border-b last:border-0">
-                        <td class="py-3 px-3 font-medium">{{ o.name }}</td>
-                        <td class="py-3 px-3 text-gray-500">
-                            {{ o.unit_office || '—' }}
-                            <p class="text-xs text-gray-400">{{ o.region }}</p>
-                        </td>
-                        <td class="py-3 px-3">{{ o.course }}</td>
-                        <td class="py-3 px-3"><span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ o.modules_completed }}</span></td>
-                        <td class="py-3 px-3">
-                            <span :class="o.exam_result.startsWith('Passed') ? 'bg-green-100 text-green-700' : o.exam_result === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-500'" class="px-2 py-0.5 rounded-full text-xs">{{ o.exam_result }}</span>
-                        </td>
-                        <td class="py-3 px-3">
-                            <span :class="o.certificate_status === 'Issued' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'" class="px-2 py-0.5 rounded-full text-xs">{{ o.certificate_status }}</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
         </div>
     </AdminLayout>
 </template>

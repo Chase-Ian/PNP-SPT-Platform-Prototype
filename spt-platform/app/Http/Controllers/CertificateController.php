@@ -23,6 +23,7 @@ class CertificateController extends Controller
                 'serial_id'        => $cert->serial_id,
                 'training_ctrl_no' => $cert->training_ctrl_no ?? 'N/A',
                 'verification_url' => $cert->verification_url,
+                'archived'         => $cert->archived_at !== null,
             ]);
 
         return Inertia::render('Certificates/Index', [
@@ -64,6 +65,7 @@ class CertificateController extends Controller
                 'region'           => $certificate->user->region ?? 'N/A',
                 'issued_at'        => $certificate->issued_at->format('d F Y'),
                 'verification_url' => $certificate->verification_url,
+                'archived'         => $certificate->archived_at !== null,
             ] : null,
         ]);
     }

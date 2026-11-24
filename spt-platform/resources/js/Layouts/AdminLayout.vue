@@ -5,7 +5,7 @@ import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import NotificationBell from '@/Components/NotificationBell.vue';
 import {
-    Home, BookOpen, Users, ClipboardList, Award, BarChart3,
+    Home, BookOpen, Users, ClipboardList, Award,
     UserCog, X, Menu, LogOut, GraduationCap, MailCheck,
 } from 'lucide-vue-next';
 
@@ -16,9 +16,8 @@ const sidebarOpen = ref(true);
 const navItems = [
     { label: 'Admin Dashboard', href: '/admin/dashboard', icon: Home, match: 'admin.dashboard' },
     { label: 'Manage Courses & Modules', href: '/admin/courses', icon: BookOpen, match: 'admin.courses*' },
-    { label: 'Monitor Trainees', href: '/admin/students', icon: Users, match: 'admin.students*' },
+    { label: 'Trainee Accounts', href: '/admin/students', icon: Users, match: 'admin.students*' },
     { label: 'Monitor Certificates', href: '/admin/certificates', icon: Award, match: 'admin.certificates*' },
-    { label: 'Analytics', href: '/admin/analytics', icon: BarChart3, match: 'admin.analytics*' },
     { label: 'Manage Staff', href: '/admin/staff', icon: UserCog, match: 'admin.staff*' },
     { label: 'Email Change Requests', href: '/admin/email-requests', icon: MailCheck, match: 'admin.email-requests*' },
 ];

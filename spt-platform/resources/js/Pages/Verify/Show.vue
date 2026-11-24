@@ -80,6 +80,7 @@ const isLoggedIn = computed(() => !!page.props.auth?.user);
                                     <div>
                                         <p class="text-xs text-gray-400 font-medium">Course / Module</p>
                                         <p class="text-sm font-semibold text-gray-800">{{ certificate.title }}</p>
+                                        <p v-if="certificate.archived" class="text-xs text-purple-700 mt-0.5">Issued for an earlier version of this course. Still genuine.</p>
                                     </div>
                                 </div>
 
