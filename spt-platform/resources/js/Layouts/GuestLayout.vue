@@ -1,5 +1,6 @@
 <script setup>
 import ApplicationLogo from '@/Components/ApplicationLogo.vue';
+import LegalLinks from '@/Components/LegalLinks.vue';
 import { Link } from '@inertiajs/vue3';
 </script>
 
@@ -18,5 +19,7 @@ import { Link } from '@inertiajs/vue3';
         >
             <slot />
         </div>
+
+        <LegalLinks class="mt-4 mb-6" />
     </div>
 </template>

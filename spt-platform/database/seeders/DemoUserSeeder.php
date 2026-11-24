@@ -56,6 +56,11 @@ class DemoUserSeeder extends Seeder
             ->whereNull('email_verified_at')
             ->update(['email_verified_at' => now()]);
 
+        // ...and start with the current Terms of Service and Privacy Notice accepted.
+        User::whereIn('email', ['maria.cruz@pnp.gov.ph', 'admin.demo@pnp.gov.ph', 'supervisor.demo@pnp.gov.ph'])
+            ->whereNull('terms_accepted_version')
+            ->update(['terms_accepted_version' => config('legal.version'), 'terms_accepted_at' => now()]);
+
         if ($maria) {
             DB::table('notifications')->insert([
                 [

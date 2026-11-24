@@ -1,4 +1,5 @@
 <script setup>
+import LegalLinks from '@/Components/LegalLinks.vue';
 import SecurityReminder from '@/Components/SecurityReminder.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { ref } from 'vue';
@@ -84,6 +85,7 @@ const initials = () => `${user.first_name?.[0] ?? ''}${user.last_name?.[0] ?? ''
             <main class="flex-1 p-6 space-y-6 overflow-x-hidden">
                 <SecurityReminder />
                 <slot />
+                <LegalLinks class="pt-6 pb-2" />
             </main>
         </div>
     </div>

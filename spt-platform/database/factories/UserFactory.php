@@ -31,8 +31,23 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
+            'terms_accepted_version' => config('legal.version'),
+            'terms_accepted_at' => now(),
         ];
     }
+
+    /**
+     * Indicate that the user hasn't accepted the current Terms of Service
+     * and Privacy Notice yet.
+     */
+    public function withoutAcceptedTerms(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'terms_accepted_version' => null,
+            'terms_accepted_at' => null,
+        ]);
+    }
+
     /**
      * Indicate that the model's email address should be unverified.
      */

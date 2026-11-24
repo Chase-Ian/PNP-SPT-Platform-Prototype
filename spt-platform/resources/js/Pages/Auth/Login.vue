@@ -1,4 +1,5 @@
 <script setup>
+import LegalLinks from '@/Components/LegalLinks.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { Monitor, ShieldCheck, Mail, Lock, Eye, EyeOff, ArrowRight, UserRound } from 'lucide-vue-next';
@@ -99,6 +100,7 @@ const submit = () => {
                 <span class="inline-flex items-center gap-1"><ShieldCheck :size="12" /> Encrypted 256-Bit SSL Connection</span>
                 <span class="inline-flex items-center gap-1"><Lock :size="12" /> PNP Cybercrime Compliant</span>
             </p>
+            <LegalLinks />
             <p class="text-xs text-gray-300">© 2026 Philippine National Police — Directorate for Human Resource & Doctrine Development</p>
         </div>
     </div>

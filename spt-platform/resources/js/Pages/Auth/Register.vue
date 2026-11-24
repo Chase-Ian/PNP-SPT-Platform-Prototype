@@ -56,6 +56,7 @@ const form = useForm({
     region: proOptions[0],
     password: '',
     password_confirmation: '',
+    terms: false,
 });
 
 const submit = () => {
@@ -123,6 +124,19 @@ const submit = () => {
                 <InputLabel for="password_confirmation" value="Confirm Password" />
                 <TextInput id="password_confirmation" v-model="form.password_confirmation" type="password" class="mt-1 block w-full" required autocomplete="new-password" />
                 <InputError class="mt-2" :message="form.errors.password_confirmation" />
+            </div>
+
+            <div class="mt-4">
+                <label class="flex items-start gap-2 text-sm text-gray-700">
+                    <input v-model="form.terms" type="checkbox" required class="mt-0.5 rounded border-gray-300" />
+                    <span>
+                        I agree to the
+                        <a :href="route('legal.terms')" target="_blank" rel="noopener" class="text-blue-600 underline">Terms of Service</a>
+                        and have read the
+                        <a :href="route('legal.privacy')" target="_blank" rel="noopener" class="text-blue-600 underline">Privacy Notice</a>.
+                    </span>
+                </label>
+                <InputError class="mt-2" :message="form.errors.terms" />
             </div>
 
             <div class="mt-4 flex items-center justify-end">

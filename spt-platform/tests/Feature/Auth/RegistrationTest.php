@@ -32,6 +32,7 @@ class RegistrationTest extends TestCase
             'region' => 'PRO NCR - National Capital Region (NCR)',
             'password' => 'password',
             'password_confirmation' => 'password',
+            'terms' => '1',
         ]);
 
         $this->assertAuthenticated();

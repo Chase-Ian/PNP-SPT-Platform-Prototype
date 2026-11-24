@@ -42,6 +42,7 @@ class User extends Authenticatable implements MustVerifyEmail
             'email_verified_at' => 'datetime',
             'two_factor_confirmed_at' => 'datetime',
             'two_factor_codes_acknowledged_at' => 'datetime',
+            'terms_accepted_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -74,6 +75,11 @@ class User extends Authenticatable implements MustVerifyEmail
     public function emailChangeRequests()
     {
         return $this->hasMany(EmailChangeRequest::class);
+    }
+
+    public function legalAcceptances()
+    {
+        return $this->hasMany(LegalAcceptance::class);
     }
 
     public function sendPasswordResetNotification($token): void

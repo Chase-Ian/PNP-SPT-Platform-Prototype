@@ -29,8 +29,13 @@ services:
         sync: false
       - key: CACHE_DRIVER
         value: file
+      # Database sessions survive redeploys, and locking an account can end
+      # its sessions right away (AccountLockService).
       - key: SESSION_DRIVER
-        value: file
+        value: database
+      # Session cookies are only sent over HTTPS.
+      - key: SESSION_SECURE_COOKIE
+        value: true
       - key: QUEUE_CONNECTION
         value: sync
       - key: FILESYSTEM_DISK

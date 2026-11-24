@@ -181,6 +181,35 @@ class AccountSecurityTest extends TestCase
             ->missing('auth.user.two_factor_recovery_codes'));
     }
 
+    // ---------- locked accounts ----------
+
+    public function test_a_locked_account_is_signed_out_on_its_next_request(): void
+    {
+        $user = $this->makeUser();
+        $this->actingAs($user)->get('/profile')->assertOk();
+
+        // Locked by an Admin while this session is still open.
+        $user->forceFill(['is_locked' => true, 'locked_at' => now()])->save();
+
+        $this->actingAs($user->fresh())->get('/profile')
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors(['email' => 'This account has been locked. Please contact your administrator.']);
+        $this->assertGuest();
+    }
+
+    public function test_remember_me_cannot_sign_a_locked_account_back_in(): void
+    {
+        $user = $this->makeUser(attrs: ['remember_token' => 'remember-token-123', 'is_locked' => true]);
+        $recaller = auth()->guard('web')->getRecallerName();
+
+        $this->withCookie($recaller, "{$user->id}|remember-token-123|{$user->password}")
+            ->get('/profile')
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+        $this->assertNotSame('remember-token-123', $user->fresh()->remember_token);
+    }
+
     // ---------- login code ----------
 
     public function test_wrong_login_codes_are_limited_to_five_a_minute(): void

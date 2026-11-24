@@ -1,5 +1,6 @@
 <!-- Verify/Index.vue -->
 <script setup>
+import LegalLinks from '@/Components/LegalLinks.vue';
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
 import { Head, Link, router, usePage } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
@@ -109,6 +110,7 @@ function submit() {
                 </div>
             </div>
 
+            <LegalLinks v-if="!isLoggedIn" class="mt-8" />
         </div>
     </component>
 </template>

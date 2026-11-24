@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Services\LegalAgreement;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,7 +30,7 @@ class RegisteredUserController extends Controller
      *
      * @throws ValidationException
      */
-    public function store(Request $request): RedirectResponse
+    public function store(Request $request, LegalAgreement $legal): RedirectResponse
     {
         $request->merge([
             'email' => preg_replace('/[\r\n]|%0[ad]/i', '', (string) $request->input('email')),
@@ -79,6 +80,9 @@ $request->validate([
         'NHQ Camp Crame - PNP National Headquarters',
     ]),
     'password' => ['required', 'confirmed', Rules\Password::defaults()],
+    'terms' => ['accepted'],
+], [
+    'terms.accepted' => 'You must agree to the Terms of Service and acknowledge the Privacy Notice to register.',
 ]);
 
         $user = User::create([
@@ -93,6 +97,9 @@ $request->validate([
             // accounts are created by an Admin in Manage Staff.
             'role' => 'trainee',
         ]);
+
+        // Proof of agreement: version, time and IP address (see LegalAgreement).
+        $legal->record($user, $request);
 
         event(new Registered($user));
         Auth::login($user);

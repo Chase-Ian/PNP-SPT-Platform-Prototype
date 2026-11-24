@@ -28,6 +28,7 @@ use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardCo
 use App\Http\Controllers\Admin\TwoFactorResetController;
 use App\Http\Controllers\Admin\EmailChangeRequestController as AdminEmailChangeRequestController;
 use App\Http\Controllers\EmailChangeRequestController;
+use App\Http\Controllers\LegalController;
 
 Route::get('/', function () {
     return redirect('/login');
@@ -144,6 +145,16 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/email-requests', [AdminEmailChangeRequestController::class, 'index'])->name('admin.email-requests.index');
     Route::post('/email-requests/{emailChangeRequest}/approve', [AdminEmailChangeRequestController::class, 'approve'])->name('admin.email-requests.approve');
     Route::post('/email-requests/{emailChangeRequest}/reject', [AdminEmailChangeRequestController::class, 'reject'])->name('admin.email-requests.reject');
+});
+
+// --- Public legal documents (linked from sign-up and every page footer) ---
+Route::get('/terms', [LegalController::class, 'terms'])->name('legal.terms');
+Route::get('/privacy', [LegalController::class, 'privacy'])->name('legal.privacy');
+
+// Accepting the current version (the Access Gate sends users here when needed)
+Route::middleware('auth')->group(function () {
+    Route::get('/legal/accept', [LegalController::class, 'showAccept'])->name('legal.accept');
+    Route::post('/legal/accept', [LegalController::class, 'accept'])->name('legal.accept.store');
 });
 
 // --- Public — no auth, matches the PDF's Certificate Verification screen ---

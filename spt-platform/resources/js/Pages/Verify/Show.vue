@@ -1,5 +1,6 @@
 <!-- Verify/Show.vue -->
 <script setup>
+import LegalLinks from '@/Components/LegalLinks.vue';
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
 import { Link, usePage } from '@inertiajs/vue3';
 import { computed } from 'vue';
@@ -166,6 +167,7 @@ const isLoggedIn = computed(() => !!page.props.auth?.user);
                 </div>
             </div>
 
+            <LegalLinks v-if="!isLoggedIn" class="mt-8" />
         </div>
     </component>
 </template>

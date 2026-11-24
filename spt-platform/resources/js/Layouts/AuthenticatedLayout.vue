@@ -1,4 +1,5 @@
 <script setup>
+import LegalLinks from '@/Components/LegalLinks.vue';
 import SecurityReminder from '@/Components/SecurityReminder.vue';
 import { computed } from 'vue';
 import { usePage } from '@inertiajs/vue3';
@@ -211,6 +212,7 @@ const dashboardActive = computed(() => {
             <main>
                 <SecurityReminder />
                 <slot />
+                <LegalLinks class="pt-6 pb-2" />
             </main>
         </div>
     </div>
