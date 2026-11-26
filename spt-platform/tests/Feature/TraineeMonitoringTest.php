@@ -28,7 +28,7 @@ class TraineeMonitoringTest extends TestCase
             'rank' => 'Patrolman/Patrolwoman (Pat)',
             'role' => $role,
             'unit_office' => 'Station 1',
-            'region' => 'PRO NCR - National Capital Region (NCR)',
+            'region' => 'NCRPO - National Capital Region Police Office',
         ]);
     }
 

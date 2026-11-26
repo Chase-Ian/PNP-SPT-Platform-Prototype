@@ -26,8 +26,6 @@ use App\Http\Controllers\LessonQuizController;
 use App\Http\Controllers\Admin\StudentController;
 use App\Http\Controllers\Supervisor\DashboardController as SupervisorDashboardController;
 use App\Http\Controllers\Admin\TwoFactorResetController;
-use App\Http\Controllers\Admin\EmailChangeRequestController as AdminEmailChangeRequestController;
-use App\Http\Controllers\EmailChangeRequestController;
 use App\Http\Controllers\LegalController;
 
 Route::get('/', function () {
@@ -37,28 +35,35 @@ Route::get('/', function () {
 Route::get('/dashboard', function () {
     $user = auth()->user();
 
-    if ($user->role === 'admin' && ! request()->has('view')) {
+    // Each account has one role, so staff always go to their own dashboard.
+    if ($user->role === 'admin') {
         return redirect()->route('admin.dashboard');
     }
-    if ($user->role === 'supervisor' && ! request()->has('view')) {
+    if ($user->role === 'supervisor') {
         return redirect()->route('supervisor.dashboard');
     }
 
     return app(DashboardController::class)->index(request());
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-// --- General authenticated routes (trainee + supervisor + admin all use these) ---
+// --- Every signed-in account: profile, notifications, lesson pictures ---
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    // Email can't be edited directly; users ask an admin to change it.
-    Route::post('/profile/email-change-request', [EmailChangeRequestController::class, 'store'])
-        ->middleware('throttle:5,60')->name('profile.email-request.store');
-    Route::delete('/profile/email-change-request/{emailChangeRequest}', [EmailChangeRequestController::class, 'destroy'])
-        ->name('profile.email-request.destroy');
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
 
+    // Trainees see these pictures in lessons; staff in the lesson editor and previews.
+    Route::get('/lesson-images/{filename}', [LessonController::class, 'showImage'])
+        ->where('filename', '[0-9a-f\-]{36}\.(jpg|png)')->name('lessons.images.show');
+});
+
+// --- Training: trainees only. Each account has exactly one role, so
+// supervisors and admins can't enroll, take lessons or exams, or hold
+// certificates. ---
+Route::middleware(['auth', 'role:trainee'])->group(function () {
     Route::get('/courses', [CourseController::class, 'index'])->name('courses.index');
     Route::post('/courses/{course}/enroll', [CourseController::class, 'enroll'])->name('courses.enroll');
     Route::post('/courses/{course}/drop', [CourseController::class, 'drop'])->name('courses.drop');
@@ -67,23 +72,14 @@ Route::middleware('auth')->group(function () {
     Route::get('/certificates/{certificate}/download', [CertificateController::class, 'download'])->name('certificates.download');
     Route::get('/certificates/{certificate}/view', [CertificateController::class, 'view'])->name('certificates.view');
 
-    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
-    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
-
     Route::get('/exams/{course}', [ExamController::class, 'show'])->name('exams.show');
     Route::post('/exams/{course}', [ExamController::class, 'submit'])->name('exams.submit');
     Route::get('/exams/result/{attempt}', [ExamController::class, 'result'])->name('exams.result');
 
     Route::get('/lessons/{lesson}', [LessonViewController::class, 'show'])->name('lessons.show');
-    Route::get('/lesson-images/{filename}', [LessonController::class, 'showImage'])
-    ->where('filename', '[0-9a-f\-]{36}\.(jpg|png)')->name('lessons.images.show');
-
     Route::get('/lessons/{lesson}/quiz', [LessonQuizController::class, 'show'])->name('lessons.quiz.show');
     Route::post('/lessons/{lesson}/quiz', [LessonQuizController::class, 'submit'])->name('lessons.quiz.submit');
-    
-    Route::get('/lesson-images/{filename}', [LessonController::class, 'showImage'])
-    ->where('filename', '[0-9a-f\-]{36}\.(jpg|png)')->name('lessons.images.show');
-    });
+});
 
 // --- Supervisor routes ---
 Route::middleware(['auth', 'role:supervisor'])->prefix('supervisor')->group(function () {
@@ -137,17 +133,18 @@ Route::middleware(['auth', 'role:admin'])->prefix('admin')->group(function () {
     Route::get('/students', [StudentController::class, 'index'])->name('admin.students.index');
     Route::post('/students/{student}/toggle-lock', [StudentController::class, 'toggleLock'])->name('admin.students.toggle-lock');
     Route::delete('/students/{student}', [StudentController::class, 'destroy'])->name('admin.students.destroy');
+    Route::post('/students/{student}/reinstate', [StudentController::class, 'reinstate'])->withTrashed()->name('admin.students.reinstate');
+    Route::delete('/students/{student}/permanently', [StudentController::class, 'erase'])->withTrashed()->name('admin.students.erase');
     Route::get('/certificates', [CertificateLogController::class, 'index'])->name('admin.certificates.index');
     Route::get('/staff', [StaffController::class, 'index'])->name('admin.staff.index');
     Route::post('/staff', [StaffController::class, 'store'])->name('admin.staff.store');
     Route::post('/staff/{staff}/toggle-lock', [StaffController::class, 'toggleLock'])->name('admin.staff.toggle-lock');
     Route::delete('/staff/{staff}', [StaffController::class, 'destroy'])->name('admin.staff.destroy');
+    Route::post('/staff/{staff}/reinstate', [StaffController::class, 'reinstate'])->withTrashed()->name('admin.staff.reinstate');
+    Route::delete('/staff/{staff}/permanently', [StaffController::class, 'erase'])->withTrashed()->name('admin.staff.erase');
 
     // Account recovery
     Route::post('/users/{user}/reset-two-factor', [TwoFactorResetController::class, 'store'])->name('admin.users.reset-two-factor');
-    Route::get('/email-requests', [AdminEmailChangeRequestController::class, 'index'])->name('admin.email-requests.index');
-    Route::post('/email-requests/{emailChangeRequest}/approve', [AdminEmailChangeRequestController::class, 'approve'])->name('admin.email-requests.approve');
-    Route::post('/email-requests/{emailChangeRequest}/reject', [AdminEmailChangeRequestController::class, 'reject'])->name('admin.email-requests.reject');
 });
 
 // --- Public legal documents (linked from sign-up and every page footer) ---
@@ -165,6 +162,9 @@ Route::get('/verify', function () {
     return Inertia::render('Verify/Index');
 })->name('certificates.verify.form');
 
-Route::get('/verify/{serial}', [CertificateController::class, 'verify'])->name('certificates.verify');
+// Limited per visitor, so the holders' names can't be harvested by stepping
+// through certificate numbers.
+Route::get('/verify/{serial}', [CertificateController::class, 'verify'])
+    ->middleware('throttle:30,1')->name('certificates.verify');
 
 require __DIR__.'/auth.php';

@@ -5,85 +5,78 @@ namespace Database\Seeders;
 use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
+/**
+ * Three demo accounts (trainee, supervisor, admin) for local development and
+ * presentations. They must never exist on the live site with a shared or
+ * published password: that would let anyone in. So this seeder does nothing
+ * in production, and the password comes from DEMO_PASSWORD in your local
+ * .env, or is generated and printed once.
+ */
 class DemoUserSeeder extends Seeder
 {
+    private const ACCOUNTS = [
+        'maria.cruz@pnp.gov.ph' => [
+            'first_name' => 'Maria',
+            'last_name' => 'Cruz',
+            'rank' => 'Patrolman/Patrolwoman (Pat)',
+            'unit_office' => 'Manila Police District - Station 1 (Ermita)',
+            'region' => 'NCRPO - National Capital Region Police Office',
+            'role' => 'trainee',
+        ],
+        'admin.demo@pnp.gov.ph' => [
+            'first_name' => 'Admin',
+            'last_name' => 'Demo',
+            'rank' => 'Police Colonel (PCol)',
+            'unit_office' => 'PNP National Headquarters',
+            'region' => 'NHQ Camp Crame - PNP National Headquarters',
+            'role' => 'admin',
+        ],
+        'supervisor.demo@pnp.gov.ph' => [
+            'first_name' => 'Supervisor',
+            'last_name' => 'Demo',
+            'rank' => 'Police Lieutenant Colonel (PLtCol)',
+            'unit_office' => 'Regional Training Command',
+            'region' => 'NCRPO - National Capital Region Police Office',
+            'role' => 'supervisor',
+        ],
+    ];
+
     public function run(): void
     {
-        $maria = User::firstOrCreate(
-            ['email' => 'maria.cruz@pnp.gov.ph'],
-            [
-                'first_name' => 'Maria',
-                'last_name' => 'Cruz',
-                'rank' => 'Pat.',
-                'password' => Hash::make('demo1234'),
-                'unit_office' => 'Manila Police District - Station 1 (Ermita)',
-                'region' => 'National Capital Region (NCR)',
-                'two_factor_verified' => true,
-                'role' => 'trainee',
-            ]
-        );
+        if (app()->environment('production')) {
+            $this->command?->warn('Demo accounts are not created in production.');
 
-        User::firstOrCreate(
-            ['email' => 'admin.demo@pnp.gov.ph'],
-            [
-                'first_name' => 'Admin',
-                'last_name' => 'Demo',
-                'rank' => 'Police Colonel (PCol)', // admins need a rank too now, since it's required
-                'password' => Hash::make('demo1234'),
-                'two_factor_verified' => true,
-                'role' => 'admin',
-            ]
-        );
+            return;
+        }
 
-        User::firstOrCreate(
-            ['email' => 'supervisor.demo@pnp.gov.ph'],
-            [
-                'first_name' => 'Supervisor',
-                'last_name' => 'Demo',
-                'rank' => 'P/Supt.',
-                'password' => Hash::make('demo1234'),
-                'unit_office' => 'Regional Training Command',
-                'two_factor_verified' => true,
-                'role' => 'supervisor',
-            ]
-        );
+        $chosen = (string) env('DEMO_PASSWORD', '');
+        $plain = $chosen !== '' ? $chosen : Str::password(16);
+        $hash = Hash::make($plain);
 
-        // Demo accounts skip the email step so live demos work offline.
-        User::whereIn('email', ['maria.cruz@pnp.gov.ph', 'admin.demo@pnp.gov.ph', 'supervisor.demo@pnp.gov.ph'])
-            ->whereNull('email_verified_at')
+        foreach (self::ACCOUNTS as $email => $attributes) {
+            // withTrashed: a deleted demo account is reinstated by an admin, not duplicated.
+            User::withTrashed()->firstOrCreate(
+                ['email' => $email],
+                [...$attributes, 'password' => $hash, 'two_factor_verified' => true],
+            );
+        }
+
+        $emails = array_keys(self::ACCOUNTS);
+
+        // Demo accounts skip the email step so local demos work offline...
+        User::whereIn('email', $emails)->whereNull('email_verified_at')
             ->update(['email_verified_at' => now()]);
 
         // ...and start with the current Terms of Service and Privacy Notice accepted.
-        User::whereIn('email', ['maria.cruz@pnp.gov.ph', 'admin.demo@pnp.gov.ph', 'supervisor.demo@pnp.gov.ph'])
-            ->whereNull('terms_accepted_version')
+        User::whereIn('email', $emails)->whereNull('terms_accepted_version')
             ->update(['terms_accepted_version' => config('legal.version'), 'terms_accepted_at' => now()]);
 
-        if ($maria) {
-            DB::table('notifications')->insert([
-                [
-                    'id' => Str::uuid(),
-                    'type' => 'App\\Notifications\\Generic',
-                    'notifiable_type' => User::class,
-                    'notifiable_id' => $maria->id,
-                    'data' => json_encode(['message' => 'New course available: Advanced Crisis Management']),
-                    'read_at' => null,
-                    'created_at' => now()->subHours(2),
-                    'updated_at' => now()->subHours(2),
-                ],
-                [
-                    'id' => Str::uuid(),
-                    'type' => 'App\\Notifications\\Generic',
-                    'notifiable_type' => User::class,
-                    'notifiable_id' => $maria->id,
-                    'data' => json_encode(['message' => 'You have completed Police Ethics and Conduct']),
-                    'read_at' => null,
-                    'created_at' => now()->subHours(5),
-                    'updated_at' => now()->subHours(5),
-                ],
-            ]);
+        if ($chosen === '') {
+            $this->command?->info("Password for new demo accounts: {$plain} (set DEMO_PASSWORD in .env to choose one)");
         }
+
+        // No sample notifications: notifications come only from real events.
     }
 }

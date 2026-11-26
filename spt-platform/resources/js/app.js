@@ -1,3 +1,4 @@
+import '@fontsource-variable/source-sans-3';
 import '../css/app.css';
 import './bootstrap';
 
@@ -22,6 +23,6 @@ createInertiaApp({
             .mount(el);
     },
     progress: {
-        color: '#4B5563',
+        color: '#2563eb',
     },
 });

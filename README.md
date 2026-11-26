@@ -27,11 +27,14 @@ constraints → imported through TiDB Cloud's SQL Editor.
 Three roles, enforced via route-level `role:` middleware (not just hidden
 nav links):
 
-- **Trainee** — self-registers, takes courses/lessons/exams, earns certificates
-- **Supervisor** — trainee-like base experience + a Monitoring tab for
-  tracking assigned trainees' progress
-- **Admin** — full platform management (courses, staff, exam content,
-  certificates, analytics)
+Each account has exactly one role: a trainee is only a trainee, a supervisor
+only a supervisor, an admin only an admin. Staff can't switch to a trainee view.
+
+- **Trainee**: self-registers, takes courses, lessons and exams, earns certificates
+- **Supervisor**: monitors trainees' progress and results, sees analytics, and
+  manages course content
+- **Admin**: manages trainee and staff accounts (lock, unlock, MFA reset,
+  delete, reinstate), course content and certificates
 
 Supervisor and Admin accounts are **not self-registered** — only an Admin
 can create them, via Manage Staff.
@@ -40,17 +43,14 @@ can create them, via Manage Staff.
 
 ## Demo accounts
 
-**Local development only.** In production, the `/dev/quick-login/{type}`
-shortcut route has been **fully removed from the codebase** (not just
-environment-gated) as a security hardening step before going live — see
-Phase 8 below. On the live deployment, log in manually with these
-credentials through the normal login form:
+**Local development only.** `DemoUserSeeder` creates a trainee, a supervisor
+and an admin demo account. It does nothing in production. Their password is
+not published here: set `DEMO_PASSWORD` in your local `.env` before seeding,
+or use the password the seeder prints.
 
-| Role | Email | Password |
-|---|---|---|
-| Trainee | maria.cruz@pnp.gov.ph | demo1234 |
-| Supervisor | supervisor.demo@pnp.gov.ph | demo1234 |
-| Admin | admin.demo@pnp.gov.ph | demo1234 |
+The live site must not have accounts with a shared or published password. If
+demo accounts exist there, give each a strong, unique password or delete them
+(Admin: Trainee accounts / Staff).
 
 ---
 

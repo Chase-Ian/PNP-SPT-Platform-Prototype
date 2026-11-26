@@ -1,141 +1,184 @@
 <script setup>
+import EmptyState from '@/Components/EmptyState.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import SelectMenu from '@/Components/SelectMenu.vue';
+import SearchField from '@/Components/SearchField.vue';
+import Tabs from '@/Components/Tabs.vue';
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
+import { askConfirm } from '@/confirm';
 import { Head, Link, router } from '@inertiajs/vue3';
-import { ref, computed } from 'vue';
-import { ArrowLeft, Search, X, FileCheck2, ArrowLeftRightIcon, ArrowBigRight } from 'lucide-vue-next';
+import { computed, ref } from 'vue';
+import { BookOpen, CircleCheck, ClipboardCheck, Lock, PlayCircle, SearchX } from 'lucide-vue-next';
 
 const props = defineProps({ courses: Array });
-const tab = ref('catalog');
+
+// "/courses?tab=mine" opens My learning directly (dashboard link).
+const tab = ref(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'mine' ? 'mine' : 'catalog');
 const search = ref('');
+const statusFilter = ref('');
+const STATUS_FILTERS = [
+    { value: '', label: 'All statuses' },
+    { value: 'available', label: 'Available' },
+    { value: 'enrolled', label: 'Enrolled' },
+    { value: 'completed', label: 'Completed' },
+];
 
-const myLearningCourses = computed(() => props.courses.filter(c => c.status === 'enrolled' || c.status === 'completed'));
-const myLearningCount = computed(() => myLearningCourses.value.length);
+const STATUS = {
+    available: { label: 'Available', badge: 'badge-slate' },
+    enrolled: { label: 'Enrolled', badge: 'badge-blue' },
+    completed: { label: 'Completed', badge: 'badge-green' },
+};
+const statusOf = (course) => course.status ?? 'available';
 
-const filteredCatalog = computed(() => {
-    let list = props.courses;
-    if (search.value) {
-        const q = search.value.toLowerCase();
-        list = list.filter(c => c.title.toLowerCase().includes(q) || c.activity_code.toLowerCase().includes(q));
-    }
-    return list;
+const myCourses = computed(() => props.courses.filter((c) => c.status === 'enrolled' || c.status === 'completed'));
+
+const filtered = computed(() => {
+    const q = search.value.trim().toLowerCase();
+    return props.courses.filter((c) =>
+        (!q || c.title.toLowerCase().includes(q) || c.activity_code.toLowerCase().includes(q))
+        && (!statusFilter.value || statusOf(c) === statusFilter.value));
 });
+const filtersActive = computed(() => search.value !== '' || statusFilter.value !== '');
+const clearFilters = () => {
+    search.value = '';
+    statusFilter.value = '';
+};
 
 const enroll = (course) => router.post(`/courses/${course.id}/enroll`, {}, { preserveScroll: true });
-const drop = (course) => router.post(`/courses/${course.id}/drop`, {}, { preserveScroll: true });
+const drop = async (course) => {
+    const ok = await askConfirm({
+        title: `Drop "${course.title}"?`,
+        message: 'The course leaves My learning. You can enroll again later from the catalog.',
+        confirmLabel: 'Drop course',
+        tone: 'danger',
+    });
+    if (ok) router.post(`/courses/${course.id}/drop`, {}, { preserveScroll: true });
+};
 
-const statusLabel = (status) => ({ enrolled: 'Enrolled', completed: 'Completed' }[status] ?? 'Available');
-const statusClass = (status) => ({
-    enrolled: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-}[status] ?? 'bg-gray-100 text-gray-600');
+const tabs = computed(() => [
+    { value: 'catalog', label: 'Course catalog', count: props.courses.length },
+    { value: 'mine', label: 'My learning', count: myCourses.value.length },
+]);
 </script>
 
-
 <template>
-    <Head title="Course Catalog" />
+    <Head title="Courses" />
     <TraineeLayout>
-        <div class="space-y-4">
-            <Link href="/dashboard" class="inline-flex items-center gap-1 text-sm font-medium">
-                <ArrowLeft :size="14" /> Back to Home
-            </Link>
+        <PageHeader title="Courses" description="Enroll in a course, continue your lessons and take the final exam." />
 
-            <div class="flex gap-2">
-                <button @click="tab = 'catalog'" :class="tab === 'catalog' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600'" class="px-4 py-1.5 rounded-full text-sm font-medium">Course Catalog</button>
-                <button @click="tab = 'mine'" :class="tab === 'mine' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600'" class="px-4 py-1.5 rounded-full text-sm font-medium">My Learning ({{ myLearningCount }})</button>
+        <Tabs v-model="tab" :tabs="tabs" label="Courses" />
+
+        <!-- Course catalog -->
+        <section v-if="tab === 'catalog'" role="tabpanel" aria-labelledby="tab-catalog" class="card">
+            <div v-if="courses.length" class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:px-6">
+                <SearchField v-model="search" label="Search courses" placeholder="Search by title or code" />
+                <SelectMenu v-model="statusFilter" :options="STATUS_FILTERS" label="Filter by status" class="w-full sm:w-48" />
+                <button v-if="filtersActive" type="button" class="btn btn-ghost btn-sm self-start sm:self-auto" @click="clearFilters">Clear filters</button>
+                <p class="text-sm text-slate-600 sm:ml-auto" aria-live="polite">
+                    {{ filtered.length }} of {{ courses.length }} {{ courses.length === 1 ? 'course' : 'courses' }}
+                </p>
             </div>
 
-            <div v-if="tab === 'catalog'" class="bg-white rounded-xl border p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <h3 class="font-bold text-lg">Course Catalog</h3>
-                        <p class="text-xs text-gray-500">Browse and enroll in available learning modules (5 to 6 hours each).</p>
-                    </div>
-                    <div class="relative">
-                        <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input v-model="search" type="text" placeholder="Search catalog by title or code..." class="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-64" />
-                    </div>
+            <EmptyState v-if="courses.length === 0" :icon="BookOpen" tone="blue" title="No courses are published yet"
+                description="Published courses will appear here. Check back later or ask your training office." />
+            <EmptyState v-else-if="filtered.length === 0" :icon="SearchX" title="No matching courses"
+                description="Try another title or activity code, or clear the filters.">
+                <button type="button" class="btn btn-secondary" @click="clearFilters">Clear filters</button>
+            </EmptyState>
+
+            <template v-else>
+                <!-- Phones -->
+                <ul class="divide-y divide-slate-100 md:hidden">
+                    <li v-for="course in filtered" :key="`m-${course.id}`" class="space-y-3 px-4 py-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-semibold leading-snug text-navy-900">{{ course.title }}</p>
+                                <p class="text-xs text-slate-500">{{ course.activity_code }} · {{ course.duration_hours }} {{ course.duration_hours == 1 ? 'hour' : 'hours' }} · {{ course.lesson_count }} {{ course.lesson_count == 1 ? 'lesson' : 'lessons' }}</p>
+                            </div>
+                            <span :class="STATUS[statusOf(course)].badge" class="badge shrink-0">{{ STATUS[statusOf(course)].label }}</span>
+                        </div>
+                        <button v-if="course.status === 'enrolled'" type="button" class="btn btn-danger-outline w-full" @click="drop(course)">Drop course</button>
+                        <button v-else-if="course.status !== 'completed'" type="button" class="btn btn-primary w-full" @click="enroll(course)">Enroll</button>
+                    </li>
+                </ul>
+
+                <!-- Tablet and desktop -->
+                <div class="hidden overflow-x-auto md:block">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Course</th>
+                                <th scope="col" class="text-right">Duration</th>
+                                <th scope="col" class="text-right">Lessons</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-right"><span class="sr-only">Action</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="course in filtered" :key="course.id">
+                                <td>
+                                    <p class="font-semibold text-navy-900">{{ course.title }}</p>
+                                    <p class="text-xs text-slate-500">{{ course.activity_code }}</p>
+                                </td>
+                                <td class="whitespace-nowrap text-right tabular-nums">{{ course.duration_hours }} {{ course.duration_hours == 1 ? 'hour' : 'hours' }}</td>
+                                <td class="text-right tabular-nums">{{ course.lesson_count }}</td>
+                                <td><span :class="STATUS[statusOf(course)].badge" class="badge">{{ STATUS[statusOf(course)].label }}</span></td>
+                                <td class="text-right">
+                                    <button v-if="course.status === 'enrolled'" type="button" class="btn btn-danger-outline btn-sm" @click="drop(course)">Drop</button>
+                                    <button v-else-if="course.status !== 'completed'" type="button" class="btn btn-primary btn-sm" @click="enroll(course)">Enroll</button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
                 </div>
+            </template>
+        </section>
 
-                <table class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                            <th class="py-2 px-3">Activity Code</th>
-                            <th class="py-2 px-3">Module Details</th>
-                            <th class="py-2 px-3">Status</th>
-                            <th class="py-2 px-3">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="course in filteredCatalog" :key="course.id" class="border-b last:border-0">
-                            <td class="py-3 px-3 text-blue-600 font-medium">{{ course.activity_code }}</td>
-                            <td class="py-3 px-3">
-                                <p class="font-semibold">{{ course.title }}</p>
-                                <p class="text-xs text-gray-400">{{ course.duration_hours }} Hours · {{ course.lesson_count }} Lessons (Includes Final Assessment)</p>
-                            </td>
-                            <td class="py-3 px-3">
-                                <span :class="statusClass(course.status)" class="px-2 py-0.5 rounded-full text-xs font-medium">{{ statusLabel(course.status) }}</span>
-                            </td>
-                            <td class="py-3 px-3">
-                                <button v-if="course.status === 'enrolled'" @click="drop(course)" class="bg-red-100 text-red-600 px-4 py-1.5 rounded-lg text-xs font-medium">Drop</button>
-                                <button v-else-if="course.status !== 'completed'" @click="enroll(course)" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">Enroll</button>
-                                <span v-else class="text-green-600 text-xs font-medium inline-flex items-center gap-1"><FileCheck2 :size="14" /> Completed</span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+        <!-- My learning -->
+        <section v-else role="tabpanel" aria-labelledby="tab-mine" class="card">
+            <EmptyState v-if="myCourses.length === 0" :icon="BookOpen" tone="blue" title="You haven’t enrolled in a course yet"
+                description="Enroll from the course catalog to start learning.">
+                <button type="button" class="btn btn-primary" @click="tab = 'catalog'">Browse the catalog</button>
+            </EmptyState>
 
-            <!-- My Learning tab -->
-            <div v-else class="bg-white rounded-xl border p-6">
-                <h3 class="font-bold text-lg">My Learning</h3>
-                <p class="text-xs text-gray-500 mb-4">Continue your active course modules and take knowledge check quizzes.</p>
+            <ul v-else class="divide-y divide-slate-100">
+                <li v-for="course in myCourses" :key="course.id" class="flex flex-col gap-4 px-4 py-5 sm:px-6 lg:flex-row lg:items-center">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <p class="font-semibold text-navy-900">{{ course.title }}</p>
+                            <span :class="STATUS[statusOf(course)].badge" class="badge">{{ STATUS[statusOf(course)].label }}</span>
+                        </div>
+                        <p class="text-xs text-slate-500">{{ course.activity_code }}</p>
+                        <div v-if="course.lessons_total > 0" class="mt-2.5 flex items-center gap-3">
+                            <div class="progress-track max-w-md" role="progressbar" :aria-valuenow="course.progress_percent"
+                                aria-valuemin="0" aria-valuemax="100" :aria-label="`${course.title}: ${course.progress_percent}% complete`">
+                                <div class="progress-bar" :style="{ width: `${course.progress_percent}%` }"></div>
+                            </div>
+                            <span class="shrink-0 text-sm tabular-nums text-slate-600">{{ course.lessons_completed }} of {{ course.lessons_total }} {{ course.lessons_total === 1 ? 'lesson' : 'lessons' }}</span>
+                        </div>
+                        <p v-else class="mt-1.5 text-sm text-slate-500">No lessons published yet</p>
+                    </div>
 
-                <div v-if="myLearningCourses.length === 0" class="text-sm text-gray-400 py-6 text-center">
-                    You're not enrolled in any courses yet. Browse the Course Catalog to get started.
-                </div>
-
-                <table v-else class="w-full text-sm">
-                    <thead>
-                        <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                            <th class="py-2 px-3">Module Title</th>
-                            <th class="py-2 px-3">Progress</th>
-                            <th class="py-2 px-3 text-right">Launch</th>
-                            <th class="py-2 px-3 text-right">Final Exam</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr v-for="course in myLearningCourses" :key="course.id" class="border-b last:border-0">
-                            <td class="py-4 px-3">
-                                <p class="font-semibold">{{ course.title }}</p>
-                                <p class="text-xs text-gray-400">{{ course.lessons_completed }} of {{ course.lessons_total }} modules completed</p>
-                            </td>
-                            <td class="py-4 px-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-40 bg-gray-100 rounded-full h-2">
-                                        <div class="bg-blue-600 h-2 rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
-                                    </div>
-                                    <span class="text-blue-600 text-xs font-medium">{{ course.progress_percent }}%</span>
-                                </div>
-                            </td>
-                            <td class="py-4 px-3 text-right">
-                                <Link :href="course.launch_lesson_id ? `/lessons/${course.launch_lesson_id}` : '#'"
-                                    class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700">
-                                    <ArrowBigRight :size="20" /> 
-                                </Link>
-                            </td>
-                            <td class="py-4 px-3 text-right">
-                                <span v-if="course.exam_passed" class="text-green-600 text-xs font-medium">✓ Passed</span>
-                                <Link v-else-if="course.all_lessons_passed" :href="`/exams/${course.id}`" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">
-                                    Take Final Exam
-                                </Link>
-                                <span v-else class="text-gray-400 text-xs" :title="`Complete all ${course.lessons_total} lessons to unlock`">
-                                    🔒 Locked
-                                </span>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-        </div>
+                    <div class="flex shrink-0 flex-wrap items-center gap-2 lg:justify-end">
+                        <span v-if="course.exam_passed" class="inline-flex items-center gap-1.5 text-sm font-semibold text-green-700">
+                            <CircleCheck :size="18" aria-hidden="true" /> Final exam passed
+                        </span>
+                        <Link v-else-if="course.all_lessons_passed" :href="`/exams/${course.id}`" class="btn btn-primary">
+                            <ClipboardCheck :size="18" aria-hidden="true" /> Take final exam
+                        </Link>
+                        <span v-else-if="course.lessons_total > 0" class="inline-flex items-center gap-1.5 text-sm text-slate-600" :title="`Pass all ${course.lessons_total} lesson quizzes to unlock`">
+                            <Lock :size="16" aria-hidden="true" /> Final exam locked
+                        </span>
+                        <template v-if="course.launch_lesson_id">
+                            <Link v-if="!course.exam_passed" :href="`/lessons/${course.launch_lesson_id}`"
+                                :class="course.all_lessons_passed ? 'btn btn-secondary' : 'btn btn-primary'">
+                                <PlayCircle :size="18" aria-hidden="true" /> {{ course.lessons_completed ? (course.all_lessons_passed ? 'Review lessons' : 'Resume') : 'Start course' }}
+                            </Link>
+                            <Link v-else :href="`/lessons/${course.launch_lesson_id}`" class="btn btn-secondary">Review lessons</Link>
+                        </template>
+                    </div>
+                </li>
+            </ul>
+        </section>
     </TraineeLayout>
 </template>

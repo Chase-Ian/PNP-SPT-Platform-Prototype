@@ -17,12 +17,13 @@ const props = defineProps({
     aiAssistant: Boolean,
     processors: Object,
     twoFactorScope: String, // none | staff | all (REQUIRE_2FA)
+    deletedAccountDays: { type: Number, default: 30 },
 });
 
 const twoFactorText = computed(() => ({
-    all: 'two-factor authentication is required for every account;',
-    staff: 'two-factor authentication is required for Administrators and Supervisors, and available to every user;',
-}[props.twoFactorScope] ?? 'two-factor authentication is available to every user;'));
+    all: 'MFA is required for every account;',
+    staff: 'MFA is required for Administrators and Supervisors, and available to every user;',
+}[props.twoFactorScope] ?? 'MFA is available to every user;'));
 </script>
 
 <template>
@@ -54,7 +55,7 @@ const twoFactorText = computed(() => ({
                 </tr>
                 <tr>
                     <td>Sign-in and security</td>
-                    <td>Your password (stored only as a one-way hash), two-factor authentication secret and recovery codes (encrypted), email verification status, account lock status, and failed sign-in counters (kept for about a minute)</td>
+                    <td>Your password (stored only as a one-way hash), multi-factor authentication (MFA) secret (encrypted), email verification status, account lock status, and failed sign-in counters (kept for about a minute)</td>
                     <td>You and the Platform</td>
                 </tr>
                 <tr>
@@ -68,9 +69,9 @@ const twoFactorText = computed(() => ({
                     <td>The Platform, as you train</td>
                 </tr>
                 <tr>
-                    <td>Requests and messages</td>
-                    <td>Email change requests (current and new address, your reason, and the Administrator's decision and note) and in-app notifications</td>
-                    <td>You and Administrators</td>
+                    <td>Notifications</td>
+                    <td>In-app notifications about your account and training</td>
+                    <td>The Platform</td>
                 </tr>
                 <tr>
                     <td>Technical data</td>
@@ -90,11 +91,11 @@ const twoFactorText = computed(() => ({
 
         <h2>Why we use it</h2>
         <ul>
-            <li>to create and manage your account and to confirm who you are (email verification, two-factor authentication and account locks);</li>
+            <li>to create and manage your account and to confirm who you are (email verification, MFA and account locks);</li>
             <li>to deliver training, track your progress and grade your assessments;</li>
             <li>to issue certificates and let others check that they are genuine;</li>
             <li>to let Supervisors monitor training results and readiness;</li>
-            <li>to handle your requests, such as email changes, and to send account emails such as verification links, password resets and security notices;</li>
+            <li>to send account emails such as verification links, password resets and security notices;</li>
             <li>to keep the Platform secure, investigate incidents and keep an audit trail;</li>
             <li>to produce training statistics, using combined data that does not identify you wherever possible;</li>
             <li>to meet our legal and regulatory obligations.</li>
@@ -121,11 +122,11 @@ const twoFactorText = computed(() => ({
         <ul>
             <li><strong>You</strong> can see your own profile, progress, results and certificates.</li>
             <li><strong>Supervisors</strong> can see trainees' names, units, course status (not submitted, submitted or archived), final exam results and certificate status. After a major course change, they can archive a course's results so trainees redo it.</li>
-            <li><strong>Administrators</strong> can see account details and status (including whether your email is verified and two-factor authentication is set up), issued certificates, overall statistics and email change requests. They can lock and delete accounts and reset two-factor authentication. They do not monitor individual training results.</li>
+            <li><strong>Administrators</strong> can see account details and status (including whether your email is verified and MFA is set up), issued certificates and overall statistics. They can lock, unlock, delete and reinstate accounts and reset MFA. They do not monitor individual training results.</li>
             <li>
                 <strong>Anyone with a certificate's serial number or QR code</strong> can see, on the public verification page,
-                the holder's name, the course, the issue date, the holder's unit or office and region, and the certificate's
-                serial and control numbers.
+                the holder's name, the course, the issue date, whether the certificate is current, and its serial and
+                control numbers. The holder's unit, office and region are not shown.
             </li>
             <li><strong>Service providers</strong> that run the Platform for us. They may use the data only on our instructions:</li>
         </ul>
@@ -162,28 +163,29 @@ const twoFactorText = computed(() => ({
                     <td>Account details, training records and certificates</td>
                     <td>While your account exists. Where PNP records rules require training records to be kept longer: <mark class="legal-todo">[period under the PNP records disposition schedule]</mark></td>
                 </tr>
-                <tr><td>Email change requests</td><td><mark class="legal-todo">[retention period]</mark></td></tr>
                 <tr><td>Agreement records</td><td>While your account exists</td></tr>
+                <tr><td>Deleted accounts</td><td>Kept for {{ deletedAccountDays }} days so an Administrator can reinstate them, then erased</td></tr>
                 <tr><td>Signed-in sessions</td><td>Until you sign out, or after 2 hours without activity. "Remember me" keeps you signed in longer on that device.</td></tr>
-                <tr><td>Links sent by email</td><td>Verification and password reset links expire after 60 minutes; two-factor reset links after 30 minutes</td></tr>
+                <tr><td>Links sent by email</td><td>Verification and password reset links expire after 60 minutes; MFA reset links after 30 minutes</td></tr>
                 <tr><td>Server logs</td><td><mark class="legal-todo">[retention period]</mark></td></tr>
                 <tr><td>Backups</td><td><mark class="legal-todo">[backup retention period]</mark></td></tr>
             </tbody>
         </table>
         <p>
-            If you delete your account, your profile, training records and certificates are permanently removed from
-            the Platform right away, and your certificates can no longer be verified. Copies in backups are removed when
+            If your account is deleted, by you or by an Administrator, it is hidden right away: it can't be used and
+            your certificates can no longer be verified. An Administrator can reinstate it within {{ deletedAccountDays }} days.
+            After that, your profile, training records and certificates are erased. Copies in backups are removed when
             those backups expire.
         </p>
 
         <h2>How we protect it</h2>
         <ul>
             <li>connections to the Platform are encrypted (HTTPS);</li>
-            <li>passwords are stored only as one-way hashes, and two-factor authentication secrets are encrypted;</li>
+            <li>passwords are stored only as one-way hashes, and MFA secrets are encrypted;</li>
             <li>{{ twoFactorText }}</li>
             <li>email addresses are verified, sign-in attempts are limited, and accounts can be locked;</li>
             <li>access is limited by role, and only an Administrator can change an account's email address;</li>
-            <li>security events such as two-factor resets and email changes are logged.</li>
+            <li>security events such as MFA resets are logged.</li>
         </ul>
         <p>
             If a personal data breach is likely to put you at risk, we will notify the National Privacy Commission and
@@ -196,7 +198,7 @@ const twoFactorText = computed(() => ({
             <li>be informed of how your data is processed (this notice);</li>
             <li>access your personal data;</li>
             <li>object to processing, and withdraw your consent where we rely on it;</li>
-            <li>have inaccurate data corrected: you can update your name, rank, unit and region on your profile, and change your email address through an Administrator;</li>
+            <li>have inaccurate data corrected: you can update your name, rank, unit and region on your profile;</li>
             <li>have your data deleted or blocked when it is no longer needed or was processed unlawfully;</li>
             <li>receive a copy of your data in a commonly used electronic format (data portability);</li>
             <li>be compensated for damage caused by inaccurate or unlawfully used data;</li>

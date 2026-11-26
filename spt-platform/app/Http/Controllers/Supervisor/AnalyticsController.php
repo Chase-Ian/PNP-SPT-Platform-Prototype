@@ -14,15 +14,19 @@ class AnalyticsController extends Controller
 {
     public function index()
     {
-        $totalEnrolled = User::where('role', 'trainee')->count();
+        // Percentages are null when there is nothing to divide by, so the page
+        // can say "No data yet" instead of showing a measured-looking 0%.
+        $traineeAccounts = User::where('role', 'trainee')->count();
+        $enrolledTrainees = Enrollment::whereHas('user', fn ($q) => $q->where('role', 'trainee'))
+            ->distinct()->count('user_id');
 
         $totalAttempts = ExamAttempt::count();
         $passedAttempts = ExamAttempt::where('passed', true)->count();
-        $avgPassRate = $totalAttempts > 0 ? round(($passedAttempts / $totalAttempts) * 100) : 0;
+        $avgPassRate = $totalAttempts > 0 ? (int) round(($passedAttempts / $totalAttempts) * 100) : null;
 
         $totalEnrollments = Enrollment::count();
         $completedEnrollments = Enrollment::where('status', 'completed')->count();
-        $completionRate = $totalEnrollments > 0 ? round(($completedEnrollments / $totalEnrollments) * 100) : 0;
+        $completionRate = $totalEnrollments > 0 ? (int) round(($completedEnrollments / $totalEnrollments) * 100) : null;
 
         $certificatesIssued = Certificate::count();
 
@@ -40,10 +44,11 @@ class AnalyticsController extends Controller
                     'region' => $region,
                     'completed' => $completed,
                     'total' => $total,
-                    'percent' => $total > 0 ? round(($completed / $total) * 100) : 0,
+                    'percent' => $total > 0 ? (int) round(($completed / $total) * 100) : null,
+                    'trainees' => $users->count(),
                 ];
             })
-            ->sortByDesc('percent')
+            ->sortByDesc(fn ($r) => [$r['percent'] ?? -1, $r['total']])
             ->values();
 
         // Course Enrollment & Exam Performance — per course, enrollment count + pass rate
@@ -51,24 +56,31 @@ class AnalyticsController extends Controller
             ->get()
             ->map(function ($course) {
                 $attempts = ExamAttempt::where('course_id', $course->id)->get();
-                $passRate = $attempts->count() > 0
-                    ? round(($attempts->where('passed', true)->count() / $attempts->count()) * 100)
-                    : 0;
-                $avgScore = $attempts->count() > 0 ? round($attempts->avg('score')) : 0;
+                $passed = $attempts->where('passed', true)->count();
+                $passRate = $attempts->count() > 0 ? (int) round(($passed / $attempts->count()) * 100) : null;
+                // Average grade in percent (raw scores differ by question count).
+                $avgPercent = $attempts->count() > 0 ? (int) round($attempts->avg(fn ($a) => $a->percent())) : null;
 
                 return [
                     'title' => $course->title,
                     'enrollments_count' => $course->enrollments_count,
+                    'attempts' => $attempts->count(),
+                    'passed' => $passed,
                     'pass_rate' => $passRate,
-                    'avg_score' => $avgScore,
+                    'avg_percent' => $avgPercent,
                 ];
             });
 
         return Inertia::render('Supervisor/Analytics', [
             'stats' => [
-                'totalEnrolled' => $totalEnrolled,
+                'traineeAccounts' => $traineeAccounts,
+                'enrolledTrainees' => $enrolledTrainees,
                 'avgPassRate' => $avgPassRate,
+                'examAttempts' => $totalAttempts,
+                'examAttemptsPassed' => $passedAttempts,
                 'completionRate' => $completionRate,
+                'enrollments' => $totalEnrollments,
+                'completedEnrollments' => $completedEnrollments,
                 'certificatesIssued' => $certificatesIssued,
             ],
             'regions' => $regions,

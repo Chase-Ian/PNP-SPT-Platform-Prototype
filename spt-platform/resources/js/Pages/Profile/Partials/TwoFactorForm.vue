@@ -1,4 +1,7 @@
 <!-- resources/js/Pages/Profile/Partials/TwoFactorForm.vue -->
+<!-- MFA on the profile page: set it up, or turn it off when it isn't required.
+     There are no recovery codes; a lost phone is handled by the emailed reset
+     link at sign-in or by an administrator. -->
 <script setup>
 import { ref } from 'vue';
 import axios from 'axios';
@@ -9,17 +12,15 @@ import TextInput from '@/Components/TextInput.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import InputError from '@/Components/InputError.vue';
 import Modal from '@/Components/Modal.vue';
-import { Link, router, usePage } from '@inertiajs/vue3';
+import { askConfirm } from '@/confirm';
+import { Link, router } from '@inertiajs/vue3';
+import { CircleCheck } from 'lucide-vue-next';
 
-const props = defineProps({
+defineProps({
     // { setUp: bool, required: bool } from ProfileController::edit
     twoFactor: { type: Object, default: () => ({ setUp: false, required: false }) },
 });
 
-const user = usePage().props.auth.user;
-// Code confirmed but recovery codes not yet acknowledged
-const started = !!user.two_factor_confirmed_at;
-const recoveryCodes = ref([]);
 const busy = ref(false);
 
 // Password confirmation (Fortify answers 423 when it's needed)
@@ -45,15 +46,8 @@ const withPassword = (action) => async () => {
     }
 };
 
-const regenerate = withPassword(async () => {
-    if (!window.confirm('Generate new recovery codes? Your old codes will stop working.')) return;
-    await axios.post('/user/two-factor-recovery-codes');
-    const { data } = await axios.get('/user/two-factor-recovery-codes');
-    recoveryCodes.value = data;
-});
-
 const disable = withPassword(async () => {
-    if (!window.confirm('Turn off two-factor authentication?')) return;
+    if (!(await askConfirm({ title: 'Turn off MFA?', message: 'Signing in will only need your password.', confirmLabel: 'Turn off MFA', tone: 'danger' }))) return;
     await axios.delete('/user/two-factor-authentication');
     router.reload();
 });
@@ -88,45 +82,33 @@ const closeModal = () => {
 <template>
     <section>
         <header>
-            <h2 class="text-lg font-medium text-gray-900">Two-Factor Authentication</h2>
-            <p class="mt-1 text-sm text-gray-600">Add an extra layer of security using Google Authenticator or a similar app.</p>
+            <h2 class="section-title">Multi-factor authentication (MFA)</h2>
+            <p class="mt-1 text-sm text-slate-600">Add an extra layer of security using Google Authenticator or a similar app.</p>
         </header>
 
         <div class="mt-4">
             <div v-if="twoFactor.setUp" class="space-y-3">
-                <p class="text-sm text-green-600 font-medium">✓ Two-factor authentication is enabled.</p>
-                <p v-if="twoFactor.required" class="text-xs text-gray-500">
-                    Required for your account, so it can't be turned off. Lost your phone? Use a recovery code at sign-in,
-                    the "email me a reset link" option, or ask an administrator to reset it.
+                <p class="flex items-center gap-1.5 text-sm font-medium text-green-700">
+                    <CircleCheck :size="16" :stroke-width="1.75" /> MFA is enabled.
                 </p>
-
-                <div class="flex flex-wrap gap-3">
-                    <SecondaryButton :disabled="busy" @click="regenerate">Regenerate recovery codes</SecondaryButton>
-                    <DangerButton v-if="!twoFactor.required" :disabled="busy" @click="disable">Disable 2FA</DangerButton>
-                </div>
-
-                <div v-if="recoveryCodes.length" class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm">
-                    <p class="font-medium mb-2">Your new recovery codes. Save them now; they won't be shown again:</p>
-                    <ul class="grid grid-cols-2 gap-1 font-mono text-xs select-all">
-                        <li v-for="rc in recoveryCodes" :key="rc">{{ rc }}</li>
-                    </ul>
-                </div>
+                <p class="text-xs text-slate-500">
+                    <template v-if="twoFactor.required">Required for your account, so it can't be turned off.</template>
+                    Lost your phone? Use "Email me a link to reset MFA" at sign-in, or ask an administrator to reset it.
+                </p>
+                <DangerButton v-if="!twoFactor.required" :disabled="busy" @click="disable">Disable MFA</DangerButton>
             </div>
 
             <div v-else class="space-y-2">
-                <p v-if="twoFactor.required" class="text-sm text-amber-700">Two-factor authentication is required for your account.</p>
-                <Link :href="route('security.setup')"
-                    class="inline-flex items-center px-4 py-2 bg-gray-800 border border-transparent rounded-md font-semibold text-xs text-white uppercase tracking-widest hover:bg-gray-700">
-                    {{ started ? 'Continue setup' : 'Set up two-factor authentication' }}
-                </Link>
+                <p v-if="twoFactor.required" class="text-sm text-amber-700">MFA is required for your account.</p>
+                <Link :href="route('security.setup')" class="btn btn-primary">Set up MFA</Link>
             </div>
         </div>
 
         <!-- Password Confirmation Modal for Fortify Status 423 -->
         <Modal :show="confirmingPassword" @close="closeModal">
             <div class="p-6">
-                <h2 class="text-lg font-medium text-gray-900">Confirm Password</h2>
-                <p class="mt-1 text-sm text-gray-600">For your security, please confirm your password before continuing.</p>
+                <h2 class="section-title">Confirm Password</h2>
+                <p class="mt-1 text-sm text-slate-600">For your security, please confirm your password before continuing.</p>
 
                 <div class="mt-6">
                     <InputLabel for="password" value="Password" class="sr-only" />
@@ -137,7 +119,7 @@ const closeModal = () => {
 
                 <div class="mt-6 flex justify-end">
                     <SecondaryButton @click="closeModal">Cancel</SecondaryButton>
-                    <PrimaryButton class="ms-3" :class="{ 'opacity-25': verifyingPassword }" :disabled="verifyingPassword"
+                    <PrimaryButton class="ms-3" :disabled="verifyingPassword"
                         @click="submitPasswordConfirmation">Confirm</PrimaryButton>
                 </div>
             </div>

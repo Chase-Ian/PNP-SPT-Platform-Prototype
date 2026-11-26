@@ -27,6 +27,7 @@ class DashboardController extends Controller
                 'course_title' => $a->course->title,
                 'result' => $a->passed ? 'Passed' : 'Failed',
                 'score' => $a->score,
+                'score_total' => $a->total_questions,
                 'submitted_at' => $a->created_at->format('Y-m-d'),
             ]);
 

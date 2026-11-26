@@ -1,12 +1,18 @@
 <script setup>
+import ActionMenu from '@/Components/ActionMenu.vue';
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
-import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { BookOpen } from 'lucide-vue-next';
+import EmptyState from '@/Components/EmptyState.vue';
+import InputError from '@/Components/InputError.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import SearchField from '@/Components/SearchField.vue';
+import { askConfirm } from '@/confirm';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
-import { ref } from 'vue';
+import { computed, ref } from 'vue';
+import { BookOpen, ClipboardList, Layers, Pencil, Plus, SearchX, Trash2 } from 'lucide-vue-next';
 
 const props = defineProps({ courses: Array });
 const showForm = ref(false);
+const editingCourseId = ref(null);
 
 const form = useForm({
     activity_code: '',
@@ -17,16 +23,16 @@ const form = useForm({
     lesson_count: 5,
 });
 
-const remove = (course) => {
-    if (confirm(`Delete "${course.title}"? This also deletes all its modules and lessons.`)) {
-        router.delete(`/admin/courses/${course.id}`);
-    }
+const openCreateCourse = () => {
+    editingCourseId.value = null;
+    form.reset();
+    form.clearErrors();
+    showForm.value = true;
 };
-
-const editingCourseId = ref(null);
 
 const openEditCourse = (course) => {
     editingCourseId.value = course.id;
+    form.clearErrors();
     form.activity_code = course.activity_code;
     form.title = course.title;
     form.description = course.description;
@@ -51,85 +57,151 @@ const submit = () => {
     }
 };
 
+const remove = async (course) => {
+    const ok = await askConfirm({
+        title: `Delete "${course.title}"?`,
+        message: 'This also deletes all of its modules and lessons. It can’t be undone.',
+        confirmLabel: 'Delete course',
+        tone: 'danger',
+    });
+    if (ok) router.delete(`/admin/courses/${course.id}`);
+};
+
+const search = ref('');
+const filtered = computed(() => {
+    const q = search.value.trim().toLowerCase();
+    return props.courses.filter((c) => !q || c.title.toLowerCase().includes(q) || c.activity_code.toLowerCase().includes(q));
+});
+
+const moreFor = (course) => [
+    { label: 'Edit details', icon: Pencil, onSelect: () => openEditCourse(course) },
+    { label: 'Delete course', icon: Trash2, tone: 'danger', hint: 'Also deletes its modules and lessons', onSelect: () => remove(course) },
+];
+const invalid = (field) => (form.errors[field] ? 'true' : undefined);
 </script>
 
 <template>
-    <Head title="Manage Courses" />
+    <Head title="Courses" />
     <AdminOrSupervisorLayout>
-        <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Course Catalog"
-            title="Manage Courses"
-            subtitle="Create new courses, then manage their modules, lessons, and quizzes.">
+        <PageHeader title="Courses" description="Create courses, then manage their modules, lessons and final exam.">
             <template #actions>
-                <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Add New Course</button>
+                <button v-if="!showForm" type="button" class="btn btn-primary" @click="openCreateCourse">
+                    <Plus :size="18" aria-hidden="true" /> Add course
+                </button>
             </template>
-        </AdminPageBanner>
+        </PageHeader>
 
-        <form v-if="showForm" @submit.prevent="submit" class="bg-white rounded-xl border p-6 space-y-3">
-            <div class="grid grid-cols-2 gap-3">
+        <form v-if="showForm" class="card" aria-labelledby="course-form-heading" @submit.prevent="submit">
+            <div class="card-header">
+                <h2 id="course-form-heading" class="section-title">{{ editingCourseId ? 'Edit course' : 'New course' }}</h2>
+            </div>
+            <div class="grid max-w-4xl grid-cols-1 gap-x-5 gap-y-4 px-4 py-5 sm:px-6 md:grid-cols-2">
                 <div>
-                    <label class="text-sm font-medium">Activity Code</label>
-                    <input v-model="form.activity_code" type="text" placeholder="e.g. SRAIU-2026-M5" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
-                    <div v-if="form.errors.activity_code" class="text-red-600 text-xs mt-1">{{ form.errors.activity_code }}</div>
+                    <label for="course-code" class="label">Activity code</label>
+                    <input id="course-code" v-model="form.activity_code" type="text" placeholder="e.g. SRAIU-2026-M5" class="field" required :aria-invalid="invalid('activity_code')" />
+                    <InputError class="mt-1.5" :message="form.errors.activity_code" />
                 </div>
                 <div>
-                    <label class="text-sm font-medium">Instructor Name</label>
-                    <input v-model="form.instructor_name" type="text" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" />
+                    <label for="course-instructor" class="label">Instructor</label>
+                    <input id="course-instructor" v-model="form.instructor_name" type="text" class="field" />
                 </div>
-            </div>
-            <div>
-                <label class="text-sm font-medium">Title</label>
-                <input v-model="form.title" type="text" placeholder="e.g. Introduction to Proper AI Usage" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
-                <div v-if="form.errors.title" class="text-red-600 text-xs mt-1">{{ form.errors.title }}</div>
-            </div>
-            <div>
-                <label class="text-sm font-medium">Description</label>
-                <textarea v-model="form.description" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></textarea>
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="text-sm font-medium">Duration (hours)</label>
-                    <input v-model="form.duration_hours" type="number" min="1" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
+                <div class="md:col-span-2">
+                    <label for="course-title" class="label">Title</label>
+                    <input id="course-title" v-model="form.title" type="text" placeholder="e.g. Introduction to Proper AI Usage" class="field" required :aria-invalid="invalid('title')" />
+                    <InputError class="mt-1.5" :message="form.errors.title" />
+                </div>
+                <div class="md:col-span-2">
+                    <label for="course-description" class="label">Description</label>
+                    <textarea id="course-description" v-model="form.description" rows="3" class="field"></textarea>
                 </div>
                 <div>
-                    <label class="text-sm font-medium">Lesson Count (estimate)</label>
-                    <input v-model="form.lesson_count" type="number" min="1" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
+                    <label for="course-hours" class="label">Duration (hours)</label>
+                    <input id="course-hours" v-model="form.duration_hours" type="number" min="1" class="field" required />
+                </div>
+                <div>
+                    <label for="course-lessons" class="label">Planned number of lessons</label>
+                    <input id="course-lessons" v-model="form.lesson_count" type="number" min="1" class="field" required aria-describedby="course-lessons-hint" />
+                    <p id="course-lessons-hint" class="hint">Shown in the catalog until lessons are added.</p>
                 </div>
             </div>
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                {{ editingCourseId ? 'Save Changes' : 'Save Course' }}
-            </button>
-            <button v-if="editingCourseId" type="button" @click="cancelCourseForm" class="text-xs text-gray-400 ml-3">Cancel Edit</button>
+            <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
+                <button type="button" class="btn btn-secondary" @click="cancelCourseForm">Cancel</button>
+                <button type="submit" :disabled="form.processing" class="btn btn-primary">{{ editingCourseId ? 'Save changes' : 'Create course' }}</button>
+            </div>
         </form>
 
-        <div class="bg-white rounded-xl border p-6">
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-xs text-gray-400 uppercase border-b">
-                        <th class="py-2">Activity Code</th>
-                        <th class="py-2">Title</th>
-                        <th class="py-2">Modules</th>
-                        <th class="py-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="course in courses" :key="course.id" class="border-b last:border-0">
-                        <td class="py-3 text-blue-600 font-medium">{{ course.activity_code }}</td>
-                        <td class="py-3">
-                            <p class="font-medium">{{ course.title }}</p>
-                            <p class="text-xs text-gray-400">{{ course.duration_hours }} Hours · Instructor: {{ course.instructor_name || '—' }}</p>
-                        </td>
-                        <td class="py-3">{{ course.modules_count }}</td>
-                        <td class="py-3">
-                            <div class="flex items-center gap-4">
-                                <Link :href="`/admin/courses/${course.id}/modules`" class="text-blue-600 text-xs font-medium">Manage Modules</Link>
-                                <Link :href="`/admin/courses/${course.id}/exam-questions`" class="text-blue-600 text-xs font-medium">Manage Final Exam</Link>
-                                <button @click="openEditCourse(course)" class="text-green-600 text-xs font-medium">✏️ Edit</button>
-                                <button @click="remove(course)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
+        <section class="card" aria-label="Course list">
+            <div v-if="courses.length" class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:px-6">
+                <SearchField v-model="search" label="Search courses" placeholder="Search by title or code" />
+                <p class="text-sm text-slate-600 sm:ml-auto" aria-live="polite">{{ filtered.length }} of {{ courses.length }} courses</p>
+            </div>
+
+            <EmptyState v-if="courses.length === 0" :icon="BookOpen" tone="purple" title="No courses yet"
+                description="Add the first course, then add its modules, lessons and final exam.">
+                <button type="button" class="btn btn-primary" @click="openCreateCourse"><Plus :size="18" aria-hidden="true" /> Add course</button>
+            </EmptyState>
+            <EmptyState v-else-if="filtered.length === 0" :icon="SearchX" title="No matching courses" description="Try another title or activity code.">
+                <button type="button" class="btn btn-secondary" @click="search = ''">Clear search</button>
+            </EmptyState>
+
+            <template v-else>
+                <!-- Phones -->
+                <ul class="divide-y divide-slate-100 lg:hidden">
+                    <li v-for="course in filtered" :key="`m-${course.id}`" class="space-y-3 px-4 py-4 sm:px-6">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <p class="font-semibold leading-snug text-navy-900">{{ course.title }}</p>
+                                <p class="text-xs text-slate-500">{{ course.activity_code }} · {{ course.duration_hours }} {{ course.duration_hours == 1 ? 'hour' : 'hours' }} · {{ course.modules_count }} {{ course.modules_count === 1 ? 'module' : 'modules' }}</p>
                             </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+                            <span :class="course.is_published ? 'badge-green' : 'badge-slate'" class="badge shrink-0">{{ course.is_published ? 'Published' : 'Draft' }}</span>
+                        </div>
+                        <div class="flex flex-wrap gap-2">
+                            <Link :href="`/admin/courses/${course.id}/modules`" class="btn btn-secondary btn-sm"><Layers :size="16" aria-hidden="true" /> Modules</Link>
+                            <Link :href="`/admin/courses/${course.id}/exam-questions`" class="btn btn-secondary btn-sm"><ClipboardList :size="16" aria-hidden="true" /> Final exam</Link>
+                            <ActionMenu :items="moreFor(course)" label="More" :sr-label="`More actions for ${course.title}`" />
+                        </div>
+                    </li>
+                </ul>
+
+                <!-- Desktop -->
+                <div class="hidden overflow-x-auto lg:block">
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th scope="col">Course</th>
+                                <th scope="col">Instructor</th>
+                                <th scope="col" class="text-right">Duration</th>
+                                <th scope="col" class="text-right">Modules</th>
+                                <th scope="col">Status</th>
+                                <th scope="col" class="text-right"><span class="sr-only">Actions</span></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="course in filtered" :key="course.id">
+                                <td>
+                                    <p class="font-semibold text-navy-900">{{ course.title }}</p>
+                                    <p class="text-xs text-slate-500">{{ course.activity_code }}</p>
+                                </td>
+                                <td>{{ course.instructor_name || 'Not set' }}</td>
+                                <td class="whitespace-nowrap text-right tabular-nums">{{ course.duration_hours }} {{ course.duration_hours == 1 ? 'hour' : 'hours' }}</td>
+                                <td class="text-right tabular-nums">{{ course.modules_count }}</td>
+                                <td><span :class="course.is_published ? 'badge-green' : 'badge-slate'" class="badge">{{ course.is_published ? 'Published' : 'Draft' }}</span></td>
+                                <td>
+                                    <div class="flex flex-nowrap justify-end gap-2">
+                                        <Link :href="`/admin/courses/${course.id}/modules`" class="btn btn-secondary btn-sm">
+                                            <Layers :size="16" aria-hidden="true" /> Modules<span class="sr-only"> of {{ course.title }}</span>
+                                        </Link>
+                                        <Link :href="`/admin/courses/${course.id}/exam-questions`" class="btn btn-secondary btn-sm">
+                                            <ClipboardList :size="16" aria-hidden="true" /> Final exam<span class="sr-only"> of {{ course.title }}</span>
+                                        </Link>
+                                        <ActionMenu :items="moreFor(course)" label="More" :sr-label="`More actions for ${course.title}`" />
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </section>
     </AdminOrSupervisorLayout>
 </template>

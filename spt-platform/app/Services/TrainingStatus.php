@@ -49,7 +49,7 @@ class TrainingStatus
         $attempts = ExamAttempt::query()
             ->when($only, fn ($q) => $q->where('user_id', $only->getKey()))
             ->orderBy('created_at')->orderBy('id')
-            ->get(['id', 'user_id', 'course_id', 'score', 'passed', 'archived_at', 'created_at'])
+            ->get(['id', 'user_id', 'course_id', 'score', 'total_questions', 'passed', 'archived_at', 'created_at'])
             ->groupBy(fn ($a) => $a->user_id.'-'.$a->course_id);
 
         $certified = Certificate::query()
@@ -71,7 +71,7 @@ class TrainingStatus
                 return [[
                     ...$base,
                     'course_id' => null, 'course_title' => null, 'status' => self::NOT_ENROLLED,
-                    'result' => null, 'score' => null, 'submitted_at' => null, 'certificate' => false,
+                    'result' => null, 'score' => null, 'score_total' => null, 'submitted_at' => null, 'certificate' => false,
                 ]];
             }
 
@@ -91,6 +91,8 @@ class TrainingStatus
                     },
                     'result' => $current ? ($current->passed ? 'Passed' : 'Failed') : null,
                     'score' => $current?->score,
+                    // Questions in the exam when it was taken (null for attempts saved before this was recorded).
+                    'score_total' => $current?->total_questions,
                     'submitted_at' => $current?->created_at?->format('Y-m-d'),
                     'certificate' => $certified->has($key),
                 ];
@@ -105,6 +107,7 @@ class TrainingStatus
             'submitted' => $rows->where('status', self::SUBMITTED)->count(),
             'notSubmitted' => $rows->where('status', self::NOT_SUBMITTED)->count(),
             'archived' => $rows->where('status', self::ARCHIVED)->count(),
+            'notEnrolled' => $rows->where('status', self::NOT_ENROLLED)->count(),
         ];
     }
 
@@ -120,11 +123,14 @@ class TrainingStatus
         [$archived, $trainees] = DB::transaction(function () use ($course) {
             $now = now();
 
-            $archived = ExamAttempt::where('course_id', $course->id)->whereNull('archived_at')
+            // Count what supervisors can see, but archive every record (also
+            // deleted accounts'), so a reinstated account has no stale results.
+            $archived = ExamAttempt::where('course_id', $course->id)->whereNull('archived_at')->count();
+            ExamAttempt::withoutGlobalScope('activeTrainee')->where('course_id', $course->id)->whereNull('archived_at')
                 ->update(['archived_at' => $now]);
-            Certificate::where('course_id', $course->id)->whereNull('archived_at')
+            Certificate::withoutGlobalScope('activeTrainee')->where('course_id', $course->id)->whereNull('archived_at')
                 ->update(['archived_at' => $now]);
-            Enrollment::where('course_id', $course->id)->where('status', 'completed')
+            Enrollment::withoutGlobalScope('activeTrainee')->where('course_id', $course->id)->where('status', 'completed')
                 ->update(['status' => 'enrolled']);
 
             LessonProgress::whereIn('lesson_id', $course->lessons()->pluck('id'))->delete();

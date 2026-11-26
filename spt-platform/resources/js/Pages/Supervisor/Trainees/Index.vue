@@ -1,28 +1,46 @@
 <!-- resources/js/Pages/Supervisor/Trainees/Index.vue
-     Monitor Trainees: each trainee's status per course, from saved records
-     only (no live progress). Supervisors can archive a course's results after
-     a major course change, so trainees redo it and take the new final exam. -->
+     Monitoring: each trainee's status per course, from saved records only
+     (no live progress). Supervisors can archive a course's results after a
+     major course change, so trainees redo it and take the new final exam. -->
 <script setup>
-import SupervisorLayout from '@/Layouts/SupervisorLayout.vue';
-import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import TrainingStatusBadge from '@/Components/TrainingStatusBadge.vue';
+import EmptyState from '@/Components/EmptyState.vue';
 import Modal from '@/Components/Modal.vue';
-import { Users, Archive } from 'lucide-vue-next';
+import PageHeader from '@/Components/PageHeader.vue';
+import SelectMenu from '@/Components/SelectMenu.vue';
+import SearchField from '@/Components/SearchField.vue';
+import StatCard from '@/Components/StatCard.vue';
+import TrainingStatusBadge from '@/Components/TrainingStatusBadge.vue';
+import SupervisorLayout from '@/Layouts/SupervisorLayout.vue';
 import { Head, Link, useForm, usePage } from '@inertiajs/vue3';
 import { computed, ref } from 'vue';
+import { Archive, CheckCircle2, Clock, SearchX, Users, UserX } from 'lucide-vue-next';
 
 const props = defineProps({ rows: Array, stats: Object, courses: Array });
 
 const search = ref('');
 const courseId = ref('');
 const status = ref('');
+const courseOptions = computed(() => [{ value: '', label: 'All courses' }, ...props.courses.map((c) => ({ value: c.id, label: c.title }))]);
+const STATUS_FILTERS = [
+    { value: '', label: 'All statuses' },
+    'Not submitted',
+    'Submitted',
+    'Archived',
+    'Not enrolled',
+];
 
 const filtered = computed(() => props.rows.filter((r) => {
-    const q = search.value.toLowerCase();
+    const q = search.value.trim().toLowerCase();
     return (!q || r.name.toLowerCase().includes(q) || (r.unit_office || '').toLowerCase().includes(q))
         && (!courseId.value || r.course_id === Number(courseId.value))
         && (!status.value || r.status === status.value);
 }));
+const filtersActive = computed(() => search.value !== '' || courseId.value !== '' || status.value !== '');
+const clearFilters = () => {
+    search.value = '';
+    courseId.value = '';
+    status.value = '';
+};
 
 const selectedCourse = computed(() => props.courses.find((c) => c.id === Number(courseId.value)));
 const courseRows = computed(() => props.rows.filter((r) => r.course_id === Number(courseId.value)));
@@ -45,113 +63,117 @@ const flash = computed(() => {
 </script>
 
 <template>
-    <Head title="Monitor Trainees" />
+    <Head title="Monitoring" />
     <SupervisorLayout>
-        <AdminPageBanner :icon="Users" badge-text="Supervisor Portal • Trainee Monitoring"
-            title="Monitor Trainees"
-            subtitle="Each trainee's status per course: Not submitted, Submitted (with the final exam result) or Archived. Statuses change only when a final exam is submitted or results are archived." />
+        <PageHeader title="Trainee monitoring"
+            description="Each trainee's status per course. Statuses change only when a final exam is submitted or results are archived." />
 
-        <div v-if="flash !== null" class="bg-green-50 border border-green-200 text-green-800 rounded-lg px-4 py-3 text-sm">
+        <div v-if="flash !== null" role="status" class="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-[15px] text-green-800">
             Results archived: {{ flash }} {{ flash === 1 ? 'submission' : 'submissions' }}. Enrolled trainees were notified to redo the course and take the new final exam.
         </div>
 
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div class="bg-white rounded-xl border p-4">
-                <p class="text-xs text-gray-500">Trainees</p>
-                <p class="text-2xl font-bold text-blue-900">{{ stats.totalTrainees }}</p>
-            </div>
-            <div class="bg-white rounded-xl border p-4">
-                <p class="text-xs text-gray-500">Submitted</p>
-                <p class="text-2xl font-bold text-green-600">{{ stats.submitted }}</p>
-            </div>
-            <div class="bg-white rounded-xl border p-4">
-                <p class="text-xs text-gray-500">Not submitted</p>
-                <p class="text-2xl font-bold text-gray-600">{{ stats.notSubmitted }}</p>
-            </div>
-            <div class="bg-white rounded-xl border p-4">
-                <p class="text-xs text-gray-500">Archived</p>
-                <p class="text-2xl font-bold text-purple-600">{{ stats.archived }}</p>
-            </div>
+        <div class="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-3 xl:grid-cols-5">
+            <StatCard label="Trainees" :value="stats.totalTrainees" :icon="Users" tone="blue" hint="People with a trainee account" />
+            <StatCard label="Not enrolled" :value="stats.notEnrolled" :icon="UserX" tone="slate" hint="Trainees with no course yet" />
+            <StatCard label="Submitted" :value="stats.submitted" :icon="CheckCircle2" tone="green" hint="Course records" />
+            <StatCard label="Not submitted" :value="stats.notSubmitted" :icon="Clock" tone="amber" hint="Course records" />
+            <StatCard label="Archived" :value="stats.archived" :icon="Archive" tone="purple" hint="Course records" />
         </div>
 
-        <div class="bg-white rounded-xl border p-6 space-y-4">
-            <div class="flex flex-wrap gap-2">
-                <input v-model="search" type="text" placeholder="Search by name or station..."
-                    class="border rounded-lg px-3 py-1.5 text-sm w-64" />
-                <select v-model="courseId" class="border rounded-lg px-3 py-1.5 text-sm">
-                    <option value="">All courses</option>
-                    <option v-for="c in courses" :key="c.id" :value="c.id">{{ c.title }}</option>
-                </select>
-                <select v-model="status" class="border rounded-lg px-3 py-1.5 text-sm">
-                    <option value="">All statuses</option>
-                    <option>Not submitted</option>
-                    <option>Submitted</option>
-                    <option>Archived</option>
-                    <option>Not enrolled</option>
-                </select>
+        <section class="card" aria-label="Trainee status by course">
+            <div v-if="rows.length" class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:px-6">
+                <SearchField v-model="search" label="Search trainees" placeholder="Search name or station" />
+                <SelectMenu v-model="courseId" :options="courseOptions" label="Filter by course" class="w-full sm:w-72" />
+                <SelectMenu v-model="status" :options="STATUS_FILTERS" label="Filter by status" class="w-full sm:w-48" />
+                <button v-if="filtersActive" type="button" class="btn btn-ghost btn-sm self-start sm:self-auto" @click="clearFilters">Clear filters</button>
+                <p class="text-sm text-slate-600 sm:ml-auto" aria-live="polite">{{ filtered.length }} of {{ rows.length }} records</p>
             </div>
 
-            <div v-if="selectedCourse" class="flex flex-wrap items-center justify-between gap-3 bg-purple-50 border border-purple-200 rounded-lg px-4 py-3 text-sm">
-                <p class="text-purple-900">
-                    Changed <strong>{{ selectedCourse.title }}</strong> enough that trainees must redo it?
-                </p>
-                <button type="button" @click="confirming = true"
-                    class="inline-flex items-center gap-1.5 bg-purple-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-purple-700">
-                    <Archive :size="14" /> Archive results for this course
+            <div v-if="selectedCourse" class="flex flex-wrap items-center justify-between gap-3 border-b border-purple-200 bg-purple-50 px-4 py-3 text-[15px] sm:px-6">
+                <p class="text-purple-900">Changed <strong>{{ selectedCourse.title }}</strong> enough that trainees must redo it?</p>
+                <button type="button" class="btn btn-secondary btn-sm" @click="confirming = true">
+                    <Archive :size="16" aria-hidden="true" /> Archive results for this course
                 </button>
             </div>
 
-            <p v-if="filtered.length === 0" class="text-sm text-gray-400">No trainees match these filters.</p>
-            <table v-else class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                        <th class="py-2 px-3">Trainee</th>
-                        <th class="py-2 px-3">Station</th>
-                        <th class="py-2 px-3">Course</th>
-                        <th class="py-2 px-3">Status</th>
-                        <th class="py-2 px-3">Submitted On</th>
-                        <th class="py-2 px-3">Certificate</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="r in filtered" :key="`${r.trainee_id}-${r.course_id}`" class="border-b last:border-0">
-                        <td class="py-3 px-3">
-                            <Link :href="route('supervisor.trainees.show', r.trainee_id)" class="text-blue-600 font-medium hover:underline">{{ r.name }}</Link>
-                            <p class="text-xs text-gray-400">{{ r.rank }}</p>
-                        </td>
-                        <td class="py-3 px-3 text-gray-500">
-                            {{ r.unit_office || '—' }}
-                            <p class="text-xs text-gray-400">{{ r.region }}</p>
-                        </td>
-                        <td class="py-3 px-3">{{ r.course_title || '—' }}</td>
-                        <td class="py-3 px-3"><TrainingStatusBadge :status="r.status" :result="r.result" :score="r.score" /></td>
-                        <td class="py-3 px-3 text-gray-500">{{ r.submitted_at || '—' }}</td>
-                        <td class="py-3 px-3">
-                            <span :class="r.certificate ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'"
-                                class="px-2 py-0.5 rounded-full text-xs">{{ r.certificate ? 'Issued' : 'None' }}</span>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+            <EmptyState v-if="rows.length === 0" :icon="Users" tone="blue" title="No trainees yet"
+                description="Trainees appear here once they have an account." />
+            <EmptyState v-else-if="filtered.length === 0" :icon="SearchX" title="No matching records"
+                description="Try another name or station, or change the course and status filters.">
+                <button type="button" class="btn btn-secondary" @click="clearFilters">Clear filters</button>
+            </EmptyState>
 
-        <Modal :show="confirming" @close="confirming = false">
-            <div v-if="selectedCourse" class="p-6 space-y-3 text-sm text-gray-700">
-                <h2 class="text-lg font-semibold text-gray-900">Archive results for "{{ selectedCourse.title }}"?</h2>
+            <template v-else>
+                <!-- Phones -->
+                <ul class="divide-y divide-slate-100 md:hidden">
+                    <li v-for="r in filtered" :key="`m-${r.trainee_id}-${r.course_id}`" class="space-y-2 px-4 py-4">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="min-w-0">
+                                <Link :href="route('supervisor.trainees.show', r.trainee_id)" class="link">{{ r.name }}</Link>
+                                <p class="text-xs text-slate-500">{{ r.rank }}</p>
+                            </div>
+                            <TrainingStatusBadge :status="r.status" :result="r.result" :score="r.score" :score-total="r.score_total" />
+                        </div>
+                        <p class="text-[15px] text-slate-800">{{ r.course_title || 'No course yet' }}</p>
+                        <p class="text-xs text-slate-500">{{ r.unit_office || 'Unit not recorded' }}<span v-if="r.region"> · {{ r.region }}</span></p>
+                        <div class="flex justify-between gap-3 text-xs text-slate-600">
+                            <span>Submitted: {{ r.submitted_at || 'Not yet' }}</span>
+                            <span>Certificate: <span :class="r.certificate ? 'font-semibold text-green-700' : ''">{{ r.certificate ? 'Available' : 'None' }}</span></span>
+                        </div>
+                    </li>
+                </ul>
+
+                <!-- Tablet and desktop -->
+                <div class="hidden overflow-x-auto md:block">
+                    <table class="data-table min-w-[860px]">
+                        <thead>
+                            <tr>
+                                <th scope="col">Trainee</th>
+                                <th scope="col">Unit / region</th>
+                                <th scope="col">Course</th>
+                                <th scope="col">Status</th>
+                                <th scope="col">Submitted</th>
+                                <th scope="col">Certificate</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr v-for="r in filtered" :key="`${r.trainee_id}-${r.course_id}`">
+                                <td>
+                                    <Link :href="route('supervisor.trainees.show', r.trainee_id)" class="link">{{ r.name }}</Link>
+                                    <p class="text-xs text-slate-500">{{ r.rank }}</p>
+                                </td>
+                                <td>
+                                    <p class="text-slate-800">{{ r.unit_office || 'Not recorded' }}</p>
+                                    <p class="text-xs text-slate-500">{{ r.region }}</p>
+                                </td>
+                                <td class="text-slate-800">{{ r.course_title || 'No course yet' }}</td>
+                                <td><TrainingStatusBadge :status="r.status" :result="r.result" :score="r.score" :score-total="r.score_total" /></td>
+                                <td class="whitespace-nowrap tabular-nums">{{ r.submitted_at || 'Not yet' }}</td>
+                                <td>
+                                    <span v-if="r.certificate" class="badge badge-green">Available</span>
+                                    <span v-else class="text-sm text-slate-500">None</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </template>
+        </section>
+
+        <Modal :show="confirming" max-width="lg" @close="confirming = false">
+            <div v-if="selectedCourse" class="space-y-3 p-6 text-[15px] text-slate-700" role="alertdialog" aria-labelledby="archive-title">
+                <h2 id="archive-title" class="text-lg font-semibold text-navy-900">Archive results for "{{ selectedCourse.title }}"?</h2>
                 <p>Use this only when the course changed enough that trainees must redo it.</p>
-                <ul class="list-disc pl-5 space-y-1">
+                <ul class="list-disc space-y-1 pl-5">
                     <li>{{ toArchive }} current {{ toArchive === 1 ? 'submission' : 'submissions' }} will be marked <strong>Archived</strong>.</li>
-                    <li>Every trainee enrolled in this course will have their lesson results cleared, must redo the lessons, and take the new final exam.</li>
+                    <li>Every trainee enrolled in this course has their lesson results cleared, redoes the lessons and takes the new final exam.</li>
                     <li>Certificates already issued stay valid and verifiable, marked as an earlier course version. Passing again earns a new one.</li>
                     <li>Enrolled trainees get a notification.</li>
                 </ul>
-                <p class="font-medium text-red-700">This can't be undone.</p>
-                <div class="flex justify-end gap-2 pt-2">
-                    <button type="button" @click="confirming = false" class="px-4 py-2 rounded-lg border text-sm">Cancel</button>
-                    <button type="button" @click="archive" :disabled="form.processing"
-                        class="px-4 py-2 rounded-lg bg-purple-600 text-white text-sm font-medium hover:bg-purple-700 disabled:opacity-60">
-                        Archive results
-                    </button>
+                <p class="font-semibold text-red-700">This can't be undone.</p>
+                <div class="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                    <button type="button" class="btn btn-secondary" @click="confirming = false">Cancel</button>
+                    <button type="button" :disabled="form.processing" class="btn btn-danger" @click="archive">Archive results</button>
                 </div>
             </div>
         </Modal>

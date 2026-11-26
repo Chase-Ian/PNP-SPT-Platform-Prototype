@@ -1,174 +1,99 @@
-<!-- Verify/Show.vue -->
+<!-- Verify/Show.vue: lookup form with the result directly below it. -->
 <script setup>
-import LegalLinks from '@/Components/LegalLinks.vue';
-import TraineeLayout from '@/Layouts/TraineeLayout.vue';
-import { Link, usePage } from '@inertiajs/vue3';
-import { computed } from 'vue';
-import { ArrowLeft, CheckCircle2, XCircle, ShieldCheck, User, BookOpen, Calendar, Hash, Building2, MapPin, QrCode, ExternalLink } from 'lucide-vue-next';
+import CertificateLookup from '@/Components/CertificateLookup.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import VerifyHelp from '@/Components/VerifyHelp.vue';
+import PublicLayout from '@/Layouts/PublicLayout.vue';
+import RoleLayout from '@/Layouts/RoleLayout.vue';
+import { Head, Link, usePage } from '@inertiajs/vue3';
+import { computed, ref, watch } from 'vue';
+import { Award, Check, Info, SearchX, ShieldCheck } from 'lucide-vue-next';
 
-defineProps({ certificate: Object });
-const page = usePage();
-const isLoggedIn = computed(() => !!page.props.auth?.user);
+const props = defineProps({ certificate: Object, serial: String });
+const isLoggedIn = computed(() => !!usePage().props.auth?.user);
+const isTrainee = computed(() => usePage().props.auth?.user?.role === 'trainee');
+
+// Hidden after an invalid entry or a failed check, until the next result arrives.
+const stale = ref(false);
+watch(() => props.serial, () => { stale.value = false; });
+
+const rows = computed(() => props.certificate ? [
+    { label: 'Trainee name', value: props.certificate.holder_name },
+    { label: 'Date issued', value: props.certificate.issued_at },
+    { label: 'Course', value: props.certificate.title },
+    { label: 'Status', status: true },
+    { label: 'Certificate number', value: props.certificate.serial_id, mono: true },
+    { label: 'Training control no.', value: props.certificate.training_ctrl_no, mono: true },
+] : []);
 </script>
 
 <template>
-    <component :is="isLoggedIn ? TraineeLayout : 'div'"
-               :class="!isLoggedIn ? 'min-h-screen bg-gradient-to-br from-slate-100 to-blue-50 py-12 px-4' : ''">
+    <Head :title="certificate ? 'Certificate verified' : 'No record found'" />
+    <component :is="isLoggedIn ? RoleLayout : PublicLayout">
+        <div class="mx-auto w-full max-w-[1200px] space-y-6">
+            <PageHeader title="Certificate verification" description="Check a training certificate using its certificate number.">
+                <template v-if="isTrainee" #actions>
+                    <Link href="/certificates" class="inline-flex items-center gap-2 text-[15px] font-semibold text-blue-700 hover:text-blue-800">
+                        <Award :size="20" class="text-purple-600" aria-hidden="true" /> My certificates
+                    </Link>
+                </template>
+            </PageHeader>
 
-        <div class="max-w-2xl mx-auto space-y-4">
+            <div class="grid grid-cols-1 gap-6 lg:grid-cols-3">
+                <div class="space-y-6 lg:col-span-2">
+                    <CertificateLookup :initial="serial ?? certificate?.serial_id ?? ''" @stale="stale = true" @fresh="stale = false" />
 
-            <!-- Nav row -->
-            <div class="flex justify-between items-center">
-                <Link href="/verify"
-                      class="text-sm text-blue-600 font-medium flex items-center gap-1.5 hover:text-blue-800 transition-colors">
-                    <ArrowLeft :size="14" /> Search another certificate
-                </Link>
-                <Link v-if="isLoggedIn" href="/dashboard"
-                      class="text-sm text-blue-600 font-medium hover:text-blue-800 transition-colors">
-                    Back to Home →
-                </Link>
+                    <!-- Match found -->
+                    <section v-if="certificate && !stale" class="card p-5 sm:p-6" aria-labelledby="result-heading">
+                        <div class="flex items-start gap-3">
+                            <ShieldCheck :size="30" class="shrink-0 text-green-600" aria-hidden="true" />
+                            <div>
+                                <h2 id="result-heading" class="text-xl font-semibold text-navy-900">Certificate verified</h2>
+                                <p class="text-[15px] text-slate-600">A matching issued record was found.</p>
+                            </div>
+                        </div>
+
+                        <dl class="mt-5 overflow-hidden rounded-lg border border-slate-200">
+                            <div v-for="row in rows" :key="row.label" class="grid grid-cols-1 gap-0.5 px-4 py-2.5 odd:bg-slate-50 sm:grid-cols-[13rem_1fr] sm:gap-4">
+                                <dt class="font-semibold text-navy-900">{{ row.label }}</dt>
+                                <dd v-if="row.status">
+                                    <span v-if="certificate.archived" class="inline-flex flex-wrap items-center gap-2 font-semibold text-purple-800">
+                                        <Check :size="18" class="text-green-600" aria-hidden="true" /> Issued
+                                        <span class="badge badge-purple">Earlier course version</span>
+                                    </span>
+                                    <span v-else class="inline-flex items-center gap-1.5 font-semibold text-green-700">
+                                        <Check :size="18" aria-hidden="true" /> Issued
+                                    </span>
+                                </dd>
+                                <dd v-else :class="row.mono ? 'break-all font-mono text-[14px]' : ''" class="text-slate-800">{{ row.value }}</dd>
+                            </div>
+                        </dl>
+
+                        <p v-if="certificate.archived" class="mt-3 text-sm text-slate-600">
+                            This certificate was issued for an earlier version of the course. It is still genuine.
+                        </p>
+                        <p class="mt-4 flex items-center gap-2 border-t border-slate-200 pt-4 text-sm text-slate-600">
+                            <Info :size="18" class="shrink-0 text-slate-500" aria-hidden="true" /> Check that these details match the certificate you were given.
+                        </p>
+                    </section>
+
+                    <!-- No match -->
+                    <section v-else-if="!stale" class="card p-5 sm:p-6" aria-labelledby="result-heading">
+                        <div class="flex items-start gap-3">
+                            <SearchX :size="30" class="shrink-0 text-slate-500" aria-hidden="true" />
+                            <div>
+                                <h2 id="result-heading" class="text-xl font-semibold text-navy-900">No record found</h2>
+                                <p class="mt-1 text-[15px] text-slate-600">Check the number and try again.</p>
+                                <p class="mt-2 text-sm text-slate-500">
+                                    Number searched: <span class="break-all font-mono font-semibold text-slate-700">{{ serial }}</span>
+                                </p>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <VerifyHelp />
             </div>
-
-            <!-- ===== CERTIFICATE VALID ===== -->
-            <div v-if="certificate">
-                <!-- Status Banner -->
-                <div class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-2xl p-5 text-white shadow-lg mb-4">
-                    <div class="flex items-center gap-3">
-                        <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                            <CheckCircle2 :size="26" />
-                        </div>
-                        <div>
-                            <h1 class="font-bold text-lg">Certificate Verified ✓</h1>
-                            <p class="text-emerald-100 text-sm">This certificate is authentic and on record in the PNP-SPT system.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Certificate Details Card -->
-                <div class="bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden">
-
-                    <!-- Gold top accent -->
-                    <div class="h-1.5 bg-gradient-to-r from-[#0a1a4e] via-[#DAA520] to-[#0a1a4e]"></div>
-
-                    <div class="p-6">
-                        <!-- Title Header -->
-                        <div class="text-center mb-5 pb-4 border-b border-gray-100">
-                            <p class="text-xs text-gray-400 uppercase tracking-widest mb-1">Philippine National Police</p>
-                            <p class="text-xs text-gray-400 uppercase tracking-widest">Special Police Training Division</p>
-                            <h2 class="text-xl font-bold text-[#0a1a4e] mt-2">CERTIFICATE OF PARTICIPATION</h2>
-                        </div>
-
-                        <!-- Detail rows -->
-                        <div class="grid grid-cols-1 gap-3">
-
-                            <!-- Holder Name -->
-                            <div class="flex items-start gap-3 p-3 bg-blue-50 rounded-xl">
-                                <div class="w-8 h-8 bg-[#0a1a4e] text-yellow-400 rounded-lg flex items-center justify-center flex-shrink-0">
-                                    <User :size="14" />
-                                </div>
-                                <div>
-                                    <p class="text-xs text-gray-500 font-medium uppercase tracking-wide">Certificate Holder</p>
-                                    <p class="font-bold text-[#0a1a4e] text-lg">{{ certificate.holder_name }}</p>
-                                </div>
-                            </div>
-
-                            <!-- Two-column grid for other fields -->
-                            <div class="grid grid-cols-2 gap-3">
-
-                                <div class="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
-                                    <BookOpen :size="14" class="text-blue-500 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p class="text-xs text-gray-400 font-medium">Course / Module</p>
-                                        <p class="text-sm font-semibold text-gray-800">{{ certificate.title }}</p>
-                                        <p v-if="certificate.archived" class="text-xs text-purple-700 mt-0.5">Issued for an earlier version of this course. Still genuine.</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
-                                    <Calendar :size="14" class="text-blue-500 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p class="text-xs text-gray-400 font-medium">Date Issued</p>
-                                        <p class="text-sm font-semibold text-gray-800">{{ certificate.issued_at }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
-                                    <Building2 :size="14" class="text-blue-500 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p class="text-xs text-gray-400 font-medium">Unit / Office</p>
-                                        <p class="text-sm font-semibold text-gray-800">{{ certificate.unit_office }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
-                                    <MapPin :size="14" class="text-blue-500 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p class="text-xs text-gray-400 font-medium">Region</p>
-                                        <p class="text-sm font-semibold text-gray-800">{{ certificate.region }}</p>
-                                    </div>
-                                </div>
-
-                            </div>
-
-                            <!-- Certificate Numbers -->
-                            <div class="grid grid-cols-2 gap-3">
-                                <div class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                                    <Hash :size="14" class="text-amber-600 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p class="text-xs text-amber-600 font-medium">Certificate No.</p>
-                                        <p class="text-xs font-mono font-bold text-amber-800">{{ certificate.serial_id }}</p>
-                                    </div>
-                                </div>
-                                <div class="flex items-start gap-2 p-3 bg-amber-50 border border-amber-100 rounded-xl">
-                                    <Hash :size="14" class="text-amber-600 flex-shrink-0 mt-0.5" />
-                                    <div>
-                                        <p class="text-xs text-amber-600 font-medium">Training Ctrl No.</p>
-                                        <p class="text-xs font-mono font-bold text-amber-800">{{ certificate.training_ctrl_no }}</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Verify Link -->
-                            <div class="flex items-start gap-2 p-3 bg-gray-50 rounded-xl">
-                                <ExternalLink :size="14" class="text-blue-500 flex-shrink-0 mt-0.5" />
-                                <div class="min-w-0">
-                                    <p class="text-xs text-gray-400 font-medium">Verification URL</p>
-                                    <a :href="certificate.verification_url" target="_blank"
-                                       class="text-xs text-blue-600 hover:underline break-all">
-                                        {{ certificate.verification_url }}
-                                    </a>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-                </div>
-
-                <!-- QR hint -->
-                <div class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center gap-3 mt-4">
-                    <QrCode :size="18" class="text-blue-600 flex-shrink-0" />
-                    <p class="text-xs text-blue-700">
-                        The QR code on the physical certificate links directly to this verification page.
-                        Scanning it will confirm the authenticity of the document.
-                    </p>
-                </div>
-            </div>
-
-            <!-- ===== CERTIFICATE NOT FOUND ===== -->
-            <div v-else class="bg-white rounded-2xl border border-gray-100 shadow-md overflow-hidden">
-                <div class="h-1.5 bg-gradient-to-r from-red-400 to-rose-500"></div>
-                <div class="p-8 text-center">
-                    <div class="w-16 h-16 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-4">
-                        <XCircle :size="32" class="text-red-500" />
-                    </div>
-                    <h2 class="font-bold text-lg text-gray-800 mb-2">Certificate Not Found</h2>
-                    <p class="text-sm text-gray-500 max-w-xs mx-auto">
-                        No certificate was found with that serial number. Please double-check the number printed on your certificate.
-                    </p>
-                </div>
-            </div>
-
-            <LegalLinks v-if="!isLoggedIn" class="mt-8" />
         </div>
     </component>
 </template>

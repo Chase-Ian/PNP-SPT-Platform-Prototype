@@ -29,7 +29,7 @@ class RegistrationTest extends TestCase
             'rank' => 'Patrolman/Patrolwoman (Pat)',
             'email' => 'test@example.com',
             'unit_office' => 'Station 1',
-            'region' => 'PRO NCR - National Capital Region (NCR)',
+            'region' => 'NCRPO - National Capital Region Police Office',
             'password' => 'password',
             'password_confirmation' => 'password',
             'terms' => '1',

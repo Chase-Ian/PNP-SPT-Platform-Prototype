@@ -44,4 +44,13 @@ return [
     */
 
     'recovery_link_minutes' => (int) env('TWO_FACTOR_RECOVERY_LINK_MINUTES', 30),
+
+    /*
+    | Deleted accounts: hidden and unable to sign in, but an administrator can
+    | reinstate them for this many days. After that the daily `model:prune`
+    | erases them with their training records and certificates. The Privacy
+    | Notice and Terms show this number.
+    */
+
+    'deleted_account_days' => (int) env('DELETED_ACCOUNT_DAYS', 30),
 ];

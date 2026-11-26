@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\TwoFactorPolicy;
+use App\Support\PnpRegions;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -29,20 +30,14 @@ class ProfileController extends Controller
                 'setUp' => $policy->isSetUp($user),
                 'required' => $policy->isRequiredFor($user),
             ],
-            'emailRequests' => $user->emailChangeRequests()->latest()->limit(5)->get()
-                ->map(fn ($r) => [
-                    'id' => $r->id,
-                    'new_email' => $r->new_email,
-                    'status' => $r->status,
-                    'admin_note' => $r->admin_note,
-                    'created_at' => $r->created_at->format('Y-m-d'),
-                ]),
+            'deletedAccountDays' => (int) config('security.deleted_account_days', 30),
+            'regionOptions' => PnpRegions::all(),
         ]);
     }
 
     /**
-     * Update the user's profile information. Email is not part of this:
-     * see EmailChangeRequestController.
+     * Update the user's profile information. The email address is not part
+     * of this: it is the sign-in identity and can't be changed.
      */
     public function update(ProfileUpdateRequest $request): RedirectResponse
     {
@@ -65,6 +60,7 @@ class ProfileController extends Controller
 
         Auth::logout();
 
+        // Hidden, not erased: an administrator can reinstate it for a while.
         $user->delete();
 
         $request->session()->invalidate();

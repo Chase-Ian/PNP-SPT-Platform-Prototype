@@ -1,10 +1,12 @@
 <!-- resources/js/Pages/Admin/ExamQuestions/Index.vue -->
 <script setup>
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
-import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import SelectMenu from '@/Components/SelectMenu.vue';
+import { askConfirm } from '@/confirm';
 import { Head, Link, useForm, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { ClipboardList, Eye, Plus, Pencil, X, ArrowLeft, ArrowLeftRight } from 'lucide-vue-next';
+import { ArrowRight, Pencil, Plus, Trash2, X } from 'lucide-vue-next';
 
 const props = defineProps({ course: Object, questions: Array, settings: Object, liveQuestionCount: Number });
 
@@ -72,146 +74,159 @@ const submit = () => {
 };
 
 const remove = (question) => {
-    if (confirm('Delete this question?')) router.delete(`/admin/exam-questions/${question.id}`);
+    askConfirm({
+        title: 'Delete this exam question?',
+        message: question.question,
+        confirmLabel: 'Delete question',
+        tone: 'danger',
+    }).then((ok) => ok && router.delete(`/admin/exam-questions/${question.id}`));
+};
+
+const openCreateQuestion = () => {
+    editingQuestionId.value = null;
+    resetForType('multiple_choice');
+    form.question = '';
+    form.clearErrors();
+    showForm.value = true;
 };
 
 const typeLabel = (t) => ({ multiple_choice: 'Multiple Choice', true_false: 'True / False', matching: 'Matching Type', identification: 'Identification' }[t]);
 </script>
 
 <template>
-    <Head :title="`Final Exam — ${course.title}`" />
+    <Head :title="`Final exam: ${course.title}`" />
     <AdminOrSupervisorLayout>
-        <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">
-            <ArrowLeft :size="14" /> Back to Courses
-        </Link>
-
-        <AdminPageBanner :icon="ClipboardList" badge-text="Final Assessment • Question Bank & Settings"
-            :title="`Final Exam — ${course.title}`"
-            subtitle="Configure exam duration, passing threshold, and manage the question bank all in one place.">
+        <PageHeader back-href="/admin/courses" back-label="Back to courses"
+            :title="`Final exam: ${course.title}`"
+            description="Set the time limit and pass mark, and manage the question bank.">
             <template #actions>
-            <Link :href="`/admin/courses/${course.id}/exam-questions/preview`" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
-                <Eye :size="14" /> Preview Exam
-            </Link>
-            <button @click="showForm = !showForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium inline-flex items-center gap-1.5">
-                <Plus :size="14" /> Add Question
-            </button>
+                <Link :href="`/admin/courses/${course.id}/exam-questions/preview`" class="btn btn-secondary">Preview exam</Link>
+                <button type="button" @click="openCreateQuestion" class="btn btn-primary">Add question</button>
             </template>
-        </AdminPageBanner>
+        </PageHeader>
 
         <!-- Settings panel -->
-        <div class="bg-white rounded-xl border p-6">
-            <div class="flex justify-between items-start mb-4">
-                <h3 class="font-semibold">Exam Settings</h3>
-                <div class="flex gap-2">
-                    <span class="bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full text-xs">{{ liveQuestionCount }} Questions</span>
-                    <span class="bg-green-100 text-green-700 px-2 py-0.5 rounded-full text-xs">{{ settingsForm.pass_threshold_percent }}% Pass Score Threshold</span>
+        <section class="card">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-4 py-3 sm:px-6">
+                <h2 class="section-title">Exam settings</h2>
+                <div class="flex flex-wrap gap-2">
+                    <span class="badge badge-blue">{{ liveQuestionCount }} {{ liveQuestionCount === 1 ? 'question' : 'questions' }}</span>
+                    <span class="badge badge-green">{{ settingsForm.pass_threshold_percent }}% pass mark</span>
                 </div>
             </div>
 
-            <div class="grid grid-cols-2 gap-6">
+            <div class="grid grid-cols-1 gap-6 px-4 py-4 sm:px-6 lg:grid-cols-2">
                 <div>
-                    <p class="text-xs text-gray-500 mb-2">Exam Time Limit (Minutes)</p>
-                    <p class="text-xl font-bold text-blue-900 mb-2">{{ (settingsForm.time_limit_minutes / 60).toFixed(1) }} Hours</p>
-                    <div class="flex gap-1 flex-wrap">
-                        <button v-for="preset in timePresets" :key="preset" @click="settingsForm.time_limit_minutes = preset"
-                            :class="settingsForm.time_limit_minutes === preset ? 'bg-blue-900 text-white' : 'bg-gray-100 text-gray-600'"
-                            class="px-2 py-1 rounded text-xs">{{ preset }} min</button>
+                    <p class="text-sm font-medium text-slate-700">Time limit</p>
+                    <p class="mt-1 text-xl font-semibold tabular-nums text-navy-900">{{ (settingsForm.time_limit_minutes / 60).toFixed(1) }} hours</p>
+                    <div class="mt-2 inline-flex flex-wrap rounded-lg border border-slate-300 bg-white p-0.5">
+                        <button v-for="preset in timePresets" :key="preset" type="button" @click="settingsForm.time_limit_minutes = preset"
+                            :aria-pressed="settingsForm.time_limit_minutes === preset"
+                            :class="settingsForm.time_limit_minutes === preset ? 'bg-blue-800 text-white' : 'text-slate-600 hover:bg-slate-50'"
+                            class="rounded px-2.5 py-1 text-xs font-medium">{{ preset }} min</button>
                     </div>
                 </div>
                 <div>
-                    <p class="text-xs text-gray-500 mb-2">Passing Threshold (%)</p>
-                    <input v-model.number="settingsForm.pass_threshold_percent" type="number" min="1" max="100" class="border rounded-lg px-3 py-2 text-sm w-24" />
-                    <p class="text-xs text-gray-400 mt-1">{{ requiredCorrect }} / {{ liveQuestionCount }} Correct Required</p>
+                    <label for="pass-threshold" class="text-sm font-medium text-slate-700">Pass mark (%)</label>
+                    <input id="pass-threshold" v-model.number="settingsForm.pass_threshold_percent" type="number" min="1" max="100" class="mt-1 block w-28 px-3 py-2 text-sm shadow-sm" />
+                    <p class="mt-1 text-xs text-slate-500">{{ requiredCorrect }} / {{ liveQuestionCount }} correct required</p>
                 </div>
             </div>
 
-            <button @click="saveSettings" :disabled="settingsForm.processing" class="mt-4 bg-blue-900 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                Save Exam Settings
-            </button>
-        </div>
+            <div class="flex justify-end border-t border-slate-200 px-4 py-3 sm:px-6">
+                <button type="button" @click="saveSettings" :disabled="settingsForm.processing" class="btn btn-primary">
+                    Save exam settings
+                </button>
+            </div>
+        </section>
 
-        <form v-if="showForm" @submit.prevent="submit" class="bg-white rounded-xl border p-6 space-y-4">
-            <div>
-                <p class="text-xs font-semibold text-gray-500 mb-2">QUESTION TYPE</p>
-                <div class="grid grid-cols-4 gap-2">
+        <form v-if="showForm" @submit.prevent="submit" class="card space-y-4 p-4 sm:p-6">
+            <h2 class="section-title">{{ editingQuestionId ? 'Edit question' : 'New question' }}</h2>
+
+            <fieldset>
+                <legend class="text-sm font-medium text-slate-700">Question type</legend>
+                <div class="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-4">
                     <button v-for="t in ['multiple_choice', 'true_false', 'matching', 'identification']" :key="t" type="button"
-                        @click="resetForType(t)" :class="selectedType === t ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-600'"
-                        class="rounded-lg py-2 text-xs font-medium">{{ typeLabel(t) }}</button>
+                        @click="resetForType(t)" :aria-pressed="selectedType === t"
+                        :class="selectedType === t ? 'border-blue-600 bg-blue-50 text-blue-900 ring-1 ring-blue-600' : 'border-slate-300 bg-white text-slate-600 hover:bg-slate-50'"
+                        class="rounded-lg border py-2 text-xs font-medium">{{ typeLabel(t) }}</button>
                 </div>
-            </div>
+            </fieldset>
 
             <div>
-                <label class="text-sm font-medium">Question</label>
-                <textarea v-model="form.question" rows="2" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required></textarea>
+                <label for="exam-question" class="block text-sm font-medium text-slate-700">Question</label>
+                <textarea id="exam-question" v-model="form.question" rows="2" class="mt-1 block w-full px-3 py-2 text-sm shadow-sm" required></textarea>
             </div>
 
             <!-- Multiple Choice -->
             <div v-if="selectedType === 'multiple_choice'" class="space-y-2">
-                <label class="text-sm font-medium">Choices</label>
+                <p class="text-sm font-medium text-slate-700">Choices</p>
                 <div v-for="(c, i) in form.answer_data.choices" :key="i" class="flex gap-2">
-                    <input v-model="form.answer_data.choices[i]" type="text" :placeholder="`Choice ${i + 1}`" class="flex-1 border rounded px-2 py-1.5 text-sm" required />
-                    <button type="button" @click="removeChoice(i)" aria-label="Remove choice" class="text-red-600 hover:text-red-700"><X :size="14" /></button>
+                    <input v-model="form.answer_data.choices[i]" type="text" :placeholder="`Choice ${i + 1}`" :aria-label="`Choice ${i + 1}`" class="block min-w-0 flex-1 px-2.5 py-1.5 text-sm" required />
+                    <button type="button" @click="removeChoice(i)" aria-label="Remove choice" title="Remove choice" class="btn-icon hover:bg-red-50 hover:text-red-700"><X :size="16" :stroke-width="1.75" /></button>
                 </div>
-                <button type="button" @click="addChoice" class="text-blue-600 text-xs font-medium inline-flex items-center gap-1"><Plus :size="12" /> Add Choice</button>
+                <button type="button" @click="addChoice" class="btn btn-ghost btn-sm"><Plus :size="14" :stroke-width="2" /> Add choice</button>
 
-                <label class="text-sm font-medium block mt-2">Correct Answer</label>
-                <select v-model="form.answer_data.correct_choice" class="w-full border rounded px-2 py-1.5 text-sm" required>
-                    <option value="" disabled>Select correct choice</option>
-                    <option v-for="(c, i) in form.answer_data.choices" :key="i" :value="c">{{ c || `Choice ${i + 1}` }}</option>
-                </select>
+                <label for="mc-correct" class="mt-2 block text-sm font-medium text-slate-700">Correct answer</label>
+                <SelectMenu id="mc-correct" v-model="form.answer_data.correct_choice" :options="form.answer_data.choices.filter(Boolean)"
+                    label="Correct answer" placeholder="Select the correct choice" />
             </div>
 
             <!-- True / False -->
             <div v-if="selectedType === 'true_false'">
-                <label class="text-sm font-medium">Correct Answer</label>
-                <div class="flex gap-2 mt-1">
-                    <button type="button" @click="form.answer_data.correct_choice = 'True'"
-                        :class="form.answer_data.correct_choice === 'True' ? 'bg-green-600 text-white' : 'bg-gray-100'"
-                        class="px-4 py-2 rounded-lg text-sm font-medium">True</button>
-                    <button type="button" @click="form.answer_data.correct_choice = 'False'"
-                        :class="form.answer_data.correct_choice === 'False' ? 'bg-red-600 text-white' : 'bg-gray-100'"
-                        class="px-4 py-2 rounded-lg text-sm font-medium">False</button>
+                <p class="text-sm font-medium text-slate-700">Correct answer</p>
+                <div class="mt-1 inline-flex rounded-lg border border-slate-300 bg-white p-0.5">
+                    <button v-for="v in ['True', 'False']" :key="v" type="button" @click="form.answer_data.correct_choice = v"
+                        :aria-pressed="form.answer_data.correct_choice === v"
+                        :class="form.answer_data.correct_choice === v ? 'bg-blue-800 text-white' : 'text-slate-600 hover:bg-slate-50'"
+                        class="rounded px-5 py-1.5 text-sm font-medium">{{ v }}</button>
                 </div>
             </div>
 
             <!-- Matching -->
             <div v-if="selectedType === 'matching'" class="space-y-2">
-                <label class="text-sm font-medium">Pairs (Column A matches Column B)</label>
-                <div v-for="(pair, i) in form.answer_data.pairs" :key="i" class="flex gap-2">
-                    <input v-model="pair.left" type="text" placeholder="Column A" class="flex-1 border rounded px-2 py-1.5 text-sm" required />
-                    <ArrowLeftRight :size="14" class="self-center text-gray-400" />
-                    <input v-model="pair.right" type="text" placeholder="Column B" class="flex-1 border rounded px-2 py-1.5 text-sm" required />
-                    <button type="button" @click="removePair(i)" aria-label="Remove pair" class="text-red-600 hover:text-red-700"><X :size="14" /></button>
+                <p class="text-sm font-medium text-slate-700">Pairs (column A matches column B)</p>
+                <div v-for="(pair, i) in form.answer_data.pairs" :key="i" class="flex flex-col gap-2 rounded-lg border border-slate-200 p-2 sm:flex-row sm:items-center sm:border-0 sm:p-0">
+                    <input v-model="pair.left" type="text" placeholder="Column A" aria-label="Column A" class="block min-w-0 flex-1 px-2.5 py-1.5 text-sm" required />
+                    <ArrowRight :size="16" :stroke-width="1.75" class="hidden shrink-0 text-slate-400 sm:block" />
+                    <div class="flex flex-1 gap-2">
+                        <input v-model="pair.right" type="text" placeholder="Column B" aria-label="Column B" class="block min-w-0 flex-1 px-2.5 py-1.5 text-sm" required />
+                        <button type="button" @click="removePair(i)" aria-label="Remove pair" title="Remove pair" class="btn-icon hover:bg-red-50 hover:text-red-700"><X :size="16" :stroke-width="1.75" /></button>
+                    </div>
                 </div>
-                <button type="button" @click="addPair" class="text-blue-600 text-xs font-medium inline-flex items-center gap-1"><Plus :size="12" /> Add Pair</button>
+                <button type="button" @click="addPair" class="btn btn-ghost btn-sm"><Plus :size="14" :stroke-width="2" /> Add pair</button>
             </div>
 
             <!-- Identification -->
             <div v-if="selectedType === 'identification'">
-                <label class="text-sm font-medium">Correct Answer</label>
-                <input v-model="form.answer_data.correct_answer" type="text" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
-                <p class="text-xs text-gray-400 mt-1">Matching is case-insensitive; extra spaces are trimmed.</p>
+                <label for="id-answer" class="block text-sm font-medium text-slate-700">Correct answer</label>
+                <input id="id-answer" v-model="form.answer_data.correct_answer" type="text" class="mt-1 block w-full px-3 py-2 text-sm shadow-sm" required />
+                <p class="mt-1 text-xs text-slate-500">Matching is case-insensitive; extra spaces are trimmed.</p>
             </div>
 
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
-                {{ editingQuestionId ? 'Save Changes' : 'Save Question' }}
-            </button>
-            <button v-if="editingQuestionId" type="button" @click="cancelQuestionForm" class="text-xs text-gray-400 ml-3">Cancel Edit</button>
+            <div class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+                <button type="button" @click="cancelQuestionForm" class="btn btn-secondary">Cancel</button>
+                <button type="submit" :disabled="form.processing" class="btn btn-primary">
+                    {{ editingQuestionId ? 'Save changes' : 'Save question' }}
+                </button>
+            </div>
         </form>
 
-            <div class="bg-white rounded-xl border p-6">
-                <h3 class="font-semibold mb-4">Question Bank ({{ questions.length }})</h3>
-                <div v-if="questions.length === 0" class="text-sm text-gray-400">No questions yet.</div>
-                <div v-for="q in questions" :key="q.id" class="flex justify-between items-start border-b last:border-0 py-3">
-                    <div>
-                        <span class="bg-gray-100 text-gray-500 text-xs px-2 py-0.5 rounded-full mr-2">{{ typeLabel(q.type) }}</span>
-                        <p class="text-sm mt-1">{{ q.question }}</p>
+        <section class="card">
+            <h2 class="section-title border-b border-slate-200 px-4 py-3 sm:px-6">Question bank ({{ questions.length }})</h2>
+            <p v-if="questions.length === 0" class="px-4 py-6 text-sm text-slate-500 sm:px-6">No questions yet.</p>
+            <ol v-else class="divide-y divide-slate-200">
+                <li v-for="(q, i) in questions" :key="q.id" class="flex items-start justify-between gap-3 px-4 py-3 sm:px-6">
+                    <div class="min-w-0">
+                        <span class="badge bg-slate-100 text-slate-600">{{ typeLabel(q.type) }}</span>
+                        <p class="mt-1 text-sm text-slate-800">{{ i + 1 }}. {{ q.question }}</p>
                     </div>
-                    <div class="flex items-center gap-4 shrink-0">
-                        <button @click="openEditQuestion(q)" class="text-green-600 text-xs font-medium inline-flex items-center gap-1"><Pencil :size="12" /> Edit</button>
-                        <button @click="remove(q)" class="text-red-600 text-xs font-medium">Delete</button>
+                    <div class="flex shrink-0 gap-0.5">
+                        <button @click="openEditQuestion(q)" class="btn-icon" aria-label="Edit question" title="Edit"><Pencil :size="15" :stroke-width="1.75" /></button>
+                        <button @click="remove(q)" class="btn-icon hover:bg-red-50 hover:text-red-700" aria-label="Delete question" title="Delete"><Trash2 :size="15" :stroke-width="1.75" /></button>
                     </div>
-                </div>
-            </div>
+                </li>
+            </ol>
+        </section>
     </AdminOrSupervisorLayout>
 </template>

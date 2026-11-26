@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\URL;
 
 /**
- * Lost authenticator, no recovery codes: after the password step of login,
+ * Lost authenticator: after the password step of login,
  * the user can have a reset link sent to their verified email. The link only
  * works in the same browser session that passed the password check, so the
  * reset still needs two factors (password + mailbox).
@@ -36,7 +36,7 @@ class TwoFactorRecoveryController extends Controller
             );
 
             $user->notify(new TwoFactorRecoveryLink($url, $minutes));
-            Log::info('2FA email recovery link sent', ['user_id' => $user->id]);
+            Log::info('MFA email recovery link sent', ['user_id' => $user->id]);
         }
 
         return back()->with('status', 'recovery-link-sent');
@@ -57,7 +57,7 @@ class TwoFactorRecoveryController extends Controller
         }
 
         $this->policy->reset($user);
-        Log::warning('2FA reset via email recovery link', ['user_id' => $user->id]);
+        Log::warning('MFA reset via email recovery link', ['user_id' => $user->id]);
 
         Auth::login($user, $request->session()->pull('login.remember', false));
         $request->session()->forget('login.id');

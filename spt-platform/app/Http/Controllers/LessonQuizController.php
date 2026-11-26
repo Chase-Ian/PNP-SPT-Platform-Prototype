@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Lesson;
 use App\Models\LessonProgress;
 use Illuminate\Http\Request;
+use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
 
 class LessonQuizController extends Controller
@@ -25,14 +26,25 @@ class LessonQuizController extends Controller
 
     public function submit(Request $request, Lesson $lesson)
     {
-        $request->validate(['answers' => 'required|array']);
+        $request->validate(['answers' => ['nullable', 'array']]);
 
         $questions = $lesson->quizQuestions;
+        $answers = $request->input('answers') ?? [];
+
+        // Say what's missing instead of failing silently (the page used to do
+        // nothing when an answer was missing).
+        $unanswered = $questions->filter(fn ($q) => blank($answers[$q->id] ?? null))->count();
+        if ($unanswered > 0) {
+            throw ValidationException::withMessages([
+                'answers' => "Answer all questions before submitting ({$unanswered} left).",
+            ]);
+        }
+
         $correctCount = 0;
         $breakdown = [];
 
         foreach ($questions as $q) {
-            $submitted = $request->answers[$q->id] ?? null;
+            $submitted = $answers[$q->id] ?? null;
             $isCorrect = $submitted === $q->correct_choice;
 
             if ($isCorrect) {
@@ -45,9 +57,11 @@ class LessonQuizController extends Controller
             ];
         }
 
-        $total = max($questions->count(), 1);
-        $percent = round(($correctCount / $total) * 100);
-        $passed = $percent >= 70;
+        // A lesson without quiz questions is passed by confirming the material
+        // was reviewed. Otherwise the next lesson and the final exam (which
+        // need every lesson quiz passed) could never unlock.
+        $total = $questions->count();
+        $passed = $total === 0 || round(($correctCount / $total) * 100) >= 70;
 
         LessonProgress::updateOrCreate(
             ['user_id' => $request->user()->id, 'lesson_id' => $lesson->id],

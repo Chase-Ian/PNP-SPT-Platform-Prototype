@@ -46,7 +46,8 @@ class CertificateIssuerTest extends TestCase
         $this->assertNotSame($third->serial_id, $next->serial_id);
         $this->assertNotSame($first->serial_id, $next->serial_id);
         $this->assertMatchesRegularExpression('/^PNP-SPT-CP-\d{4}-\d{6}$/', $next->serial_id);
-        $this->assertMatchesRegularExpression('/^SPT-PRON-\d{4}-\d{4}$/', $next->training_ctrl_no);
+        // The trainee was saved with the old NCR label; it still gives NCRPO.
+        $this->assertMatchesRegularExpression('/^SPT-NCRPO-\d{4}-\d{4}$/', $next->training_ctrl_no);
         Storage::assertExists($next->pdf_path);
     }
 
@@ -86,5 +87,24 @@ class CertificateIssuerTest extends TestCase
 
         $this->assertStringStartsWith('data:image/svg+xml;base64,', $uri);
         $this->assertStringContainsString('<svg', base64_decode(substr($uri, strlen('data:image/svg+xml;base64,'))));
+    }
+
+    public function test_the_certificate_names_the_trainee_the_course_and_the_date(): void
+    {
+        Storage::fake();
+        $user = User::factory()->create([
+            'first_name' => 'Juan', 'last_name' => 'Peña', 'role' => 'trainee',
+            'rank' => 'Police Lieutenant Colonel (PLtCol)',
+        ]);
+        $course = Course::create(['activity_code' => 'SPT-104', 'title' => 'Data Privacy', 'duration_hours' => 6]);
+        $certificate = app(CertificateIssuer::class)->issue($user, $course);
+        $certificate->update(['issued_at' => '2026-11-26 09:00:00']);
+
+        $text = app(CertificateIssuer::class)->pdf($certificate->fresh())->getDomPDF()->getDom()->textContent;
+        $text = preg_replace('/\s+/', ' ', $text);
+
+        $this->assertStringContainsString('PLTCOL JUAN PEÑA', $text);
+        $this->assertStringContainsString("6-hour online training on \u{201C}Data Privacy\u{201D}", $text);
+        $this->assertStringContainsString('Given this 26th day of November 2026', $text);
     }
 }

@@ -19,6 +19,8 @@ class CertificateLogController extends Controller
             ->map(function ($users, $station) {
                 return [
                     'station' => $station,
+                    // As recorded on the trainees' profiles (can differ between people).
+                    'regions' => $users->pluck('region')->filter()->unique()->values(),
                     'officers' => $users->map(fn ($u) => [
                         'name' => $u->name,
                         'rank_or_role' => $u->rank ?: 'Trainee',
@@ -43,7 +45,8 @@ class CertificateLogController extends Controller
                 'monitoredUnits' => $totalStations,
                 'traineePersonnel' => $totalOfficers,
                 'totalIssued' => $totalCertificates,
-                'verificationStatus' => $totalCertificates > 0 ? 100 : 0, // all seeded certs are valid; no "revoked" concept yet
+                // Issued for an earlier course version (results archived after a course change).
+                'earlierVersion' => Certificate::whereNotNull('archived_at')->count(),
             ],
             'stations' => $grouped,
         ]);

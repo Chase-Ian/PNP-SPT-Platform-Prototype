@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\Course;
-use App\Models\EmailChangeRequest;
 use App\Models\ExamAttempt;
 use App\Models\User;
 use Inertia\Inertia;
@@ -23,12 +22,16 @@ class DashboardController extends Controller
 
         return Inertia::render('Admin/Dashboard', [
             'stats' => [
-                'activeOfficers' => User::where('role', 'trainee')->count(),
+                // All trainee accounts, locked ones included.
+                'traineeAccounts' => User::where('role', 'trainee')->count(),
                 'coursesPublished' => Course::where('is_published', true)->count(),
-                'examCompletionRate' => $totalAttempts > 0 ? round(($passedAttempts / $totalAttempts) * 100) : 0,
+                // null = no final exam taken yet (shown as "No results yet", not 0%).
+                'examPassRate' => $totalAttempts > 0 ? (int) round(($passedAttempts / $totalAttempts) * 100) : null,
+                'examAttempts' => $totalAttempts,
+                'examAttemptsPassed' => $passedAttempts,
                 'certificatesIssued' => Certificate::count(),
                 'lockedAccounts' => User::where('is_locked', true)->count(),
-                'pendingEmailRequests' => EmailChangeRequest::pending()->count(),
+                'deletedAccounts' => User::onlyTrashed()->count(),
             ],
         ]);
     }

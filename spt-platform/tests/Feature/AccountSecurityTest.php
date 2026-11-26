@@ -2,12 +2,9 @@
 
 namespace Tests\Feature;
 
-use App\Models\EmailChangeRequest;
 use App\Models\User;
-use App\Notifications\EmailAddressChanged;
 use App\Notifications\TwoFactorRecoveryLink;
 use App\Notifications\TwoFactorWasReset;
-use Illuminate\Auth\Notifications\VerifyEmail;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\URL;
@@ -25,18 +22,16 @@ class AccountSecurityTest extends TestCase
             'rank' => 'Patrolman/Patrolwoman (Pat)',
             'role' => $role,
             'unit_office' => 'Test Unit',
-            'region' => 'PRO NCR - National Capital Region (NCR)',
+            'region' => 'NCRPO - National Capital Region Police Office',
             ...$attrs,
         ]);
     }
 
-    private function withTwoFactor(User $user, bool $acknowledged = true): User
+    private function withTwoFactor(User $user): User
     {
         $user->forceFill([
             'two_factor_secret' => Fortify::currentEncrypter()->encrypt(app(Google2FA::class)->generateSecretKey()),
-            'two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(json_encode(['code-one', 'code-two'])),
             'two_factor_confirmed_at' => now(),
-            'two_factor_codes_acknowledged_at' => $acknowledged ? now() : null,
         ])->save();
 
         return $user;
@@ -98,11 +93,13 @@ class AccountSecurityTest extends TestCase
     public function test_half_finished_setup_counts_as_not_set_up(): void
     {
         config(['security.require_2fa' => 'all']);
-        $user = $this->withTwoFactor($this->makeUser(), acknowledged: false);
+        // A secret was made but the code was never confirmed.
+        $user = $this->makeUser();
+        $user->forceFill(['two_factor_secret' => Fortify::currentEncrypter()->encrypt(app(Google2FA::class)->generateSecretKey())])->save();
 
         $this->actingAs($user)->get('/profile')->assertRedirect(route('security.setup'));
         $this->actingAs($user)->get('/security/two-factor')
-            ->assertInertia(fn ($page) => $page->component('Security/SetupTwoFactor')->where('step', 'codes'));
+            ->assertInertia(fn ($page) => $page->component('Security/SetupTwoFactor')->where('step', 'scan'));
     }
 
     public function test_exempt_demo_accounts_are_not_forced(): void
@@ -145,20 +142,16 @@ class AccountSecurityTest extends TestCase
 
         $this->actingAs($user)->post('/security/two-factor/confirm', ['code' => '000000'])->assertSessionHasErrors('code');
 
+        // Confirming the code finishes setup: there are no recovery codes to save.
         $this->actingAs($user)->post('/security/two-factor/confirm', ['code' => $this->currentCode($user)])
-            ->assertSessionHasNoErrors();
-        $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
-
-        // Still gated until the recovery codes are acknowledged.
-        $this->actingAs($user)->get('/profile')->assertRedirect(route('security.setup'));
-        $this->actingAs($user)->post('/security/two-factor/acknowledge', [])->assertSessionHasErrors('acknowledged');
-
-        $this->actingAs($user)->post('/security/two-factor/acknowledge', ['acknowledged' => true])
             ->assertRedirect(route('dashboard'));
+        $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
+        $this->assertNull($user->fresh()->two_factor_recovery_codes);
         $this->actingAs($user)->get('/profile')->assertOk();
+        $this->actingAs($user)->get('/security/two-factor')->assertRedirect(route('dashboard'));
     }
 
-    public function test_required_two_factor_cannot_be_disabled_but_codes_can_be_regenerated(): void
+    public function test_required_mfa_cannot_be_disabled_and_has_no_recovery_codes(): void
     {
         config(['security.require_2fa' => 'all']);
         $user = $this->withTwoFactor($this->makeUser());
@@ -167,8 +160,11 @@ class AccountSecurityTest extends TestCase
             ->deleteJson('/user/two-factor-authentication')->assertForbidden();
         $this->actingAs($user)->withSession(['auth.password_confirmed_at' => time()])
             ->postJson('/user/two-factor-authentication')->assertForbidden();
+        // Fortify's recovery code endpoints are switched off.
         $this->actingAs($user)->withSession(['auth.password_confirmed_at' => time()])
-            ->postJson('/user/two-factor-recovery-codes')->assertOk();
+            ->getJson('/user/two-factor-recovery-codes')->assertNotFound();
+        $this->actingAs($user)->withSession(['auth.password_confirmed_at' => time()])
+            ->postJson('/user/two-factor-recovery-codes')->assertNotFound();
         $this->assertNotNull($user->fresh()->two_factor_confirmed_at);
     }
 
@@ -219,7 +215,7 @@ class AccountSecurityTest extends TestCase
         for ($i = 0; $i < 5; $i++) {
             $this->withSession(['login.id' => $user->id])
                 ->post('/two-factor-challenge', ['code' => '000000'])
-                ->assertSessionHasErrors(['code' => 'The provided two-factor authentication code was invalid.']);
+                ->assertSessionHasErrors(['code' => 'The provided MFA code was invalid.']);
         }
 
         // The sixth try is refused even with the right code, and the code isn't used up.
@@ -227,12 +223,6 @@ class AccountSecurityTest extends TestCase
             ->post('/two-factor-challenge', ['code' => $this->currentCode($user)])
             ->assertSessionHasErrors('code');
         $this->assertStringStartsWith('Too many incorrect codes', session('errors')->first('code'));
-        $this->assertGuest();
-
-        // Recovery codes count toward the same limit.
-        $this->withSession(['login.id' => $user->id])
-            ->post('/two-factor-challenge', ['recovery_code' => 'code-one'])
-            ->assertSessionHasErrors('code');
         $this->assertGuest();
 
         $this->travel(61)->seconds();
@@ -248,13 +238,25 @@ class AccountSecurityTest extends TestCase
         $user = $this->withTwoFactor($this->makeUser());
 
         for ($i = 0; $i < 4; $i++) {
-            $this->withSession(['login.id' => $user->id])->post('/two-factor-challenge', ['recovery_code' => 'wrong-code']);
+            $this->withSession(['login.id' => $user->id])->post('/two-factor-challenge', ['code' => '000000']);
         }
         $this->withSession(['login.id' => $user->id])
-            ->post('/two-factor-challenge', ['recovery_code' => 'code-one'])
+            ->post('/two-factor-challenge', ['code' => $this->currentCode($user)])
             ->assertRedirect(route('dashboard'));
 
         $this->assertTrue(\Illuminate\Support\Facades\RateLimiter::attempts('two-factor-challenge|'.$user->id) === 0);
+    }
+
+    public function test_old_recovery_codes_no_longer_sign_in(): void
+    {
+        // Codes saved before recovery codes were removed don't work.
+        $user = $this->withTwoFactor($this->makeUser());
+        $user->forceFill(['two_factor_recovery_codes' => Fortify::currentEncrypter()->encrypt(json_encode(['code-one']))])->save();
+
+        $this->withSession(['login.id' => $user->id])
+            ->post('/two-factor-challenge', ['recovery_code' => 'code-one'])
+            ->assertSessionHasErrors('code');
+        $this->assertGuest();
     }
 
     // ---------- recovery ----------
@@ -312,7 +314,7 @@ class AccountSecurityTest extends TestCase
         $this->post(route('two-factor.recovery.send'))->assertForbidden();
     }
 
-    // ---------- email changes ----------
+    // ---------- email address ----------
 
     public function test_profile_update_cannot_change_email(): void
     {
@@ -327,52 +329,13 @@ class AccountSecurityTest extends TestCase
         $this->assertSame('New', $user->fresh()->first_name);
     }
 
-    public function test_trainee_requests_email_change_and_admin_approves(): void
-    {
-        Notification::fake();
-        $admin = $this->makeUser('admin');
-        $user = $this->makeUser('trainee', ['email' => 'old@pnp.gov.ph']);
-
-        $this->actingAs($user)->post(route('profile.email-request.store'), [
-            'new_email' => 'NEW@pnp.gov.ph', 'reason' => 'Transferred to a new unit',
-        ])->assertSessionHasNoErrors();
-
-        // Only one pending request at a time.
-        $this->actingAs($user)->post(route('profile.email-request.store'), [
-            'new_email' => 'other@pnp.gov.ph', 'reason' => 'Another reason here',
-        ])->assertSessionHasErrors('new_email');
-
-        $request = EmailChangeRequest::firstOrFail();
-        $this->assertSame('new@pnp.gov.ph', $request->new_email);
-        $this->assertSame('old@pnp.gov.ph', $user->fresh()->email);
-
-        $this->actingAs($user)->post(route('admin.email-requests.approve', $request))->assertForbidden();
-        $this->actingAs($admin)->post(route('admin.email-requests.approve', $request))->assertRedirect();
-
-        $user->refresh();
-        $this->assertSame('new@pnp.gov.ph', $user->email);
-        $this->assertNull($user->email_verified_at);
-        $this->assertSame('approved', $request->fresh()->status);
-        Notification::assertSentTo($user, VerifyEmail::class);
-        Notification::assertSentOnDemand(EmailAddressChanged::class,
-            fn ($n, $channels, $notifiable) => $notifiable->routes['mail'] === 'old@pnp.gov.ph');
-
-        // New address must be verified before using the platform again.
-        $this->actingAs($user)->get('/courses')->assertRedirect(route('verification.notice'));
-    }
-
-    public function test_reject_needs_a_note_and_admins_cannot_review_their_own_request(): void
+    public function test_email_change_requests_are_gone(): void
     {
         $admin = $this->makeUser('admin');
-        $other = $this->makeUser('trainee');
+        $user = $this->makeUser();
 
-        $own = $admin->emailChangeRequests()->create(['current_email' => $admin->email, 'new_email' => 'x@pnp.gov.ph', 'reason' => 'Some reason']);
-        $theirs = $other->emailChangeRequests()->create(['current_email' => $other->email, 'new_email' => 'y@pnp.gov.ph', 'reason' => 'Some reason']);
-
-        $this->actingAs($admin)->post(route('admin.email-requests.approve', $own))->assertForbidden();
-        $this->actingAs($admin)->post(route('admin.email-requests.reject', $theirs))->assertSessionHasErrors('admin_note');
-        $this->actingAs($admin)->post(route('admin.email-requests.reject', $theirs), ['admin_note' => 'Use your official email'])
-            ->assertRedirect();
-        $this->assertSame('rejected', $theirs->fresh()->status);
+        $this->actingAs($user)->post('/profile/email-change-request', ['new_email' => 'new@pnp.gov.ph'])->assertNotFound();
+        $this->actingAs($admin)->get('/admin/email-requests')->assertNotFound();
+        $this->actingAs($user)->get('/profile')->assertOk()->assertInertia(fn ($page) => $page->missing('emailRequests'));
     }
 }

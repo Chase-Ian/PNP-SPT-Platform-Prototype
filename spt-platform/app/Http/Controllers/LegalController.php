@@ -15,7 +15,10 @@ class LegalController extends Controller
     /** Public: readable before signing up and from every page footer. */
     public function terms(): Response
     {
-        return Inertia::render('Legal/Terms', $this->documentProps());
+        return Inertia::render('Legal/Terms', [
+            ...$this->documentProps(),
+            'deletedAccountDays' => (int) config('security.deleted_account_days', 30),
+        ]);
     }
 
     public function privacy(): Response
@@ -24,6 +27,7 @@ class LegalController extends Controller
             ...$this->documentProps(),
             'processors' => config('legal.processors'),
             'twoFactorScope' => config('security.require_2fa'),
+            'deletedAccountDays' => (int) config('security.deleted_account_days', 30),
         ]);
     }
 

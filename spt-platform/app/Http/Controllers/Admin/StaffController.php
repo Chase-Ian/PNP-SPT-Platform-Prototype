@@ -6,9 +6,12 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use App\Support\PnpRegions;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Inertia\Inertia;
 use App\Services\AccountLockService;
+use App\Services\DeletedAccounts;
 
 class StaffController extends Controller
 {
@@ -21,28 +24,8 @@ class StaffController extends Controller
         'Police Staff Sergeant (PSSg)', 'Police Corporal (PCpl)', 'Patrolman/Patrolwoman (Pat)',
     ];
 
-    private const REGIONS = [
-        'PRO NCR - National Capital Region (NCR)',
-        'PRO 1 - Region 1 - Ilocos Region',
-        'PRO 2 - Region 2 - Cagayan Valley',
-        'PRO 3 - Region 3 - Central Luzon',
-        'PRO 4A - Region 4A - CALABARZON',
-        'PRO 4B - Region 4B - MIMAROPA',
-        'PRO 5 - Region 5 - Bicol Region',
-        'PRO 6 - Region 6 - Western Visayas',
-        'PRO 7 - Region 7 - Central Visayas',
-        'PRO 8 - Region 8 - Eastern Visayas',
-        'PRO 9 - Region 9 - Zamboanga Peninsula',
-        'PRO 10 - Region 10 - Northern Mindanao',
-        'PRO 11 - Region 11 - Davao Region',
-        'PRO 12 - Region 12 - SOCCSKSARGEN',
-        'PRO 13 - Region 13 - Caraga Region',
-        'PRO BARMM - Bangsamoro Autonomous Region (BARMM)',
-        'PRO CAR - Cordillera Administrative Region (CAR)',
-        'NHQ Camp Crame - PNP National Headquarters',
-    ];
 
-    public function index()
+    public function index(DeletedAccounts $deleted)
     {
         $staff = User::whereIn('role', ['supervisor', 'admin'])
             ->select('id', 'first_name', 'last_name', 'rank', 'email', 'role', 'unit_office', 'region', 'is_locked', 'two_factor_confirmed_at', 'created_at')
@@ -51,8 +34,10 @@ class StaffController extends Controller
 
         return Inertia::render('Admin/Staff/Index', [
             'staff' => $staff,
+            'deleted' => $deleted->rows(User::onlyTrashed()->whereIn('role', ['supervisor', 'admin'])),
+            'retentionDays' => $deleted->retentionDays(),
             'rankOptions' => self::RANKS,
-            'regionOptions' => self::REGIONS,
+            'regionOptions' => PnpRegions::all(),
         ]);
     }
 
@@ -69,9 +54,11 @@ class StaffController extends Controller
             'rank' => 'required|string|in:' . implode(',', self::RANKS),
             'email' => 'required|string|lowercase|email:filter|max:255|unique:users,email',
             'unit_office' => 'required|string|max:255',
-            'region' => 'required|string|in:' . implode(',', self::REGIONS),
+            'region' => ['required', 'string', Rule::in(PnpRegions::all())],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
-        ]);
+        ], User::onlyTrashed()->where('email', strtolower((string) $request->input('email')))->exists()
+            ? ['email.unique' => 'This email belongs to a deleted account. Reinstate it under "Deleted accounts" instead.']
+            : []);
 
         $staff = User::create([
             'role' => $request->role,
@@ -91,12 +78,30 @@ class StaffController extends Controller
         return back();
     }
 
-    public function destroy(User $staff)
+    /** Hides the account; it can be reinstated until it is erased. */
+    public function destroy(Request $request, User $staff, DeletedAccounts $deleted)
     {
         abort_unless(in_array($staff->role, ['supervisor', 'admin']), 403);
         abort_if($staff->id === request()->user()->id, 403, 'You cannot remove your own account.');
 
-        $staff->delete();
+        $deleted->delete($staff, $request->user());
+
+        return back();
+    }
+
+    public function reinstate(Request $request, User $staff, DeletedAccounts $deleted)
+    {
+        abort_unless(in_array($staff->role, ['supervisor', 'admin'], true) && $staff->trashed(), 404);
+        $deleted->reinstate($staff, $request->user());
+
+        return back();
+    }
+
+    /** Erases a deleted account now instead of waiting for the retention period. */
+    public function erase(Request $request, User $staff, DeletedAccounts $deleted)
+    {
+        abort_unless(in_array($staff->role, ['supervisor', 'admin'], true) && $staff->trashed(), 404);
+        $deleted->erase($staff, $request->user());
 
         return back();
     }

@@ -11,6 +11,7 @@ defineProps({
     controller: Object,
     dpo: Object,
     aiAssistant: Boolean,
+    deletedAccountDays: { type: Number, default: 30 },
 });
 </script>
 
@@ -39,10 +40,10 @@ defineProps({
         <h2>Keeping your account secure</h2>
         <ul>
             <li>Keep your password secret and do not use it on any other site.</li>
-            <li>Set up two-factor authentication when the Platform asks you to, and keep your recovery codes somewhere safe, away from your phone.</li>
+            <li>Set up multi-factor authentication (MFA) when the Platform asks you to.</li>
             <li>Do not share your account or let anyone else use a session you are signed in to.</li>
-            <li>Tell an Administrator right away if you think someone else has used your account, or if you lose the device you use for two-factor authentication.</li>
-            <li>Only an Administrator can change your email address, through a request you file from your profile.</li>
+            <li>Tell an Administrator right away if you think someone else has used your account, or if you lose the device you use for MFA.</li>
+            <li>The email address on your account is your sign-in identity and can't be changed.</li>
         </ul>
         <p>You are responsible for what is done with your account, unless it resulted from a security failure on our side.</p>
 
@@ -50,7 +51,7 @@ defineProps({
         <p>You must not:</p>
         <ul>
             <li>access, or try to access, accounts or data that you are not authorized to see;</li>
-            <li>try to get around the Platform's security, including sign-in, two-factor authentication, attempt limits and account locks;</li>
+            <li>try to get around the Platform's security, including sign-in, MFA, attempt limits and account locks;</li>
             <li>scan, probe or test the Platform for weaknesses without written permission from the <LegalValue :value="controller.office" />;</li>
             <li>upload malicious code, or interfere with the Platform or with other users;</li>
             <li>enter or upload classified or confidential information, or other people's personal data beyond what a training activity needs;</li>
@@ -76,7 +77,7 @@ defineProps({
             <li>A certificate is issued when you pass a course's final assessment. It shows that you completed that training on this Platform.</li>
             <li>
                 Each certificate has a serial number and QR code that anyone can check on the public verification page.
-                That page shows the holder's name, the course, the issue date, and the holder's unit or office and region
+                That page shows the holder's name, the course, the issue date and the certificate's status
                 (see the <Link :href="route('legal.privacy')">Privacy Notice</Link>).
             </li>
             <li>We may withdraw a certificate that was issued by mistake or obtained through cheating or misuse.</li>
@@ -101,7 +102,7 @@ defineProps({
         <h2>Locked and deleted accounts</h2>
         <ul>
             <li>An Administrator may lock an account to protect the Platform or its users, or when these Terms are broken. A locked account cannot be used until an Administrator unlocks it.</li>
-            <li>You can delete your own account from your profile. Deleting it permanently removes your profile, training records and certificates from the Platform, and your certificates can no longer be verified.</li>
+            <li>You can delete your own account from your profile, and an Administrator can delete an account. A deleted account can't be used and its certificates can no longer be verified. An Administrator can reinstate it within {{ deletedAccountDays }} days; after that, its profile, training records and certificates are erased.</li>
         </ul>
 
         <h2>Limits of our responsibility</h2>

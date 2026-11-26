@@ -8,6 +8,11 @@ import TextInput from '@/Components/TextInput.vue';
 import { useForm } from '@inertiajs/vue3';
 import { nextTick, ref } from 'vue';
 
+defineProps({
+    // Days an administrator can still reinstate the account.
+    retentionDays: { type: Number, default: 30 },
+});
+
 const confirmingUserDeletion = ref(false);
 const passwordInput = ref(null);
 
@@ -41,14 +46,14 @@ const closeModal = () => {
 <template>
     <section class="space-y-6">
         <header>
-            <h2 class="text-lg font-medium text-gray-900">
+            <h2 class="section-title">
                 Delete Account
             </h2>
 
-            <p class="mt-1 text-sm text-gray-600">
-                Once your account is deleted, all of its resources and data will
-                be permanently deleted. Before deleting your account, please
-                download any data or information that you wish to retain.
+            <p class="mt-1 text-sm text-slate-600">
+                You'll be signed out and won't be able to sign in. An administrator
+                can reinstate your account within {{ retentionDays }} days; after that,
+                your profile, training records and certificates are erased permanently.
             </p>
         </header>
 
@@ -57,15 +62,15 @@ const closeModal = () => {
         <Modal :show="confirmingUserDeletion" @close="closeModal">
             <div class="p-6">
                 <h2
-                    class="text-lg font-medium text-gray-900"
+                    class="section-title"
                 >
                     Are you sure you want to delete your account?
                 </h2>
 
-                <p class="mt-1 text-sm text-gray-600">
-                    Once your account is deleted, all of its resources and data
-                    will be permanently deleted. Please enter your password to
-                    confirm you would like to permanently delete your account.
+                <p class="mt-1 text-sm text-slate-600">
+                    Enter your password to confirm. An administrator can reinstate
+                    your account within {{ retentionDays }} days; after that it is
+                    erased permanently.
                 </p>
 
                 <div class="mt-6">

@@ -33,8 +33,10 @@ class CourseController extends Controller
                     return $lesson->progress->where('user_id', $user->id)->where('quiz_passed', true)->isEmpty();
                 });
 
-                // Has the trainee already passed the final exam for this course?
-                $examPassed = $user->examAttempts()->where('course_id', $course->id)->where('passed', true)->exists();
+                // Has the trainee passed the current final exam? Results a
+                // supervisor archived (course changed) must be redone.
+                $examPassed = $user->examAttempts()->where('course_id', $course->id)
+                    ->whereNull('archived_at')->where('passed', true)->exists();
 
                 return [
                     'id' => $course->id,

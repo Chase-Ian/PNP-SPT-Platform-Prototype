@@ -1,9 +1,10 @@
 <!-- Admin/Lessons/Index.vue -->
 <script setup>
-import { BookOpen, Pencil, Trash2, X, ImagePlus, Info, TriangleAlert, ShieldAlert } from 'lucide-vue-next';
+import { ChevronDown, ChevronUp, ImagePlus, Pencil, Plus, Trash2, X } from 'lucide-vue-next';
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
-import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { BookOpenCheck } from 'lucide-vue-next';
+import PageHeader from '@/Components/PageHeader.vue';
+import SelectMenu from '@/Components/SelectMenu.vue';
+import { askConfirm } from '@/confirm';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
@@ -32,6 +33,20 @@ const addBlock = (type) => {
     };
     form.blocks.push({ ...templates[type] });
 };
+
+const ALIGNMENTS = [{ value: 'left', label: 'Align left' }, { value: 'center', label: 'Align center' }, { value: 'full', label: 'Full width' }];
+const SIZES = [{ value: 'small', label: 'Small' }, { value: 'medium', label: 'Medium' }, { value: 'large', label: 'Large' }];
+const CALLOUTS = [{ value: 'info', label: 'Info / Tip' }, { value: 'warning', label: 'Warning' }, { value: 'important', label: 'Important' }];
+
+const blockTypes = [
+    { type: 'heading', label: 'Heading' },
+    { type: 'paragraph', label: 'Paragraph' },
+    { type: 'bullet_list', label: 'Bullet list' },
+    { type: 'video', label: 'Video', video: true },
+    { type: 'youtube', label: 'YouTube', video: true },
+    { type: 'image', label: 'Image' },
+    { type: 'callout', label: 'Callout' },
+];
 
 const removeBlock = (index) => form.blocks.splice(index, 1);
 const moveBlock = (index, direction) => {
@@ -145,10 +160,14 @@ const submit = () => {
 };
 
 
-const deleteLesson = (lesson) => {
-    if (confirm(`Delete "${lesson.title}"? This also deletes its quiz questions.`)) {
-        router.delete(`/admin/lessons/${lesson.id}`);
-    }
+const deleteLesson = async (lesson) => {
+    const ok = await askConfirm({
+        title: `Delete "${lesson.title}"?`,
+        message: 'Its quiz questions are deleted too. This can’t be undone.',
+        confirmLabel: 'Delete lesson',
+        tone: 'danger',
+    });
+    if (ok) router.delete(`/admin/lessons/${lesson.id}`);
 };
 
 const toggleQuiz = (lessonId) => {
@@ -158,8 +177,14 @@ const toggleQuiz = (lessonId) => {
 const addChoice = () => questionForm.choices.push('');
 const removeChoiceOpt = (i) => questionForm.choices.splice(i, 1);
 
-const deleteQuestion = (question) => {
-    router.delete(`/admin/questions/${question.id}`, { preserveScroll: true });
+const deleteQuestion = async (question) => {
+    const ok = await askConfirm({
+        title: 'Delete this quiz question?',
+        message: question.question,
+        confirmLabel: 'Delete question',
+        tone: 'danger',
+    });
+    if (ok) router.delete(`/admin/questions/${question.id}`, { preserveScroll: true });
 };
 
 
@@ -194,189 +219,197 @@ const submitQuestion = (lessonId) => {
 </script>
 
 <template>
-    <Head :title="`Lessons — ${module.title}`" />
+    <Head :title="`Lessons: ${module.title}`" />
     <AdminOrSupervisorLayout>
-        <div class="flex gap-4 mb-2">
-            <Link href="/admin/dashboard" class="text-sm font-medium text-blue-600">← Back to Dashboard</Link>
-            <span class="text-gray-300">|</span>
-            <Link :href="`/admin/courses/${module.course_id}/modules`" class="text-sm font-medium text-blue-600">← Back to Modules</Link>
-        </div>
-
-        <AdminPageBanner :icon="BookOpenCheck" badge-text="Lesson Authoring • Module Content"
-            :title="`Lessons — ${module.title}`"
-            subtitle="Build sequential lesson content with text blocks, or import from an existing PowerPoint file.">
+        <PageHeader :back-href="`/admin/courses/${module.course_id}/modules`" back-label="Back to modules"
+            :title="`Lessons: ${module.title}`"
+            description="Build each lesson from text blocks, or import the text of an existing PowerPoint file.">
             <template #actions>
-                <button @click="openCreateForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Add New Lesson</button>
+                <button type="button" @click="openCreateForm" class="btn btn-primary">Add lesson</button>
             </template>
-        </AdminPageBanner>
+        </PageHeader>
 
-        <form v-if="showForm" @submit.prevent="submit" class="bg-white rounded-xl border p-6 space-y-4">
-            <div class="flex justify-between items-center">
-                <h3 class="font-semibold">{{ editingLessonId ? 'Edit Lesson' : 'New Lesson' }}</h3>
-                <button type="button" @click="cancelForm" class="text-xs text-gray-400">Cancel</button>
+        <form v-if="showForm" @submit.prevent="submit" class="card space-y-5 p-4 sm:p-6">
+            <h2 class="section-title">{{ editingLessonId ? 'Edit lesson' : 'New lesson' }}</h2>
+
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_11rem]">
+                <div>
+                    <label for="lesson-title" class="block text-sm font-medium text-slate-700">Lesson title</label>
+                    <input id="lesson-title" v-model="form.title" type="text" class="mt-1 block w-full px-3 py-2 text-sm shadow-sm" required />
+                </div>
+                <div>
+                    <label for="lesson-duration" class="block text-sm font-medium text-slate-700">Duration (minutes)</label>
+                    <input id="lesson-duration" v-model="form.duration_minutes" type="number" min="1" class="mt-1 block w-full px-3 py-2 text-sm shadow-sm" required />
+                </div>
             </div>
 
-            <div>
-                <label class="text-sm font-medium">Lesson Title</label>
-                <input v-model="form.title" type="text" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
+            <div class="border-t border-slate-200 pt-4">
+                <label for="lesson-pptx" class="block text-sm font-medium text-slate-700">
+                    Import from PowerPoint (optional{{ editingLessonId ? ', adds to the existing blocks' : '' }})
+                </label>
+                <input id="lesson-pptx" type="file" accept=".pptx" @change="importFromPptx" class="mt-2 block w-full text-[15px] text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-blue-700 hover:file:bg-blue-100" />
+                <p v-if="uploading" class="mt-1 text-xs text-slate-500">Extracting text…</p>
             </div>
 
-            <div>
-                <label class="text-sm font-medium">Duration (minutes)</label>
-                <input v-model="form.duration_minutes" type="number" min="1" class="mt-1 w-32 border rounded-lg px-3 py-2 text-sm" required />
-            </div>
+            <div class="space-y-3 border-t border-slate-200 pt-4">
+                <p class="text-sm font-medium text-slate-700">Content blocks</p>
+                <p v-if="form.blocks.length === 0" class="text-sm text-slate-500">No blocks yet. Add one with the buttons below.</p>
 
-            <div class="border-t pt-4">
-                <label class="text-sm font-medium block mb-2">Import from PowerPoint (optional{{ editingLessonId ? ' — appends to existing blocks' : '' }})</label>
-                <input type="file" accept=".pptx" @change="importFromPptx" class="text-sm" />
-                <p v-if="uploading" class="text-xs text-gray-400 mt-1">Extracting text…</p>
-            </div>
-
-            <div class="border-t pt-4 space-y-3">
-                <p class="text-sm font-medium">Content Blocks</p>
-
-                <div v-for="(block, i) in form.blocks" :key="i" class="border rounded-lg p-3 bg-gray-50 space-y-2">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs font-semibold uppercase text-gray-500">{{ block.type.replace('_', ' ') }}</span>
-                        <div class="flex gap-1">
-                            <button type="button" @click="moveBlock(i, -1)" class="text-xs">↑</button>
-                            <button type="button" @click="moveBlock(i, 1)" class="text-xs">↓</button>
-                            <button type="button" @click="removeBlock(i)" class="text-red-600 text-xs">✕</button>
+                <div v-for="(block, i) in form.blocks" :key="i" class="space-y-2 rounded-lg border border-slate-200 bg-slate-50 p-3">
+                    <div class="flex items-center justify-between gap-2">
+                        <span class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ i + 1 }}. {{ block.type.replace('_', ' ') }}</span>
+                        <div class="flex gap-0.5">
+                            <button type="button" @click="moveBlock(i, -1)" :disabled="i === 0" class="btn-icon" aria-label="Move block up" title="Move up">
+                                <ChevronUp :size="16" :stroke-width="1.75" />
+                            </button>
+                            <button type="button" @click="moveBlock(i, 1)" :disabled="i === form.blocks.length - 1" class="btn-icon" aria-label="Move block down" title="Move down">
+                                <ChevronDown :size="16" :stroke-width="1.75" />
+                            </button>
+                            <button type="button" @click="removeBlock(i)" class="btn-icon hover:bg-red-50 hover:text-red-700" aria-label="Remove block" title="Remove">
+                                <X :size="16" :stroke-width="1.75" />
+                            </button>
                         </div>
                     </div>
 
-                    <input v-if="block.type === 'heading'" v-model="block.text" type="text" placeholder="Heading text" class="w-full border rounded px-2 py-1.5 text-sm" />
-                    <textarea v-if="block.type === 'paragraph'" v-model="block.text" rows="3" placeholder="Paragraph text" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
+                    <input v-if="block.type === 'heading'" v-model="block.text" type="text" placeholder="Heading text" aria-label="Heading text" class="block w-full px-2.5 py-1.5 text-sm" />
+                    <textarea v-if="block.type === 'paragraph'" v-model="block.text" rows="3" placeholder="Paragraph text" aria-label="Paragraph text" class="block w-full px-2.5 py-1.5 text-sm"></textarea>
 
                     <div v-if="block.type === 'bullet_list'" class="space-y-2">
-                        <div v-for="(item, j) in block.items" :key="j" class="flex gap-2">
-                            <input v-model="item.bold" type="text" placeholder="Bold lead-in (optional)" class="w-1/3 border rounded px-2 py-1 text-sm" />
-                            <input v-model="item.text" type="text" placeholder="Item text" class="flex-1 border rounded px-2 py-1 text-sm" />
-                            <button type="button" @click="removeBulletItem(block, j)" class="text-red-600 text-xs">✕</button>
+                        <div v-for="(item, j) in block.items" :key="j" class="flex flex-col gap-2 sm:flex-row">
+                            <input v-model="item.bold" type="text" placeholder="Bold lead-in (optional)" aria-label="Bold lead-in" class="block w-full px-2.5 py-1.5 text-sm sm:w-1/3" />
+                            <div class="flex flex-1 gap-2">
+                                <input v-model="item.text" type="text" placeholder="Item text" aria-label="Item text" class="block min-w-0 flex-1 px-2.5 py-1.5 text-sm" />
+                                <button type="button" @click="removeBulletItem(block, j)" class="btn-icon hover:bg-red-50 hover:text-red-700" aria-label="Remove item" title="Remove item">
+                                    <X :size="16" :stroke-width="1.75" />
+                                </button>
+                            </div>
                         </div>
-                        <button type="button" @click="addBulletItem(block)" class="text-blue-600 text-xs font-medium">+ Add item</button>
+                        <button type="button" @click="addBulletItem(block)" class="btn btn-ghost btn-sm">
+                            <Plus :size="14" :stroke-width="2" /> Add item
+                        </button>
                     </div>
 
-                    <div v-if="block.type === 'video'" class="text-xs text-gray-500">
-                        Video block — position must be first or last block.
-                    </div>
-                    <input v-if="block.type === 'youtube'" v-model="block.url" type="text"
-                        placeholder="https://www.youtube.com/watch?v=..." class="w-full border rounded px-2 py-1.5 text-sm" />
-                    <p v-if="block.type === 'youtube'" class="text-xs text-gray-400">Position must be first or last block.</p>
+                    <p v-if="block.type === 'video'" class="text-xs text-slate-500">
+                        Video block: it must be the first or last block.
+                    </p>
+                    <input v-if="block.type === 'youtube'" v-model="block.url" type="text" aria-label="YouTube link"
+                        placeholder="https://www.youtube.com/watch?v=..." class="block w-full px-2.5 py-1.5 text-sm" />
+                    <p v-if="block.type === 'youtube'" class="text-xs text-slate-500">Position must be first or last block.</p>
 
                     <div v-if="block.type === 'image'" class="space-y-2">
                         <div v-if="block.path" class="flex items-start gap-3">
-                            <img :src="`/${block.path}`" :alt="block.alt" class="h-24 w-auto rounded border bg-white" />
-                            <label class="text-xs text-blue-600 font-medium cursor-pointer">
+                            <img :src="`/${block.path}`" :alt="block.alt" class="h-24 w-auto rounded border border-slate-200 bg-white" />
+                            <label class="link cursor-pointer text-xs">
                                 Replace image
                                 <input type="file" accept="image/jpeg,image/png" class="hidden" @change="uploadImage(block, i, $event)" />
                             </label>
                         </div>
-                        <label v-else class="flex items-center gap-2 border border-dashed rounded-lg px-3 py-3 text-sm text-gray-500 cursor-pointer hover:bg-white">
-                            <ImagePlus :size="16" />
+                        <label v-else class="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-3 text-sm text-slate-600 hover:border-blue-400">
+                            <ImagePlus :size="16" :stroke-width="1.75" class="shrink-0 text-slate-400" />
                             {{ uploadingImageIndex === i ? 'Uploading…' : 'Choose an image (JPG or PNG, up to 5 MB)' }}
                             <input type="file" accept="image/jpeg,image/png" class="hidden" @change="uploadImage(block, i, $event)" />
                         </label>
-                        <input v-model="block.alt" type="text" maxlength="255" placeholder="Alt text (required) — describe the image for screen readers"
-                            class="w-full border rounded px-2 py-1.5 text-sm" />
+                        <input v-model="block.alt" type="text" maxlength="255" placeholder="Alt text (required): describe the image for screen readers"
+                            aria-label="Alt text" class="block w-full px-2.5 py-1.5 text-sm" />
                         <input v-model="block.caption" type="text" maxlength="255" placeholder="Caption (optional)"
-                            class="w-full border rounded px-2 py-1.5 text-sm" />
-                        <div class="flex gap-3">
-                            <select v-model="block.align" class="border rounded px-2 py-1 text-sm">
-                                <option value="left">Align left</option>
-                                <option value="center">Align center</option>
-                                <option value="full">Full width</option>
-                            </select>
-                            <select v-model="block.size" :disabled="block.align === 'full'" class="border rounded px-2 py-1 text-sm disabled:opacity-40">
-                                <option value="small">Small</option>
-                                <option value="medium">Medium</option>
-                                <option value="large">Large</option>
-                            </select>
+                            aria-label="Caption" class="block w-full px-2.5 py-1.5 text-sm" />
+                        <div class="flex flex-wrap gap-3">
+                            <SelectMenu v-model="block.align" :options="ALIGNMENTS" label="Image alignment" size="sm" class="w-44" />
+                            <SelectMenu v-model="block.size" :options="SIZES" label="Image size" size="sm" :disabled="block.align === 'full'" class="w-36" />
                         </div>
                     </div>
 
                     <div v-if="block.type === 'callout'" class="space-y-2">
-                        <select v-model="block.variant" class="border rounded px-2 py-1 text-sm">
-                            <option value="info">Info / Tip</option>
-                            <option value="warning">Warning</option>
-                            <option value="important">Important</option>
-                        </select>
-                        <textarea v-model="block.text" rows="2" maxlength="2000" placeholder="Callout text" class="w-full border rounded px-2 py-1.5 text-sm"></textarea>
+                        <SelectMenu v-model="block.variant" :options="CALLOUTS" label="Callout type" size="sm" class="w-44" />
+                        <textarea v-model="block.text" rows="2" maxlength="2000" placeholder="Callout text" aria-label="Callout text" class="block w-full px-2.5 py-1.5 text-sm"></textarea>
                     </div>
                 </div>
 
-                <div class="flex gap-2 flex-wrap">
-                    <button type="button" @click="addBlock('heading')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Heading</button>
-                    <button type="button" @click="addBlock('paragraph')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Paragraph</button>
-                    <button type="button" @click="addBlock('bullet_list')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Bullet List</button>
-                    <button type="button" @click="addBlock('video')" :disabled="!canAddVideoType()" class="border rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-40">+ Video</button>
-                    <button type="button" @click="addBlock('youtube')" :disabled="!canAddVideoType()" class="border rounded-lg px-3 py-1.5 text-xs font-medium disabled:opacity-40">+ YouTube</button>
-                    <button type="button" @click="addBlock('image')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Image</button>
-                    <button type="button" @click="addBlock('callout')" class="border rounded-lg px-3 py-1.5 text-xs font-medium">+ Callout</button>
+                <div class="flex flex-wrap gap-2">
+                    <button v-for="b in blockTypes" :key="b.type" type="button" @click="addBlock(b.type)"
+                        :disabled="b.video && !canAddVideoType()" class="btn btn-secondary btn-sm">
+                        <Plus :size="14" :stroke-width="2" /> {{ b.label }}
+                    </button>
                 </div>
             </div>
 
-            <div v-if="Object.keys(form.errors).length" class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg px-3 py-2 space-y-0.5">
+            <div v-if="Object.keys(form.errors).length" role="alert" class="space-y-0.5 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
                 <p v-for="(msg, key) in form.errors" :key="key">{{ msg }}</p>
             </div>
 
-            <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
-                {{ editingLessonId ? 'Save Changes' : 'Save Lesson' }}
-            </button>
+            <div class="flex flex-col-reverse gap-2 border-t border-slate-200 pt-4 sm:flex-row sm:justify-end">
+                <button type="button" @click="cancelForm" class="btn btn-secondary">Cancel</button>
+                <button type="submit" :disabled="form.processing" class="btn btn-primary">
+                    {{ editingLessonId ? 'Save changes' : 'Save lesson' }}
+                </button>
+            </div>
         </form>
 
-        <div class="bg-white rounded-xl border p-6">
-            <h3 class="font-semibold mb-4">Existing Lessons ({{ lessons.length }})</h3>
-            <div v-if="lessons.length === 0" class="text-sm text-gray-400">No lessons yet — add one above.</div>
+        <div class="card">
+            <h2 class="section-title border-b border-slate-200 px-4 py-3 sm:px-5">Lessons ({{ lessons.length }})</h2>
+            <p v-if="lessons.length === 0" class="px-4 py-6 text-sm text-slate-500 sm:px-5">No lessons yet. Add one above.</p>
 
-            <div v-for="lesson in lessons" :key="lesson.id" class="border-b last:border-0">
-                <div class="flex justify-between items-center py-3">
-                    <div>
-                        <p class="font-medium">{{ lesson.order }}. {{ lesson.title }}</p>
-                        <p class="text-xs text-gray-400">{{ lesson.duration_minutes }} mins · {{ lesson.quiz_questions_count }} quiz questions</p>
-                    </div>
-                    <div class="flex items-center gap-4">
-                        <button @click="openEditForm(lesson)" class="text-green-600 text-xs font-medium">✏️ Manage Lesson</button>
-                        <button @click="toggleQuiz(lesson.id)" class="text-purple-600 text-xs font-medium">
-                            📝 {{ expandedQuiz === lesson.id ? 'Hide Quiz' : 'Manage Quiz' }}
-                        </button>
-                        <Link :href="`/admin/lessons/${lesson.id}/preview`" class="text-blue-600 text-xs font-medium">👁 Preview</Link>
-                        <button @click="deleteLesson(lesson)" class="text-red-600 border border-red-200 rounded px-2 py-1 text-xs font-medium hover:bg-red-50">🗑 Delete</button>
-                    </div>
-                </div>
-                        <div v-if="expandedQuiz === lesson.id" class="bg-gray-50 rounded-lg p-4 mb-3 space-y-3">
-                <div class="flex justify-between items-center">
-                    <p class="text-xs font-semibold text-gray-500">QUIZ QUESTIONS</p>
-                    <Link :href="`/admin/lessons/${lesson.id}/quiz-preview`" class="text-blue-600 text-xs font-medium">👁 Preview Quiz</Link>
-                </div>
-                </div>
-                <div v-if="expandedQuiz === lesson.id" class="bg-gray-50 rounded-lg p-4 mb-3 space-y-3">
-                    <div v-for="q in lesson.quiz_questions" :key="q.id" class="bg-white border rounded-lg p-3 flex justify-between items-start">
-                        <div>
-                            <p class="text-sm font-medium">{{ q.question }}</p>
-                            <p class="text-xs text-gray-400">{{ q.choices.join(' · ') }} — correct: {{ q.correct_choice }}</p>
+            <div v-else class="divide-y divide-slate-200">
+                <div v-for="lesson in lessons" :key="lesson.id">
+                    <div class="flex flex-col gap-3 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                        <div class="min-w-0">
+                            <p class="font-medium text-slate-900">{{ lesson.order }}. {{ lesson.title }}</p>
+                            <p class="text-xs text-slate-500">{{ lesson.duration_minutes }} mins · {{ lesson.quiz_questions_count }} quiz questions</p>
                         </div>
-                        <div class="flex gap-2 shrink-0">
-                            <button @click="openEditQuestion(q)" class="text-green-600 text-xs">✏️</button>
-                            <button @click="deleteQuestion(q)" class="text-red-600 text-xs">✕</button>
+                        <div class="flex flex-wrap gap-2">
+                            <button @click="openEditForm(lesson)" class="btn btn-secondary btn-sm">Edit lesson</button>
+                            <button @click="toggleQuiz(lesson.id)" :aria-expanded="expandedQuiz === lesson.id" class="btn btn-secondary btn-sm">
+                                {{ expandedQuiz === lesson.id ? 'Hide quiz' : 'Quiz questions' }}
+                            </button>
+                            <Link :href="`/admin/lessons/${lesson.id}/preview`" class="btn btn-ghost btn-sm">Preview</Link>
+                            <button @click="deleteLesson(lesson)" class="btn btn-danger btn-sm">Delete</button>
                         </div>
                     </div>
 
-                    <form @submit.prevent="submitQuestion(lesson.id)" class="bg-white border rounded-lg p-3 space-y-2">
-                        <input v-model="questionForm.question" type="text" placeholder="Quiz question" class="w-full border rounded px-2 py-1.5 text-sm" required />
-                        <div v-for="(c, i) in questionForm.choices" :key="i" class="flex gap-2">
-                            <input v-model="questionForm.choices[i]" type="text" :placeholder="`Choice ${i + 1}`" class="flex-1 border rounded px-2 py-1 text-sm" required />
-                            <button type="button" @click="removeChoiceOpt(i)" class="text-red-600 text-xs">✕</button>
+                    <div v-if="expandedQuiz === lesson.id" class="mx-4 mb-4 space-y-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:mx-5 sm:p-4">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Quiz questions</p>
+                            <Link :href="`/admin/lessons/${lesson.id}/quiz-preview`" class="link text-xs">Preview quiz</Link>
                         </div>
-                        <button type="button" @click="addChoice" class="text-blue-600 text-xs font-medium">+ Add Choice</button>
-                        <select v-model="questionForm.correct_choice" class="w-full border rounded px-2 py-1.5 text-sm" required>
-                            <option value="" disabled>Select correct answer</option>
-                            <option v-for="(c, i) in questionForm.choices" :key="i" :value="c">{{ c || `Choice ${i + 1}` }}</option>
-                        </select>
-                        <button type="submit" class="bg-purple-600 text-white px-3 py-1.5 rounded text-xs font-medium">
-                            {{ editingQuestionId ? 'Save Changes' : 'Add Question' }}
-                        </button>
-                    </form>
+
+                        <p v-if="!lesson.quiz_questions?.length" class="text-sm text-slate-500">No quiz questions yet.</p>
+                        <div v-for="q in lesson.quiz_questions" :key="q.id" class="flex items-start justify-between gap-3 rounded-lg border border-slate-200 bg-white p-3">
+                            <div class="min-w-0">
+                                <p class="text-sm font-medium text-slate-900">{{ q.question }}</p>
+                                <p class="text-xs text-slate-500">Choices: {{ q.choices.join(' · ') }}. Correct: <span class="font-medium text-green-700">{{ q.correct_choice }}</span></p>
+                            </div>
+                            <div class="flex shrink-0 gap-0.5">
+                                <button @click="openEditQuestion(q)" class="btn-icon" aria-label="Edit question" title="Edit">
+                                    <Pencil :size="15" :stroke-width="1.75" />
+                                </button>
+                                <button @click="deleteQuestion(q)" class="btn-icon hover:bg-red-50 hover:text-red-700" aria-label="Delete question" title="Delete">
+                                    <Trash2 :size="15" :stroke-width="1.75" />
+                                </button>
+                            </div>
+                        </div>
+
+                        <form @submit.prevent="submitQuestion(lesson.id)" class="space-y-2 rounded-lg border border-slate-200 bg-white p-3">
+                            <p class="text-xs font-semibold text-slate-600">{{ editingQuestionId ? 'Edit question' : 'Add a question' }}</p>
+                            <input v-model="questionForm.question" type="text" placeholder="Quiz question" aria-label="Quiz question" class="block w-full px-2.5 py-1.5 text-sm" required />
+                            <div v-for="(c, i) in questionForm.choices" :key="i" class="flex gap-2">
+                                <input v-model="questionForm.choices[i]" type="text" :placeholder="`Choice ${i + 1}`" :aria-label="`Choice ${i + 1}`" class="block min-w-0 flex-1 px-2.5 py-1.5 text-sm" required />
+                                <button type="button" @click="removeChoiceOpt(i)" class="btn-icon hover:bg-red-50 hover:text-red-700" aria-label="Remove choice" title="Remove choice">
+                                    <X :size="16" :stroke-width="1.75" />
+                                </button>
+                            </div>
+                            <button type="button" @click="addChoice" class="btn btn-ghost btn-sm">
+                                <Plus :size="14" :stroke-width="2" /> Add choice
+                            </button>
+                            <SelectMenu v-model="questionForm.correct_choice" :options="questionForm.choices.filter(Boolean)" label="Correct answer"
+                                placeholder="Select the correct answer" size="sm" />
+                            <div class="flex flex-wrap gap-2 pt-1">
+                                <button type="submit" :disabled="questionForm.processing" class="btn btn-primary btn-sm">
+                                    {{ editingQuestionId ? 'Save changes' : 'Add question' }}
+                                </button>
+                                <button v-if="editingQuestionId" type="button" @click="cancelQuestionEdit" class="btn btn-ghost btn-sm">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
         </div>

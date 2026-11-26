@@ -97,6 +97,7 @@ class ExamController extends Controller
             'user_id' => $user->id,
             'course_id' => $course->id,
             'score' => $correctCount,
+            'total_questions' => $questions->count(),
             'passed' => $passed,
             'answers' => $request->answers,
         ]);
@@ -140,9 +141,13 @@ class ExamController extends Controller
         return Inertia::render('Exam/Result', [
             'attempt' => [
                 'score' => $attempt->score,
+                'total' => $attempt->questionCount(),
+                'percent' => $attempt->percent(),
                 'passed' => $attempt->passed,
                 'course_title' => $attempt->course->title,
             ],
+            // The question-by-question breakdown is only shown right after submitting.
+            'breakdown' => [],
         ]);
     }
 }

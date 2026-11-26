@@ -52,6 +52,8 @@ class MonitoringController extends Controller
                 'id' => $a->id,
                 'course_title' => $a->course->title,
                 'score' => $a->score,
+                'total' => $a->total_questions,
+                'percent' => $a->percent(),
                 'passed' => $a->passed,
                 'date' => $a->created_at->format('Y-m-d'),
                 'archived' => $a->archived_at !== null,

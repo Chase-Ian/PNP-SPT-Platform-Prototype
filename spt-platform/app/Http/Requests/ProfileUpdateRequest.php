@@ -3,6 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\User;
+use App\Support\PnpRegions;
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
@@ -28,29 +29,9 @@ class ProfileUpdateRequest extends FormRequest
                 'Police Staff Sergeant (PSSg)', 'Police Corporal (PCpl)', 'Patrolman/Patrolwoman (Pat)',
             ])],
             'unit_office' => ['required', 'string', 'max:255'],
-             'region' => 'required|string|in:' . implode(',', [
-            'PRO NCR - National Capital Region (NCR)',
-            'PRO 1 - Region 1 - Ilocos Region',
-            'PRO 2 - Region 2 - Cagayan Valley',
-            'PRO 3 - Region 3 - Central Luzon',
-            'PRO 4A - Region 4A - CALABARZON',
-            'PRO 4B - Region 4B - MIMAROPA',
-            'PRO 5 - Region 5 - Bicol Region',
-            'PRO 6 - Region 6 - Western Visayas',
-            'PRO 7 - Region 7 - Central Visayas',
-            'PRO 8 - Region 8 - Eastern Visayas',
-            'PRO 9 - Region 9 - Zamboanga Peninsula',
-            'PRO 10 - Region 10 - Northern Mindanao',
-            'PRO 11 - Region 11 - Davao Region',
-            'PRO 12 - Region 12 - SOCCSKSARGEN',
-            'PRO 13 - Region 13 - Caraga Region',
-            'PRO BARMM - Bangsamoro Autonomous Region (BARMM)',
-            'PRO CAR - Cordillera Administrative Region (CAR)',
-            'NHQ Camp Crame - PNP National Headquarters',
-        ]),
-            // Email is intentionally not editable here: it is the account's
-            // recovery route. Changes go through an admin-reviewed request
-            // (EmailChangeRequestController). Any 'email' sent is ignored.
+             'region' => ['required', 'string', Rule::in(PnpRegions::all())],
+            // Email is intentionally not editable: it is the sign-in identity
+            // and can't be changed. Any 'email' sent is ignored.
         ];
     }
 }

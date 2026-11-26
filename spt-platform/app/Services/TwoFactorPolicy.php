@@ -6,7 +6,7 @@ use App\Models\User;
 use Illuminate\Support\Carbon;
 
 /**
- * Single source of truth for "does this user have to have 2FA, and are they
+ * Single source of truth for "does this user have to have MFA, and are they
  * done?". Used by the gate middleware, the setup page, the profile page and
  * the Inertia shared props, so every path answers the same way.
  */
@@ -26,13 +26,12 @@ class TwoFactorPolicy
     }
 
     /**
-     * Set up = the authenticator code was confirmed AND the user acknowledged
-     * saving their recovery codes. A half-finished setup counts as not set up.
+     * Set up = the authenticator code was confirmed. A secret that was never
+     * confirmed (setup left half-way) counts as not set up.
      */
     public function isSetUp(User $user): bool
     {
-        return $user->two_factor_confirmed_at !== null
-            && $user->two_factor_codes_acknowledged_at !== null;
+        return $user->two_factor_confirmed_at !== null;
     }
 
     /**
@@ -83,7 +82,6 @@ class TwoFactorPolicy
             'two_factor_secret' => null,
             'two_factor_recovery_codes' => null,
             'two_factor_confirmed_at' => null,
-            'two_factor_codes_acknowledged_at' => null,
         ])->save();
     }
 }

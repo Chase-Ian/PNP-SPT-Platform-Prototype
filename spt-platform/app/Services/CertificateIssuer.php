@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Certificate;
 use App\Models\Course;
 use App\Models\User;
+use App\Support\PnpRegions;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Endroid\QrCode\QrCode;
 use Endroid\QrCode\Writer\SvgWriter;
@@ -40,15 +41,22 @@ class CertificateIssuer
                 'user_id' => $user->id,
                 'course_id' => $course->id,
                 'serial_id' => 'pending-'.Str::uuid(),
-                'verification_hash' => hash('sha256', $user->id.$course->id.$issuedAt->timestamp),
+                // Must be unique. "user ID + course ID + second" wasn't: user 1 in
+                // course 23 and user 12 in course 3 passing in the same second
+                // produced the same hash and crashed the exam submission.
+                'verification_hash' => hash('sha256', implode('|', [
+                    $user->id, $course->id, $issuedAt->timestamp, Str::random(40),
+                ])),
                 'issued_at' => $issuedAt,
             ]);
 
             $year = $issuedAt->year;
             $serial = 'PNP-SPT-CP-'.$year.'-'.str_pad($certificate->id, 6, '0', STR_PAD_LEFT);
 
-            // Training Control Number, e.g. SPT-PRON-2026-0001
-            $region = strtoupper(substr(preg_replace('/\s+/', '', $user->region ?? 'REG'), 0, 4));
+            // Training Control Number, e.g. SPT-NCRPO-2026-0001 or SPT-PRO4A-2026-0002.
+            // The office's own code: the first 4 letters of the region name gave
+            // PRO 1 and PRO 10 to 13 the same code, and PRO 4A and 4B too.
+            $region = PnpRegions::code($user->region);
             $ctrlNo = 'SPT-'.$region.'-'.$year.'-'.str_pad($certificate->id, 4, '0', STR_PAD_LEFT);
 
             $certificate->update(['serial_id' => $serial, 'training_ctrl_no' => $ctrlNo]);
@@ -71,6 +79,8 @@ class CertificateIssuer
 
         return Pdf::loadView('certificates.template', [
             'name' => $user->name,
+            // "Police Lieutenant Colonel (PLtCol)" prints as PLTCOL before the name.
+            'rank' => preg_match('/\(([^)]+)\)\s*$/', (string) $user->rank, $m) ? mb_strtoupper($m[1]) : '',
             'course' => $course->title,
             'duration_hours' => $course->duration_hours ?? 3,
             'serial_id' => $certificate->serial_id,
@@ -78,6 +88,7 @@ class CertificateIssuer
             'unit_office' => $user->unit_office ?? 'N/A',
             'region' => $user->region ?? '',
             'date' => $certificate->issued_at->format('d F Y'),
+            'issued_at' => $certificate->issued_at,
             'verify_url' => $verifyUrl,
             'qr_code_data_uri' => $this->qrDataUri($verifyUrl),
         ])->setPaper('a4', 'landscape');

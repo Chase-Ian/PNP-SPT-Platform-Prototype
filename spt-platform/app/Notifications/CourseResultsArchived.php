@@ -18,6 +18,7 @@ class CourseResultsArchived extends Notification
     public function toArray(object $notifiable): array
     {
         return [
+            'url' => route('courses.index', absolute: false),
             'message' => "\"{$this->course->title}\" was updated. Your earlier results were archived: please redo the course and take the new final exam.",
         ];
     }

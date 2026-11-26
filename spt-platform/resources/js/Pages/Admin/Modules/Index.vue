@@ -1,9 +1,13 @@
 <script setup>
+import ActionMenu from '@/Components/ActionMenu.vue';
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
-import AdminPageBanner from '@/Components/AdminPageBanner.vue';
-import { BookOpen, Eye, Pencil, Trash2, X } from 'lucide-vue-next';
+import EmptyState from '@/Components/EmptyState.vue';
+import InputError from '@/Components/InputError.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import { askConfirm } from '@/confirm';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
+import { Eye, FileText, Layers, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 
 const props = defineProps({ course: Object, modules: Array });
 const showForm = ref(false);
@@ -14,12 +18,14 @@ const form = useForm({ title: '', description: '', duration_minutes: 20, file: n
 const openCreateForm = () => {
     editingModuleId.value = null;
     form.reset();
+    form.clearErrors();
     form.duration_minutes = 20;
     showForm.value = true;
 };
 
 const openEditModule = (module) => {
     editingModuleId.value = module.id;
+    form.clearErrors();
     form.title = module.title;
     form.description = module.description;
     form.duration_minutes = module.duration_minutes;
@@ -49,107 +55,96 @@ const submit = () => {
     }
 };
 
-const remove = (module) => {
-    if (confirm(`Delete "${module.title}"?`)) {
-        router.delete(`/admin/modules/${module.id}`);
-    }
+const remove = async (module) => {
+    const ok = await askConfirm({
+        title: `Delete "${module.title}"?`,
+        message: 'Its lessons and quiz questions are deleted too. This can’t be undone.',
+        confirmLabel: 'Delete module',
+        tone: 'danger',
+    });
+    if (ok) router.delete(`/admin/modules/${module.id}`);
 };
 
-const fileBadgeClass = (type) => ({
-    pdf: 'bg-red-100 text-red-600',
-    pptx: 'bg-orange-100 text-orange-600',
-    mp4: 'bg-blue-100 text-blue-600',
-}[type] ?? 'bg-gray-100 text-gray-500');
+const moreFor = (m) => [
+    ...(m.file_type ? [{ label: 'View file', icon: Eye, onSelect: () => window.open(`/admin/modules/${m.id}/view-file`, '_blank', 'noopener') }] : []),
+    { label: 'Edit module', icon: Pencil, onSelect: () => openEditModule(m) },
+    { label: 'Delete module', icon: Trash2, tone: 'danger', onSelect: () => remove(m) },
+];
 </script>
 
 <template>
-    <Head :title="`Modules — ${course.title}`" />
+    <Head :title="`Modules: ${course.title}`" />
     <AdminOrSupervisorLayout>
-        <Link href="/admin/courses" class="inline-flex items-center gap-1 text-sm font-medium text-blue-600 mb-2">← Back to Courses</Link>
-
-        <AdminPageBanner :icon="BookOpen" badge-text="Course Content Management • Module & File Operations"
-            :title="`Modules — ${course.title}`"
-            subtitle="Add, update, or delete course modules. Upload actual PDF, or Video files.">
+        <PageHeader back-href="/admin/courses" back-label="Back to courses" :title="course.title"
+            description="Modules of this course. Each module holds lessons and can include a PDF or video file.">
             <template #actions>
-                <button @click="openCreateForm" class="bg-white text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">+ Insert New Module</button>
+                <button v-if="!showForm" type="button" class="btn btn-primary" @click="openCreateForm">
+                    <Plus :size="18" aria-hidden="true" /> Add module
+                </button>
             </template>
-        </AdminPageBanner>
+        </PageHeader>
 
-        <form v-if="showForm" @submit.prevent="submit" class="bg-white rounded-xl border p-6 space-y-3">
-            <div class="flex justify-between items-center">
-                <h3 class="font-semibold">{{ editingModuleId ? 'Edit Module' : 'New Module' }}</h3>
-                <button type="button" @click="cancelModuleForm" class="text-xs text-gray-400 flex items-center gap-1">
-                    <X :size="14" /> Cancel
-                </button>
+        <form v-if="showForm" class="card" aria-labelledby="module-form-heading" @submit.prevent="submit">
+            <div class="card-header">
+                <h2 id="module-form-heading" class="section-title">{{ editingModuleId ? 'Edit module' : 'New module' }}</h2>
             </div>
-
-            <div>
-                <label class="text-sm font-medium">Title</label>
-                <input v-model="form.title" type="text" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm" required />
+            <div class="grid max-w-3xl grid-cols-1 gap-y-4 px-4 py-5 sm:px-6">
+                <div>
+                    <label for="module-title" class="label">Title</label>
+                    <input id="module-title" v-model="form.title" type="text" class="field" required :aria-invalid="form.errors.title ? 'true' : undefined" />
+                    <InputError class="mt-1.5" :message="form.errors.title" />
+                </div>
+                <div>
+                    <label for="module-description" class="label">Description</label>
+                    <textarea id="module-description" v-model="form.description" rows="3" class="field"></textarea>
+                </div>
+                <div class="max-w-[12rem]">
+                    <label for="module-duration" class="label">Duration (minutes)</label>
+                    <input id="module-duration" v-model="form.duration_minutes" type="number" min="1" class="field" required />
+                </div>
+                <div>
+                    <label for="module-file" class="label">File (PDF or MP4, optional)</label>
+                    <input id="module-file" type="file" accept=".pdf,.mp4" class="block w-full text-[15px] text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
+                        @change="form.file = $event.target.files[0]" />
+                    <p v-if="editingModuleId" class="hint">Leave empty to keep the current file.</p>
+                    <InputError class="mt-1.5" :message="form.errors.file" />
+                </div>
             </div>
-            <div>
-                <label class="text-sm font-medium">Description</label>
-                <textarea v-model="form.description" class="mt-1 w-full border rounded-lg px-3 py-2 text-sm"></textarea>
-            </div>
-            <div>
-                <label class="text-sm font-medium">Duration (minutes)</label>
-                <input v-model="form.duration_minutes" type="number" min="1" class="mt-1 w-32 border rounded-lg px-3 py-2 text-sm" required />
-            </div>
-            <div>
-                <label class="text-sm font-medium">File (PDF or MP4) — optional</label>
-                <input type="file" accept=".pdf,.mp4" @change="form.file = $event.target.files[0]" class="mt-1 w-full text-sm" />
-                <p v-if="editingModuleId" class="text-xs text-gray-400 mt-1">Leave empty to keep the current file.</p>
-                <div v-if="form.errors.file" class="text-red-600 text-xs mt-1">{{ form.errors.file }}</div>
-            </div>
-
-            <div class="flex items-center gap-3">
-                <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-4 py-2 rounded-lg text-sm font-medium">
-                    {{ editingModuleId ? 'Save Changes' : 'Save Module' }}
-                </button>
+            <div class="flex flex-col-reverse gap-2 border-t border-slate-200 px-4 py-4 sm:flex-row sm:justify-end sm:px-6">
+                <button type="button" class="btn btn-secondary" @click="cancelModuleForm">Cancel</button>
+                <button type="submit" :disabled="form.processing" class="btn btn-primary">{{ editingModuleId ? 'Save changes' : 'Add module' }}</button>
             </div>
         </form>
 
-        <div class="bg-white rounded-xl border p-6">
-            <p class="text-sm text-gray-500 mb-3">Total Modules: {{ modules.length }}</p>
-            <table class="w-full text-sm">
-                <thead>
-                    <tr class="text-left text-xs text-gray-400 uppercase border-b">
-                        <th class="py-2">Order</th>
-                        <th class="py-2">Module Title & Description</th>
-                        <th class="py-2">Inserted File</th>
-                        <th class="py-2">Duration</th>
-                        <th class="py-2">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr v-for="m in modules" :key="m.id" class="border-b last:border-0">
-                        <td class="py-3">Mod {{ m.order }}</td>
-                        <td class="py-3">
-                            <p class="font-medium">{{ m.title }}</p>
-                            <p class="text-xs text-gray-400">{{ m.description }}</p>
-                        </td>
-                        <td class="py-3">
-                            <span v-if="m.file_type" :class="fileBadgeClass(m.file_type)" class="px-2 py-0.5 rounded text-xs uppercase font-medium">{{ m.file_type }}</span>
-                            <span v-else class="text-gray-300 text-xs">No file</span>
-                        </td>
-                        <td class="py-3">{{ m.duration_minutes }} mins</td>
-                        <td class="py-3">
-                            <div class="flex items-center gap-4">
-                                <a v-if="m.file_type" :href="`/admin/modules/${m.id}/view-file`" target="_blank" class="text-blue-600 hover:text-blue-800" title="View File">
-                                    <Eye :size="16" />
-                                </a>
-                                <Link :href="`/admin/modules/${m.id}/lessons`" class="text-blue-600 text-xs font-medium">Manage Lessons</Link>
-                                <button @click="openEditModule(m)" class="text-green-600 hover:text-green-800" title="Edit">
-                                    <Pencil :size="16" />
-                                </button>
-                                <button @click="remove(m)" class="text-red-600 hover:text-red-800" title="Delete">
-                                    <Trash2 :size="16" />
-                                </button>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
+        <section class="card" aria-labelledby="modules-heading">
+            <div class="card-header">
+                <h2 id="modules-heading" class="section-title">Modules <span class="font-normal tabular-nums text-slate-500">({{ modules.length }})</span></h2>
+            </div>
+
+            <EmptyState v-if="modules.length === 0" :icon="Layers" tone="purple" title="No modules yet"
+                description="Add the first module, then add lessons to it.">
+                <button type="button" class="btn btn-primary" @click="openCreateForm"><Plus :size="18" aria-hidden="true" /> Add module</button>
+            </EmptyState>
+
+            <ul v-else class="divide-y divide-slate-100">
+                <li v-for="m in modules" :key="m.id" class="flex flex-col gap-3 px-4 py-4 sm:px-6 md:flex-row md:items-center">
+                    <span class="hidden h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-sm font-semibold tabular-nums text-slate-700 md:flex" aria-hidden="true">{{ m.order }}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="font-semibold text-navy-900"><span class="md:sr-only">Module {{ m.order }}: </span>{{ m.title }}</p>
+                        <p v-if="m.description" class="text-sm text-slate-600">{{ m.description }}</p>
+                        <p class="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                            <span>{{ m.duration_minutes }} minutes</span>
+                            <span aria-hidden="true">·</span>
+                            <span v-if="m.file_type" class="inline-flex items-center gap-1"><FileText :size="14" aria-hidden="true" /> {{ m.file_type.toUpperCase() }} attached</span>
+                            <span v-else>No file</span>
+                        </p>
+                    </div>
+                    <div class="flex shrink-0 gap-2">
+                        <Link :href="`/admin/modules/${m.id}/lessons`" class="btn btn-secondary btn-sm">Lessons<span class="sr-only"> of {{ m.title }}</span></Link>
+                        <ActionMenu :items="moreFor(m)" label="More" :sr-label="`More actions for ${m.title}`" />
+                    </div>
+                </li>
+            </ul>
+        </section>
     </AdminOrSupervisorLayout>
 </template>

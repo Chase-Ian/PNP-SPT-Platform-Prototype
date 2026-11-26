@@ -14,11 +14,11 @@ class TwoFactorResetController extends Controller
 {
     public function store(Request $request, User $user, TwoFactorPolicy $policy): RedirectResponse
     {
-        abort_if($user->id === $request->user()->id, 403, 'You cannot reset your own two-factor authentication. Ask another administrator.');
+        abort_if($user->id === $request->user()->id, 403, 'You cannot reset your own MFA. Ask another administrator.');
 
         $policy->reset($user);
 
-        Log::warning('2FA reset by admin', ['user_id' => $user->id, 'admin_id' => $request->user()->id]);
+        Log::warning('MFA reset by admin', ['user_id' => $user->id, 'admin_id' => $request->user()->id]);
         $user->notify(new TwoFactorWasReset($request->user()->name));
 
         return back()->with('status', 'two-factor-reset');

@@ -9,6 +9,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\RateLimiter;
 
 class AuthenticatedSessionController extends Controller
@@ -28,13 +29,21 @@ class AuthenticatedSessionController extends Controller
         if (! Auth::validate($request->only('email', 'password'))) {
             RateLimiter::hit($request->throttleKey());
 
+            // A deleted account that can still be reinstated gets a clear
+            // message, but only with the right password, so this doesn't
+            // reveal which addresses have accounts.
+            $deleted = User::onlyTrashed()->where('email', $request->input('email'))->first();
+            if ($deleted && Hash::check((string) $request->input('password'), $deleted->password)) {
+                return back()->withErrors(['email' => 'This account was deleted. Ask an administrator to reinstate it.']);
+            }
+
             return back()->withErrors(['email' => trans('auth.failed')]);
         }
 
         $user = Auth::getLastAttempted();
 
-        // Lock check happens before any 2FA detour — a locked account
-        // should never reach the 2FA challenge at all.
+        // Lock check happens before the MFA step: a locked account
+        // should never reach the MFA challenge at all.
         if ($user->is_locked) {
             return redirect()->route('login')->withErrors([
                 'email' => 'This account has been locked. Please contact your administrator.',
@@ -43,7 +52,7 @@ class AuthenticatedSessionController extends Controller
 
         RateLimiter::clear($request->throttleKey());
 
-        // 2FA detour: don't log in yet. Stash identity in the session and
+        // MFA step: don't log in yet. Stash identity in the session and
         // redirect to the challenge; Auth::login() only happens once that
         // challenge is passed, in TwoFactorChallengeController::store().
         if ($user->two_factor_confirmed_at) {

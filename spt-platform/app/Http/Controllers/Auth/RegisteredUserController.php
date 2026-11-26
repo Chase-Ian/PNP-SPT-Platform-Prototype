@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Services\LegalAgreement;
+use App\Support\PnpRegions;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\Validation\ValidationException;
 use Inertia\Inertia;
@@ -22,7 +24,7 @@ class RegisteredUserController extends Controller
      */
     public function create(): Response
     {
-        return Inertia::render('Auth/Register');
+        return Inertia::render('Auth/Register', ['regionOptions' => PnpRegions::all()]);
     }
 
     /**
@@ -59,30 +61,14 @@ $request->validate([
     ]),
     'email' => 'required|string|lowercase|email:filter|max:255|unique:'.User::class,
     'unit_office' => 'required|string|max:255',
-     'region' => 'required|string|in:' . implode(',', [
-        'PRO NCR - National Capital Region (NCR)',
-        'PRO 1 - Region 1 - Ilocos Region',
-        'PRO 2 - Region 2 - Cagayan Valley',
-        'PRO 3 - Region 3 - Central Luzon',
-        'PRO 4A - Region 4A - CALABARZON',
-        'PRO 4B - Region 4B - MIMAROPA',
-        'PRO 5 - Region 5 - Bicol Region',
-        'PRO 6 - Region 6 - Western Visayas',
-        'PRO 7 - Region 7 - Central Visayas',
-        'PRO 8 - Region 8 - Eastern Visayas',
-        'PRO 9 - Region 9 - Zamboanga Peninsula',
-        'PRO 10 - Region 10 - Northern Mindanao',
-        'PRO 11 - Region 11 - Davao Region',
-        'PRO 12 - Region 12 - SOCCSKSARGEN',
-        'PRO 13 - Region 13 - Caraga Region',
-        'PRO BARMM - Bangsamoro Autonomous Region (BARMM)',
-        'PRO CAR - Cordillera Administrative Region (CAR)',
-        'NHQ Camp Crame - PNP National Headquarters',
-    ]),
+     'region' => ['required', 'string', Rule::in(PnpRegions::all())],
     'password' => ['required', 'confirmed', Rules\Password::defaults()],
     'terms' => ['accepted'],
 ], [
     'terms.accepted' => 'You must agree to the Terms of Service and acknowledge the Privacy Notice to register.',
+    ...(User::onlyTrashed()->where('email', strtolower((string) $request->input('email')))->exists()
+        ? ['email.unique' => 'This email belongs to a deleted account. Ask an administrator to reinstate it.']
+        : []),
 ]);
 
         $user = User::create([

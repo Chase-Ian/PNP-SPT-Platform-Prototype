@@ -47,7 +47,6 @@ class EnsureAccountIsSecured
         'security.setup',
         'security.setup.start',
         'security.setup.confirm',
-        'security.setup.acknowledge',
     ];
 
     public function __construct(
@@ -71,6 +70,12 @@ class EnsureAccountIsSecured
         }
 
         $route = $request->route()?->getName();
+
+        // MFA has no recovery codes: Fortify's endpoints that show or
+        // regenerate them are switched off.
+        if (in_array($route, ['two-factor.recovery-codes', 'two-factor.regenerate-recovery-codes'], true)) {
+            abort(404);
+        }
         $allowedOnThisStep = fn (array $stepRoutes) => in_array($route, [...self::ALWAYS_ALLOWED, ...$stepRoutes], true);
 
         // Step 1: email verification.
@@ -87,21 +92,20 @@ class EnsureAccountIsSecured
                 : $this->deny($request, route('legal.accept'));
         }
 
-        // Step 3: required two-factor setup.
+        // Step 3: required MFA setup.
         if ($this->policy->mustSetUpNow($user)) {
             return $allowedOnThisStep(self::TWO_FACTOR_STEP_ROUTES)
                 ? $next($request)
                 : $this->deny($request, route('security.setup'));
         }
 
-        // Once 2FA is required, it can't be switched off or silently
-        // re-keyed from the profile page. Recovery codes can still be
-        // regenerated; a lost device goes through an admin reset or the
-        // emailed recovery link.
+        // Once MFA is required, it can't be switched off or silently
+        // re-keyed from the profile page. A lost device goes through an
+        // admin reset or the emailed reset link.
         if ($this->policy->isRequiredFor($user)
             && in_array($route, ['two-factor.disable', 'two-factor.enable'], true)
             && $user->two_factor_confirmed_at) {
-            abort(403, 'Two-factor authentication is required for your account and cannot be turned off.');
+            abort(403, 'MFA is required for your account and cannot be turned off.');
         }
 
         return $next($request);

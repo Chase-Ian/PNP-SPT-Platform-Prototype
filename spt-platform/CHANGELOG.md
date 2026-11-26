@@ -5,6 +5,20 @@ Format: `[Date]  -  Session Title` with categorized bullet points.
 
 ---
 
+## [2026-11-26]  -  Official PNP Office Names & Training Control Number Codes
+
+### Changed
+- **Office list** (`config/pnp.php`, `App\Support\PnpRegions`)
+  - One list for registration, profile and staff accounts: the 18 Police Regional Offices by their official short names (NCRPO, PRO 1 to PRO 13 with PRO 4A and PRO 4B, PRO BAR, PRO COR, PRO NIR) plus National Headquarters.
+  - Added PRO NIR (Negros Island Region), activated by the PNP on 27 March 2025 (Negros Occidental, Negros Oriental, Siquijor, Bacolod City).
+  - Migration `2026_11_26_000002_use_official_pnp_regional_office_names` maps saved regions (old labels and typed variants such as "NCR") to the new names. Values it can't match are left for the person to pick again on their profile.
+- **Training Control Number** (`App\Services\CertificateIssuer`)
+  - Format is still `SPT-[OFFICE]-[YEAR]-[SEQUENCE]`, but `[OFFICE]` is now the office's own code: `NCRPO`, `PRO1` to `PRO13`, `PRO4A`, `PRO4B`, `PROBAR`, `PROCOR`, `PRONIR` or `NHQ` (e.g. `SPT-NCRPO-2026-0001`, `SPT-PRO4A-2026-0002`).
+  - It used to be the first 4 letters of the region name, which gave PRO 1 and PRO 10 to 13 the same code (`PRO1`) and PRO 4A and 4B the same code (`PRO4`).
+  - Certificates already issued keep the number printed on them.
+
+---
+
 ## [2026-09-23]  -  Single-Page Certificate Refactor & GD Extension Fix
 
 ### Fixed

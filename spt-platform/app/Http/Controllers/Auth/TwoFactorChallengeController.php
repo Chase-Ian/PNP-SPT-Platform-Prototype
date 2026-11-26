@@ -25,9 +25,9 @@ class TwoFactorChallengeController extends Controller
             abort(403);
         }
 
-        // Same rule as the password step: after 5 wrong codes (authenticator
-        // or recovery) the user has to wait. Counted per account rather than
-        // per browser, so starting a new session doesn't reset the count.
+        // Same rule as the password step: after 5 wrong codes the user has
+        // to wait. Counted per account rather than per browser, so starting
+        // a new session doesn't reset the count.
         $throttleKey = 'two-factor-challenge|'.$request->session()->get('login.id');
 
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
@@ -38,11 +38,11 @@ class TwoFactorChallengeController extends Controller
             ]);
         }
 
-        if (! $request->hasValidCode() && ! $request->validRecoveryCode()) {
+        if (! $request->hasValidCode()) {
             RateLimiter::hit($throttleKey, 60);
 
             throw ValidationException::withMessages([
-                'code' => 'The provided two-factor authentication code was invalid.',
+                'code' => 'The provided MFA code was invalid.',
             ]);
         }
 

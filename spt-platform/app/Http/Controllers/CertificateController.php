@@ -56,13 +56,12 @@ class CertificateController extends Controller
             ->first();
 
         return Inertia::render('Verify/Show', [
+            'serial' => $serial,
             'certificate' => $certificate ? [
                 'serial_id'        => $certificate->serial_id,
                 'training_ctrl_no' => $certificate->training_ctrl_no ?? 'N/A',
                 'title'            => $certificate->course->title,
                 'holder_name'      => $certificate->user->name,
-                'unit_office'      => $certificate->user->unit_office ?? 'N/A',
-                'region'           => $certificate->user->region ?? 'N/A',
                 'issued_at'        => $certificate->issued_at->format('d F Y'),
                 'verification_url' => $certificate->verification_url,
                 'archived'         => $certificate->archived_at !== null,

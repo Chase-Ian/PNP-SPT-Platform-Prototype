@@ -66,12 +66,11 @@ Route::middleware('auth')->group(function () {
 
     Route::put('password', [PasswordController::class, 'update'])->name('password.update');
 
-    // "Secure your account" (forced by EnsureAccountIsSecured when 2FA is required)
+    // "Secure your account" (forced by EnsureAccountIsSecured when MFA is required)
     Route::get('security/two-factor', [TwoFactorSetupController::class, 'show'])->name('security.setup');
     Route::post('security/two-factor/start', [TwoFactorSetupController::class, 'start'])->name('security.setup.start');
     Route::post('security/two-factor/confirm', [TwoFactorSetupController::class, 'confirm'])
         ->middleware('throttle:10,1')->name('security.setup.confirm');
-    Route::post('security/two-factor/acknowledge', [TwoFactorSetupController::class, 'acknowledge'])->name('security.setup.acknowledge');
 
     Route::post('logout', [AuthenticatedSessionController::class, 'destroy'])
         ->name('logout');

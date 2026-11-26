@@ -21,7 +21,7 @@ class LegalTest extends TestCase
             'rank' => 'Patrolman/Patrolwoman (Pat)',
             'role' => 'trainee',
             'unit_office' => 'Test Unit',
-            'region' => 'PRO NCR - National Capital Region (NCR)',
+            'region' => 'NCRPO - National Capital Region Police Office',
             ...$attrs,
         ]);
     }
@@ -34,7 +34,7 @@ class LegalTest extends TestCase
             'rank' => 'Patrolman/Patrolwoman (Pat)',
             'email' => 'juan@example.com',
             'unit_office' => 'Station 1',
-            'region' => 'PRO NCR - National Capital Region (NCR)',
+            'region' => 'NCRPO - National Capital Region Police Office',
             'password' => 'password',
             'password_confirmation' => 'password',
             ...$overrides,

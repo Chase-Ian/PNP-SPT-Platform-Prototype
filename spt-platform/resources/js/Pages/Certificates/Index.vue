@@ -1,136 +1,125 @@
 <script setup>
+import EmptyState from '@/Components/EmptyState.vue';
+import PageHeader from '@/Components/PageHeader.vue';
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
 import { Head, Link } from '@inertiajs/vue3';
-import { ArrowLeft, Award, Eye, Download, ShieldCheck, Copy, CheckCheck, QrCode } from 'lucide-vue-next';
 import { ref } from 'vue';
+import { Award, Check, Copy, Download, Eye, HelpCircle, ShieldCheck } from 'lucide-vue-next';
 
-const props = defineProps({ certificates: Array });
+defineProps({ certificates: Array });
 
-// Copy-to-clipboard state per cert id
+// "Copied" confirmation per certificate
 const copied = ref(null);
-function copyLink(cert) {
+const copyLink = (cert) => {
     navigator.clipboard.writeText(cert.verification_url).then(() => {
         copied.value = cert.id;
         setTimeout(() => { copied.value = null; }, 2000);
     });
-}
+};
 </script>
 
 <template>
-    <Head title="My Certificates" />
+    <Head title="My certificates" />
     <TraineeLayout>
-        <div class="space-y-5">
+        <PageHeader title="My certificates" description="Download your training certificates or share their verification links.">
+            <template #actions>
+                <Link href="/verify" class="btn btn-secondary">
+                    <ShieldCheck :size="18" aria-hidden="true" /> Verify a certificate
+                </Link>
+            </template>
+        </PageHeader>
 
-            <!-- Back -->
-            <Link href="/dashboard" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-blue-700 transition-colors">
-                <ArrowLeft :size="14" /> Back to Home
-            </Link>
+        <section v-if="certificates.length" class="card" aria-labelledby="certs-heading">
+            <div class="card-header">
+                <h2 id="certs-heading" class="section-title">Certificates <span class="font-normal tabular-nums text-slate-500">({{ certificates.length }})</span></h2>
+            </div>
 
-            <!-- Header Banner -->
-            <div class="relative overflow-hidden bg-gradient-to-br from-[#0a1a4e] to-[#1a3a7e] rounded-2xl p-6 text-white shadow-lg">
-                <div class="absolute right-0 top-0 w-40 h-full opacity-10">
-                    <Award class="w-full h-full" />
-                </div>
-                <div class="relative z-10 flex justify-between items-center">
-                    <div>
-                        <h1 class="font-bold text-xl flex items-center gap-2">
-                            <Award :size="20" class="text-yellow-400" />
-                            My Certificates
-                        </h1>
-                        <p class="text-sm text-blue-200 mt-1">View, verify, and download your PNP training credentials.</p>
+            <!-- Phones -->
+            <ul class="divide-y divide-slate-100 md:hidden">
+                <li v-for="cert in certificates" :key="`m-${cert.id}`" class="space-y-3 px-4 py-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <p class="font-semibold leading-snug text-navy-900">{{ cert.title }}</p>
+                        <span v-if="cert.archived" class="badge badge-purple shrink-0">Earlier course version</span>
+                        <span v-else class="badge badge-green shrink-0"><Check :size="14" aria-hidden="true" /> Issued</span>
                     </div>
-                    <span class="bg-yellow-400 text-[#0a1a4e] px-4 py-1.5 rounded-full text-sm font-bold shadow">
-                        {{ certificates.length }} Earned
-                    </span>
-                </div>
-            </div>
+                    <dl class="grid grid-cols-[8.5rem_1fr] gap-y-1 text-sm">
+                        <dt class="text-slate-500">Issued</dt><dd class="text-slate-800">{{ cert.issued_at }}</dd>
+                        <dt class="text-slate-500">Certificate no.</dt><dd class="break-all font-mono text-[14px] text-slate-800">{{ cert.serial_id }}</dd>
+                    </dl>
+                    <div class="flex flex-wrap gap-2">
+                        <a :href="`/certificates/${cert.id}/download`" class="btn btn-primary btn-sm flex-1"><Download :size="16" aria-hidden="true" /> Download</a>
+                        <a :href="`/certificates/${cert.id}/view`" target="_blank" rel="noopener" class="btn btn-secondary btn-sm flex-1">
+                            <Eye :size="16" aria-hidden="true" /> Preview<span class="sr-only"> (opens in a new tab)</span>
+                        </a>
+                        <button type="button" class="btn btn-secondary btn-sm flex-1" @click="copyLink(cert)">
+                            <component :is="copied === cert.id ? Check : Copy" :size="16" aria-hidden="true" /> {{ copied === cert.id ? 'Link copied' : 'Copy link' }}
+                        </button>
+                    </div>
+                </li>
+            </ul>
 
-            <!-- Empty state -->
-            <div v-if="certificates.length === 0"
-                 class="bg-white rounded-2xl border border-dashed border-blue-200 p-10 text-center text-gray-400">
-                <Award :size="40" class="mx-auto mb-3 text-blue-100" />
-                <p class="font-medium">No certificates earned yet.</p>
-                <p class="text-sm mt-1">Complete a course and pass the final exam to earn your first certificate.</p>
-            </div>
-
-            <!-- Certificate Cards -->
-            <div v-for="cert in certificates" :key="cert.id"
-                 class="bg-white rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-
-                <!-- Top accent bar -->
-                <div class="h-1.5 w-full bg-gradient-to-r from-[#0a1a4e] via-[#DAA520] to-[#0a1a4e]"></div>
-
-                <div class="p-5">
-                    <div class="flex justify-between items-start gap-4">
-
-                        <!-- Left: Icon + Details -->
-                        <div class="flex gap-4 flex-1 min-w-0">
-                            <div class="w-12 h-12 bg-gradient-to-br from-[#0a1a4e] to-[#1a3a7e] text-yellow-400 rounded-xl flex items-center justify-center flex-shrink-0 shadow">
-                                <Award :size="22" />
-                            </div>
-                            <div class="min-w-0">
-                                <p class="font-bold text-[#0a1a4e] text-base leading-tight">{{ cert.title }}<span v-if="cert.archived" class="ml-1 bg-purple-100 text-purple-700 px-2 py-0.5 rounded-full text-xs font-medium align-middle">Earlier course version</span></p>
-                                <p class="text-xs text-gray-500 mt-0.5">Instructor: <span class="font-medium text-gray-700">{{ cert.instructor_name }}</span></p>
-                                <p class="text-xs text-gray-400 mt-1">Issued: <span class="font-medium text-gray-600">{{ cert.issued_at }}</span></p>
-
-                                <!-- Certificate Numbers -->
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    <span class="bg-blue-50 border border-blue-100 text-blue-700 rounded-md px-2 py-0.5 text-xs font-mono">
-                                        Cert No: {{ cert.serial_id }}
-                                    </span>
-                                    <span class="bg-amber-50 border border-amber-100 text-amber-700 rounded-md px-2 py-0.5 text-xs font-mono">
-                                        Ctrl No: {{ cert.training_ctrl_no }}
-                                    </span>
-                                </div>
-
-                                <!-- Verify Link row -->
-                                <div class="mt-2 flex items-center gap-2">
-                                    <span class="text-xs text-gray-400 truncate max-w-[200px]">{{ cert.verification_url }}</span>
-                                    <button @click="copyLink(cert)"
-                                            class="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 transition-colors font-medium">
-                                        <CheckCheck v-if="copied === cert.id" :size="12" class="text-green-600" />
-                                        <Copy v-else :size="12" />
-                                        {{ copied === cert.id ? 'Copied!' : 'Copy' }}
+            <!-- Tablet and desktop -->
+            <div class="hidden overflow-x-auto md:block">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th scope="col">Course</th>
+                            <th scope="col">Issued</th>
+                            <th scope="col">Certificate no.</th>
+                            <th scope="col">Status</th>
+                            <th scope="col" class="text-right"><span class="sr-only">Actions</span></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-for="cert in certificates" :key="cert.id">
+                            <td>
+                                <p class="font-semibold text-navy-900">{{ cert.title }}</p>
+                                <p class="text-xs text-slate-500">Instructor: {{ cert.instructor_name || 'Not recorded' }}</p>
+                            </td>
+                            <td class="whitespace-nowrap">{{ cert.issued_at }}</td>
+                            <td class="whitespace-nowrap font-mono text-[14px]">{{ cert.serial_id }}</td>
+                            <td>
+                                <span v-if="cert.archived" class="badge badge-purple">Earlier course version</span>
+                                <span v-else class="badge badge-green"><Check :size="14" aria-hidden="true" /> Issued</span>
+                            </td>
+                            <td>
+                                <div class="flex flex-nowrap items-center justify-end gap-2">
+                                    <a :href="`/certificates/${cert.id}/view`" target="_blank" rel="noopener" class="btn btn-secondary btn-sm">
+                                        <Eye :size="16" aria-hidden="true" /> Preview<span class="sr-only"> {{ cert.title }} (opens in a new tab)</span>
+                                    </a>
+                                    <a :href="`/certificates/${cert.id}/download`" class="btn btn-primary btn-sm">
+                                        <Download :size="16" aria-hidden="true" /> Download<span class="sr-only"> {{ cert.title }}</span>
+                                    </a>
+                                    <button type="button" class="btn-icon" :aria-label="copied === cert.id ? 'Verification link copied' : `Copy verification link for ${cert.title}`"
+                                        :title="copied === cert.id ? 'Copied' : 'Copy verification link'" @click="copyLink(cert)">
+                                        <component :is="copied === cert.id ? Check : Copy" :size="18" aria-hidden="true" />
                                     </button>
                                 </div>
-                            </div>
-                        </div>
-
-                        <!-- Right: Status + Actions -->
-                        <div class="flex flex-col items-end gap-2 flex-shrink-0">
-                            <span class="bg-emerald-50 text-emerald-700 border border-emerald-100 px-2.5 py-0.5 rounded-full text-xs font-semibold flex items-center gap-1">
-                                <ShieldCheck :size="11" /> Issued
-                            </span>
-                            <div class="flex gap-2 flex-wrap justify-end">
-                                <a :href="`/verify/${cert.serial_id}`" target="_blank"
-                                   class="border border-gray-200 bg-gray-50 hover:bg-gray-100 text-gray-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors">
-                                    <QrCode :size="12" /> Verify
-                                </a>
-                                <a :href="`/certificates/${cert.id}/view`" target="_blank"
-                                   class="border border-blue-200 bg-blue-50 hover:bg-blue-100 text-blue-700 px-3 py-1.5 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors">
-                                    <Eye :size="12" /> View
-                                </a>
-                                <a :href="`/certificates/${cert.id}/download`"
-                                   class="bg-gradient-to-r from-[#0a1a4e] to-[#1a3a7e] text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:opacity-90 flex items-center gap-1 transition-opacity shadow-sm">
-                                    <Download :size="12" /> Download
-                                </a>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
+            <p class="sr-only" aria-live="polite">{{ copied ? 'Verification link copied to the clipboard.' : '' }}</p>
+        </section>
 
-            <!-- Info box -->
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-100 rounded-2xl p-5 text-sm text-gray-600 space-y-1.5">
-                <p class="font-semibold text-[#0a1a4e] flex items-center gap-2 mb-2">
-                    <ShieldCheck :size="16" class="text-blue-600" /> About Your PNP-SPT Certificates
-                </p>
-                <p class="flex items-start gap-2"><span class="text-blue-400 font-bold">•</span> Certificates are automatically generated when you complete a course and pass the final exam.</p>
-                <p class="flex items-start gap-2"><span class="text-blue-400 font-bold">•</span> Each certificate has a unique Certificate No. and Training Control No. for official verification.</p>
-                <p class="flex items-start gap-2"><span class="text-blue-400 font-bold">•</span> Scan the QR code or visit the verify link to confirm certificate authenticity.</p>
-            </div>
+        <section v-else class="card">
+            <EmptyState :icon="Award" tone="purple" title="No certificates yet"
+                description="A certificate is issued automatically when you pass a course's final exam.">
+                <Link href="/courses" class="btn btn-primary">Browse courses</Link>
+            </EmptyState>
+        </section>
 
-        </div>
+        <details class="card px-4 py-4 sm:px-6">
+            <summary class="help-toggle">
+                <HelpCircle :size="18" aria-hidden="true" /> About your certificates
+            </summary>
+            <ul class="mt-3 max-w-3xl list-disc space-y-1.5 pl-5 text-[15px] text-slate-600">
+                <li>Certificates are issued automatically when you pass a course's final exam.</li>
+                <li>Each one has a certificate number and a training control number for official checks.</li>
+                <li>Anyone can confirm a certificate on the verification page or by scanning the QR code printed on it.</li>
+                <li>"Earlier course version" means the course was updated after you passed. The certificate is still genuine.</li>
+            </ul>
+        </details>
     </TraineeLayout>
 </template>

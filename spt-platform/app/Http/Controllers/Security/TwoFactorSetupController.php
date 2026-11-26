@@ -16,8 +16,8 @@ use Laravel\Fortify\Fortify;
 
 /**
  * "Secure your account": scan QR (or type the key) -> confirm a 6-digit
- * code -> save recovery codes -> acknowledge. Used both when 2FA is forced
- * by the gate and when a user turns it on voluntarily from their profile.
+ * code. There are no recovery codes. Used both when MFA is forced by the
+ * gate and when a user turns it on voluntarily from their profile.
  */
 class TwoFactorSetupController extends Controller
 {
@@ -32,7 +32,6 @@ class TwoFactorSetupController extends Controller
         }
 
         $step = match (true) {
-            $user->two_factor_confirmed_at !== null => 'codes',
             ! empty($user->two_factor_secret) => 'scan',
             default => 'start',
         };
@@ -47,7 +46,6 @@ class TwoFactorSetupController extends Controller
             'secretKey' => $step === 'scan'
                 ? Fortify::currentEncrypter()->decrypt($user->two_factor_secret)
                 : null,
-            'recoveryCodes' => $step === 'codes' ? $user->recoveryCodes() : [],
         ]);
     }
 
@@ -79,19 +77,8 @@ class TwoFactorSetupController extends Controller
             ]);
         }
 
-        return redirect()->route('security.setup');
-    }
-
-    public function acknowledge(Request $request): RedirectResponse
-    {
-        $request->validate(['acknowledged' => ['accepted']], [
-            'acknowledged.accepted' => 'Please confirm that you have saved your recovery codes.',
-        ]);
-
-        $user = $request->user();
-        abort_if($user->two_factor_confirmed_at === null, 409);
-
-        $user->forceFill(['two_factor_codes_acknowledged_at' => now()])->save();
+        // No recovery codes: drop the ones Fortify made with the secret.
+        $user->forceFill(['two_factor_recovery_codes' => null])->save();
 
         // The user is already signed in, so no further code is asked for in
         // this session.
