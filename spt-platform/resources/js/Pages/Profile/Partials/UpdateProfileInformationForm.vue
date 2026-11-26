@@ -42,12 +42,12 @@ const form = useForm({
 <template>
     <section>
         <header>
-            <h2 class="text-base font-semibold text-primary-900">Profile Information</h2>
-            <p class="mt-1 text-sm text-slate-600">Update your account's profile information, rank, and assignment.</p>
+            <h2 class="text-lg font-medium text-gray-900">Profile Information</h2>
+            <p class="mt-1 text-sm text-gray-600">Update your account's profile information, rank, and assignment.</p>
         </header>
 
         <form @submit.prevent="form.patch(route('profile.update'))" class="mt-6 space-y-6">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4">
                 <div>
                     <InputLabel for="first_name" value="First Name" />
                     <TextInput id="first_name" v-model="form.first_name" class="mt-1 block w-full" required />
@@ -62,7 +62,8 @@ const form = useForm({
 
             <div>
                 <InputLabel for="rank" value="Rank" />
-                <select id="rank" v-model="form.rank" required class="mt-1 block w-full text-sm shadow-sm">
+                <select id="rank" v-model="form.rank" required
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option v-for="r in rankOptions" :key="r" :value="r">{{ r }}</option>
                 </select>
                 <InputError class="mt-2" :message="form.errors.rank" />
@@ -70,7 +71,8 @@ const form = useForm({
 
             <div>
                 <InputLabel for="region" value="Police Regional Office (PRO)" />
-                <select id="region" v-model="form.region" required class="mt-1 block w-full text-sm shadow-sm">
+                <select id="region" v-model="form.region" required
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option v-for="r in regionOptions" :key="r" :value="r">{{ r }}</option>
                 </select>
                 <InputError class="mt-2" :message="form.errors.region" />
@@ -85,17 +87,17 @@ const form = useForm({
             <div>
                 <InputLabel for="email" value="Email" />
                 <!-- Read-only: email is the account's recovery route. Changes go through an admin request below. -->
-                <TextInput id="email" :model-value="user.email" type="email" class="mt-1 block w-full bg-slate-100 text-slate-600 cursor-not-allowed" readonly disabled autocomplete="username" />
-                <p class="mt-1 text-xs text-slate-500">For security, your email can only be changed by an administrator. Use "Request email change" below.</p>
+                <TextInput id="email" :model-value="user.email" type="email" class="mt-1 block w-full bg-gray-100 text-gray-600 cursor-not-allowed" readonly disabled autocomplete="username" />
+                <p class="mt-1 text-xs text-gray-500">For security, your email can only be changed by an administrator. Use "Request email change" below.</p>
 
                 <div v-if="mustVerifyEmail && user.email_verified_at === null">
-                    <p class="text-sm mt-2 text-slate-800">
+                    <p class="text-sm mt-2 text-gray-800">
                         Your email address is unverified.
-                        <Link :href="route('verification.send')" method="post" as="button" class="underline text-sm text-slate-600 hover:text-slate-900">
+                        <Link :href="route('verification.send')" method="post" as="button" class="underline text-sm text-gray-600 hover:text-gray-900">
                             Click here to re-send the verification email.
                         </Link>
                     </p>
-                    <div v-show="status === 'verification-link-sent'" class="mt-2 font-medium text-sm text-green-700">
+                    <div v-show="status === 'verification-link-sent'" class="mt-2 font-medium text-sm text-green-600">
                         A new verification link has been sent to your email address.
                     </div>
                 </div>
@@ -103,7 +105,7 @@ const form = useForm({
 
             <div class="flex items-center gap-4">
                 <PrimaryButton :disabled="form.processing">Save</PrimaryButton>
-                <p v-if="form.recentlySuccessful" class="text-sm text-green-700">Saved.</p>
+                <p v-if="form.recentlySuccessful" class="text-sm text-gray-600">Saved.</p>
             </div>
         </form>
     </section>

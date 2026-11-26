@@ -67,11 +67,11 @@ const submit = () => {
 </script>
 
 <template>
-    <GuestLayout title="Register" subtitle="Create your trainee account. Use your official PNP email address." wide>
+    <GuestLayout>
         <Head title="Register" />
 
         <form @submit.prevent="submit">
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div class="grid grid-cols-2 gap-4">
                 <div>
                     <InputLabel for="first_name" value="First Name" />
                     <TextInput id="first_name" v-model="form.first_name" type="text" class="mt-1 block w-full" required autofocus />
@@ -86,7 +86,8 @@ const submit = () => {
 
             <div class="mt-4">
                 <InputLabel for="rank" value="Rank" />
-                <select id="rank" v-model="form.rank" required class="mt-1 block w-full text-sm shadow-sm">
+                <select id="rank" v-model="form.rank" required
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option v-for="option in rankOptions" :key="option" :value="option">{{ option }}</option>
                 </select>
                 <InputError class="mt-2" :message="form.errors.rank" />
@@ -100,7 +101,8 @@ const submit = () => {
 
             <div class="mt-4">
                 <InputLabel for="region" value="Police Regional Office (PRO)" />
-                <select id="region" v-model="form.region" required class="mt-1 block w-full text-sm shadow-sm">
+                <select id="region" v-model="form.region" required
+                    class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
                     <option v-for="option in proOptions" :key="option" :value="option">{{ option }}</option>
                 </select>
                 <InputError class="mt-2" :message="form.errors.region" />
@@ -125,21 +127,21 @@ const submit = () => {
             </div>
 
             <div class="mt-4">
-                <label class="flex items-start gap-2 text-sm text-slate-700">
-                    <input v-model="form.terms" type="checkbox" required class="mt-0.5 rounded" />
+                <label class="flex items-start gap-2 text-sm text-gray-700">
+                    <input v-model="form.terms" type="checkbox" required class="mt-0.5 rounded border-gray-300" />
                     <span>
                         I agree to the
-                        <a :href="route('legal.terms')" target="_blank" rel="noopener" class="link underline">Terms of Service</a>
+                        <a :href="route('legal.terms')" target="_blank" rel="noopener" class="text-blue-600 underline">Terms of Service</a>
                         and have read the
-                        <a :href="route('legal.privacy')" target="_blank" rel="noopener" class="link underline">Privacy Notice</a>.
+                        <a :href="route('legal.privacy')" target="_blank" rel="noopener" class="text-blue-600 underline">Privacy Notice</a>.
                     </span>
                 </label>
                 <InputError class="mt-2" :message="form.errors.terms" />
             </div>
 
-            <div class="mt-6 flex flex-col-reverse gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                <p class="text-sm text-slate-600">Already registered? <Link :href="route('login')" class="link">Log in</Link></p>
-                <PrimaryButton :disabled="form.processing" class="w-full sm:w-auto">Register</PrimaryButton>
+            <div class="mt-4 flex items-center justify-end">
+                <Link :href="route('login')" class="rounded-md text-sm text-gray-600 underline hover:text-gray-900">Already registered?</Link>
+                <PrimaryButton class="ms-4" :class="{ 'opacity-25': form.processing }" :disabled="form.processing">Register</PrimaryButton>
             </div>
         </form>
     </GuestLayout>

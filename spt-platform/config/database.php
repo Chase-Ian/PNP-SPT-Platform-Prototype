@@ -58,14 +58,7 @@ return [
             'strict' => true,
             'engine' => null,
             'options' => extension_loaded('pdo_mysql') ? array_filter([
-                // CA certificate for TLS (TiDB Cloud requires it). A path relative
-                // to the project folder works too, e.g. storage/certs/isrgrootx1.pem,
-                // so the same .env line fits every computer. Docker uses a full path.
-                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA')
-                    ? (file_exists(env('MYSQL_ATTR_SSL_CA'))
-                        ? env('MYSQL_ATTR_SSL_CA')
-                        : base_path(env('MYSQL_ATTR_SSL_CA')))
-                    : null,
+                PDO::MYSQL_ATTR_SSL_CA => env('MYSQL_ATTR_SSL_CA'),
             ]) : [],
         ],
 

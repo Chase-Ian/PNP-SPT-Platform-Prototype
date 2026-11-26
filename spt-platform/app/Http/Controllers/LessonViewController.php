@@ -45,19 +45,8 @@ class LessonViewController extends Controller
         $totalLessons = $allLessons->count();
         $completedCount = $sidebar->where('passed', true)->count();
 
-        // The module's position in its course ("Module 2 of 5"), not its
-        // database ID, which TiDB hands out in large jumps.
-        $course = $lesson->course;
-        $moduleIds = $course->modules()->orderBy('order')->orderBy('id')->pluck('id');
-
         return Inertia::render('Lessons/Show', [
-            'module' => [
-                'id' => $module->id,
-                'title' => $module->title,
-                'number' => (int) $moduleIds->search($module->id) + 1,
-                'count' => $moduleIds->count(),
-            ],
-            'course' => ['id' => $course->id, 'title' => $course->title],
+            'module' => ['id' => $module->id, 'title' => $module->title],
             'lesson' => $lesson,
             'sidebar' => $sidebar,
             'currentIndex' => $currentIndex,

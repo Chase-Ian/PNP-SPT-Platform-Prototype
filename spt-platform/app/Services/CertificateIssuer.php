@@ -40,12 +40,7 @@ class CertificateIssuer
                 'user_id' => $user->id,
                 'course_id' => $course->id,
                 'serial_id' => 'pending-'.Str::uuid(),
-                // Must be unique. "user ID + course ID + second" wasn't: user 1 in
-                // course 23 and user 12 in course 3 passing in the same second
-                // produced the same hash and crashed the exam submission.
-                'verification_hash' => hash('sha256', implode('|', [
-                    $user->id, $course->id, $issuedAt->timestamp, Str::random(40),
-                ])),
+                'verification_hash' => hash('sha256', $user->id.$course->id.$issuedAt->timestamp),
                 'issued_at' => $issuedAt,
             ]);
 

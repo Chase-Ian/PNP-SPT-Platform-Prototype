@@ -4,8 +4,7 @@ import UpdatePasswordForm from './Partials/UpdatePasswordForm.vue';
 import UpdateProfileInformationForm from './Partials/UpdateProfileInformationForm.vue';
 import TwoFactorForm from './Partials/TwoFactorForm.vue';
 import EmailChangeRequestForm from './Partials/EmailChangeRequestForm.vue';
-import PageHeader from '@/Components/PageHeader.vue';
-import RoleLayout from '@/Layouts/RoleLayout.vue';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
 import { Head } from '@inertiajs/vue3';
 
 defineProps({
@@ -19,31 +18,33 @@ defineProps({
 <template>
     <Head title="Profile" />
 
-    <RoleLayout>
-        <div>
-            <div class="max-w-3xl space-y-6">
-                <PageHeader :back-href="route('dashboard')" back-label="Back to Dashboard" eyebrow="Account"
-                    title="Profile" subtitle="Your personal details, password, email address and sign-in security." />
-                <div class="card p-4 sm:p-8">
+    <AuthenticatedLayout>
+        <template #header>
+            <h2 class="font-semibold text-xl text-gray-800 leading-tight">Profile</h2>
+        </template>
+
+        <div class="py-12">
+            <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
+                <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
                     <UpdateProfileInformationForm :must-verify-email="mustVerifyEmail" :status="status" class="max-w-xl" />
                 </div>
 
-                <div class="card p-4 sm:p-8">
+                <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
                     <UpdatePasswordForm class="max-w-xl" />
                 </div>
 
-                <div class="card p-4 sm:p-8">
+                <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
                     <EmailChangeRequestForm :requests="emailRequests" :status="status" class="max-w-xl" />
                 </div>
 
-                <div class="card p-4 sm:p-8">
+                <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
                     <TwoFactorForm :two-factor="twoFactor" class="max-w-xl" />
                 </div>
 
-                <div class="card border-red-200 p-4 sm:p-8">
+                <div class="bg-white p-4 sm:p-8 shadow sm:rounded-lg">
                     <DeleteUserForm class="max-w-xl" />
                 </div>
             </div>
         </div>
-    </RoleLayout>
+    </AuthenticatedLayout>
 </template>
