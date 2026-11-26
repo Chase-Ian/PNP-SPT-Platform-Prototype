@@ -123,7 +123,8 @@ class TraineeScreensTest extends TestCase
         ]);
 
         $response = $this->actingAs($user)->getJson('/notifications')->assertOk();
-        $this->assertSame('/courses', $response->json('0.url'));
+        // Results archived: "My learning", where the course to redo is listed.
+        $this->assertSame('/courses?tab=mine', $response->json('0.url'));
         $this->assertSame('/certificates', $response->json('1.url'));
 
         $id = $response->json('0.id');

@@ -32,7 +32,7 @@ defineProps({
                     <UpdatePasswordForm class="max-w-xl" />
                 </div>
 
-                <div class="card p-4 sm:p-8">
+                <div id="mfa" class="card scroll-mt-24 p-4 sm:p-8">
                     <TwoFactorForm :two-factor="twoFactor" class="max-w-xl" />
                 </div>
 

@@ -28,7 +28,7 @@ class TwoFactorWasReset extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'url' => route('profile.edit', absolute: false),
+            'url' => route('profile.edit', absolute: false).'#mfa',
             'message' => "Your MFA was reset by {$this->by}.",
         ];
     }

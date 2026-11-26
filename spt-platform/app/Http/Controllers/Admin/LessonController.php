@@ -7,6 +7,7 @@ use App\Models\Module;
 use App\Models\Lesson;
 use App\Models\LessonQuizQuestion;
 use App\Services\LessonImageProcessor;
+use App\Support\UploadLimits;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
@@ -19,6 +20,7 @@ class LessonController extends Controller
         return Inertia::render('Admin/Lessons/Index', [
             'module' => $module->only('id', 'title', 'course_id'),
             'lessons' => $module->lessons()->with('quizQuestions')->withCount('quizQuestions')->get(),
+            'uploadLimits' => ['imageMb' => UploadLimits::mb(5120), 'pptxMb' => UploadLimits::mb(20480)],
         ]);
     }
 
@@ -96,7 +98,12 @@ class LessonController extends Controller
 
     public function extractPptx(Request $request)
     {
-        $request->validate(['file' => 'required|file|max:20480']); // 20 MB
+        $mb = UploadLimits::mb(20480); // 20 MB, or less if the server accepts less
+        $request->validate(['file' => ['required', 'file', 'extensions:pptx', 'max:'.UploadLimits::kb(20480)]], [
+            'file.extensions' => 'Only PowerPoint (.pptx) files can be imported.',
+            'file.max' => "The file is too large. PowerPoint files can be up to {$mb} MB.",
+            'file.uploaded' => "The file couldn't be uploaded. PowerPoint files can be up to {$mb} MB.",
+        ]);
 
         try {
             $blocks = (new \App\Services\PptxTextExtractor())->extract($request->file('file')->getRealPath());
@@ -109,7 +116,12 @@ class LessonController extends Controller
 
     public function uploadImage(Request $request)
     {
-        $request->validate(['image' => 'required|file|max:5120']); // 5 MB
+        $mb = UploadLimits::mb(5120); // 5 MB, or less if the server accepts less
+        $request->validate(['image' => ['required', 'file', 'extensions:jpg,jpeg,png', 'max:'.UploadLimits::kb(5120)]], [
+            'image.extensions' => 'Only JPG or PNG images can be uploaded.',
+            'image.max' => "The image is too large. Images can be up to {$mb} MB.",
+            'image.uploaded' => "The image couldn't be uploaded. Images can be up to {$mb} MB.",
+        ]);
 
         try {
             $path = (new LessonImageProcessor())->store($request->file('image'));

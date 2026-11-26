@@ -1,6 +1,7 @@
 <script setup>
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import InputError from '@/Components/InputError.vue';
+import PasswordChecklist from '@/Components/PasswordChecklist.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -63,9 +64,11 @@ const submit = () => {
                     v-model="form.password"
                     required
                     autocomplete="new-password"
+                    aria-describedby="password-rules"
                 />
 
                 <InputError class="mt-2" :message="form.errors.password" />
+                <PasswordChecklist id="password-rules" :password="form.password" />
             </div>
 
             <div class="mt-4">

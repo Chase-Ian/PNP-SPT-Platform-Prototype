@@ -29,7 +29,7 @@ class AccountReinstated extends Notification
     public function toArray(object $notifiable): array
     {
         return [
-            'url' => route('profile.edit', absolute: false),
+            'url' => route('dashboard', absolute: false),
             'message' => "Your account was reinstated by {$this->by}.",
         ];
     }

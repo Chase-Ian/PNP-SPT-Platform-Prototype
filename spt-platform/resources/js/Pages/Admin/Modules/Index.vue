@@ -4,12 +4,13 @@ import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import InputError from '@/Components/InputError.vue';
 import PageHeader from '@/Components/PageHeader.vue';
-import { askConfirm } from '@/confirm';
+import { askConfirm, showNotice } from '@/confirm';
+import { checkUpload } from '@/upload';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import { Eye, FileText, Layers, Pencil, Plus, Trash2 } from 'lucide-vue-next';
 
-const props = defineProps({ course: Object, modules: Array });
+const props = defineProps({ course: Object, modules: Array, maxFileMb: { type: Number, default: 50 } });
 const showForm = ref(false);
 const editingModuleId = ref(null);
 
@@ -40,17 +41,35 @@ const cancelModuleForm = () => {
     form.reset();
 };
 
+// Checked here first, so a wrong type or a file over the limit gets a pop-up.
+const chooseFile = (event) => {
+    const file = event.target.files[0];
+    if (file && !checkUpload(file, { what: 'file', types: ['pdf', 'mp4'], maxMb: props.maxFileMb })) {
+        event.target.value = '';
+        form.file = null;
+        return;
+    }
+    form.file = file ?? null;
+};
+
+// The server can still refuse a file (for example one that isn't really a PDF).
+const onUploadError = (errors) => {
+    if (errors.file) showNotice({ title: "The file couldn't be uploaded", message: errors.file });
+};
+
 const submit = () => {
     if (editingModuleId.value) {
         form.post(`/admin/modules/${editingModuleId.value}`, {
             forceFormData: true,
             headers: { 'X-HTTP-Method-Override': 'PUT' },
             onSuccess: cancelModuleForm,
+            onError: onUploadError,
         });
     } else {
         form.post(`/admin/courses/${props.course.id}/modules`, {
             forceFormData: true,
             onSuccess: cancelModuleForm,
+            onError: onUploadError,
         });
     }
 };
@@ -105,8 +124,8 @@ const moreFor = (m) => [
                 <div>
                     <label for="module-file" class="label">File (PDF or MP4, optional)</label>
                     <input id="module-file" type="file" accept=".pdf,.mp4" class="block w-full text-[15px] text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-blue-700 hover:file:bg-blue-100"
-                        @change="form.file = $event.target.files[0]" />
-                    <p v-if="editingModuleId" class="hint">Leave empty to keep the current file.</p>
+                        @change="chooseFile" />
+                    <p class="hint">Up to {{ maxFileMb }} MB.<template v-if="editingModuleId"> Leave empty to keep the current file.</template></p>
                     <InputError class="mt-1.5" :message="form.errors.file" />
                 </div>
             </div>

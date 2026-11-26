@@ -1,5 +1,6 @@
 <script setup>
 import InputError from '@/Components/InputError.vue';
+import PasswordChecklist from '@/Components/PasswordChecklist.vue';
 import InputLabel from '@/Components/InputLabel.vue';
 import PrimaryButton from '@/Components/PrimaryButton.vue';
 import TextInput from '@/Components/TextInput.vue';
@@ -78,6 +79,7 @@ const updatePassword = () => {
                 />
 
                 <InputError :message="form.errors.password" class="mt-2" />
+                <PasswordChecklist id="new-password-rules" :password="form.password" />
             </div>
 
             <div>

@@ -4,12 +4,13 @@ import { ChevronDown, ChevronUp, ImagePlus, Pencil, Plus, Trash2, X } from 'luci
 import AdminOrSupervisorLayout from '@/Layouts/AdminOrSupervisorLayout.vue';
 import PageHeader from '@/Components/PageHeader.vue';
 import SelectMenu from '@/Components/SelectMenu.vue';
-import { askConfirm } from '@/confirm';
+import { askConfirm, showNotice } from '@/confirm';
+import { checkUpload, uploadErrorMessage } from '@/upload';
 import { Head, useForm, router, Link } from '@inertiajs/vue3';
 import { ref } from 'vue';
 import axios from 'axios';
 
-const props = defineProps({ module: Object, lessons: Array });
+const props = defineProps({ module: Object, lessons: Array, uploadLimits: { type: Object, default: () => ({ imageMb: 5, pptxMb: 20 }) } });
 
 const showForm = ref(false);
 const editingLessonId = ref(null); // null = creating new, otherwise editing this lesson's id
@@ -65,6 +66,7 @@ const uploadImage = async (block, index, event) => {
     const file = event.target.files[0];
     event.target.value = ''; // allow re-selecting the same file
     if (!file) return;
+    if (!checkUpload(file, { what: 'image', types: ['jpg', 'jpeg', 'png'], maxMb: props.uploadLimits.imageMb })) return;
     uploadingImageIndex.value = index;
     const data = new FormData();
     data.append('image', file);
@@ -72,7 +74,7 @@ const uploadImage = async (block, index, event) => {
         const { data: result } = await axios.post('/admin/lessons/upload-image', data);
         block.path = result.path;
     } catch (e) {
-        alert(e.response?.data?.message || e.response?.data?.errors?.image?.[0] || 'Could not upload that image.');
+        showNotice({ title: "The image couldn't be uploaded", message: uploadErrorMessage(e, 'image', 'Please try again.') });
     } finally {
         uploadingImageIndex.value = null;
     }
@@ -80,7 +82,9 @@ const uploadImage = async (block, index, event) => {
 
 const importFromPptx = async (event) => {
     const file = event.target.files[0];
+    event.target.value = ''; // allow choosing the same file again
     if (!file) return;
+    if (!checkUpload(file, { what: 'file', types: ['pptx'], maxMb: props.uploadLimits.pptxMb })) return;
     uploading.value = true;
     const data = new FormData();
     data.append('file', file);
@@ -88,7 +92,7 @@ const importFromPptx = async (event) => {
         const { data: result } = await axios.post('/admin/lessons/extract-pptx', data);
         form.blocks.push(...result.blocks);
     } catch (e) {
-        alert(e.response?.data?.message || e.response?.data?.errors?.file?.[0] || 'Could not extract text from that PPTX file.');
+        showNotice({ title: "The PowerPoint file couldn't be imported", message: uploadErrorMessage(e, 'file', 'Please try again with another .pptx file.') });
     } finally {
         uploading.value = false;
     }
@@ -136,13 +140,13 @@ const firstBlockProblem = () => {
 
 const showErrorPopup = (errors) => {
     const first = Object.values(errors)[0];
-    if (first) alert(first);
+    if (first) showNotice({ title: "The lesson wasn't saved", message: first });
 };
 
 const submit = () => {
     const problem = firstBlockProblem();
     if (problem) {
-        alert(problem);
+        showNotice({ title: 'Check the lesson content', message: problem });
         return;
     }
 
@@ -248,6 +252,7 @@ const submitQuestion = (lessonId) => {
                     Import from PowerPoint (optional{{ editingLessonId ? ', adds to the existing blocks' : '' }})
                 </label>
                 <input id="lesson-pptx" type="file" accept=".pptx" @change="importFromPptx" class="mt-2 block w-full text-[15px] text-slate-700 file:mr-3 file:rounded-lg file:border-0 file:bg-blue-50 file:px-3 file:py-2 file:font-semibold file:text-blue-700 hover:file:bg-blue-100" />
+                <p class="hint">A .pptx file, up to {{ uploadLimits.pptxMb }} MB.</p>
                 <p v-if="uploading" class="mt-1 text-xs text-slate-500">Extracting text…</p>
             </div>
 
@@ -306,7 +311,7 @@ const submitQuestion = (lessonId) => {
                         </div>
                         <label v-else class="flex cursor-pointer items-center gap-2 rounded-lg border border-dashed border-slate-300 bg-white px-3 py-3 text-sm text-slate-600 hover:border-blue-400">
                             <ImagePlus :size="16" :stroke-width="1.75" class="shrink-0 text-slate-400" />
-                            {{ uploadingImageIndex === i ? 'Uploading…' : 'Choose an image (JPG or PNG, up to 5 MB)' }}
+                            {{ uploadingImageIndex === i ? 'Uploading…' : `Choose an image (JPG or PNG, up to ${uploadLimits.imageMb} MB)` }}
                             <input type="file" accept="image/jpeg,image/png" class="hidden" @change="uploadImage(block, i, $event)" />
                         </label>
                         <input v-model="block.alt" type="text" maxlength="255" placeholder="Alt text (required): describe the image for screen readers"

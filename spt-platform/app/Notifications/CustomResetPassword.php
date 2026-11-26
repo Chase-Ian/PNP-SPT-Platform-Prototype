@@ -2,15 +2,17 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class CustomResetPassword extends Notification implements ShouldQueue
+/**
+ * Sent right away, like the app's other emails. It used to be queued, so it
+ * only went out while a queue worker ran: never with `php artisan serve`, and
+ * with one database shared between copies of the site, any copy's worker
+ * could send it with that copy's link.
+ */
+class CustomResetPassword extends Notification
 {
-    use Queueable;
-
     public string $token;
 
     public function __construct(string $token)

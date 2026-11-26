@@ -81,7 +81,7 @@ class PnpRegionsTest extends TestCase
         $form = [
             'first_name' => 'Ana', 'last_name' => 'Reyes', 'rank' => 'Patrolman/Patrolwoman (Pat)',
             'email' => 'ana.reyes@pnp.gov.ph', 'unit_office' => 'Bacolod CPO - Police Station 1',
-            'password' => 'a-long-password-1', 'password_confirmation' => 'a-long-password-1', 'terms' => true,
+            'password' => 'Strong-Pass-2026', 'password_confirmation' => 'Strong-Pass-2026', 'terms' => true,
         ];
 
         $this->post('/register', [...$form, 'region' => 'PRO 6 - Region 6 - Western Visayas'])->assertSessionHasErrors('region');

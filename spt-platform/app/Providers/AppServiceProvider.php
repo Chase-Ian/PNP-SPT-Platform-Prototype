@@ -7,6 +7,7 @@ use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Illuminate\Validation\Rules\Password;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -31,7 +32,12 @@ class AppServiceProvider extends ServiceProvider
             URL::forceScheme('https');
         }
 
-        // 3. Custom Password Reset Mail Notification
+        // 3. Rules for every new password (sign-up, reset, change, staff
+        // accounts): 8+ characters with upper- and lowercase letters, a number
+        // and a symbol. PasswordChecklist.vue shows the same rules.
+        Password::defaults(fn () => Password::min(8)->mixedCase()->numbers()->symbols());
+
+        // 4. Custom Password Reset Mail Notification
         ResetPassword::toMailUsing(function (object $notifiable, string $token) {
             $url = route('password.reset', [
                 'token' => $token,

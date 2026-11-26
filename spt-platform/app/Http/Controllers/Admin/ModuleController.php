@@ -5,17 +5,22 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Course;
 use App\Models\Module;
+use App\Support\UploadLimits;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ModuleController extends Controller
 {
+    /** Module files: PDF or MP4, up to 50 MB (less if the server accepts less). */
+    private const MAX_FILE_KB = 51200;
+
     public function index(Course $course)
     {
         return \Inertia\Inertia::render('Admin/Modules/Index', [
             'course' => $course->only('id', 'title'),
             'modules' => $course->modules,
+            'maxFileMb' => UploadLimits::mb(self::MAX_FILE_KB),
         ]);
     }
 
@@ -25,8 +30,8 @@ class ModuleController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'duration_minutes' => 'required|integer|min:1',
-            'file' => 'nullable|file|mimes:pdf,mp4|max:51200', // mimes rule makes custom detection optional
-        ]);
+            'file' => $this->fileRules(),
+        ], $this->fileMessages());
 
         $data = [
             'order' => $course->modules()->max('order') + 1,
@@ -39,7 +44,7 @@ class ModuleController extends Controller
             $fileType = $this->detectFileType($request->file('file'));
 
             if (! $fileType) {
-                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, PPTX, and MP4 files are allowed.'])->withInput();
+                return back()->withErrors(['file' => "This file isn't a real PDF or MP4 file. Choose a PDF or MP4 file."])->withInput();
             }
 
             $filename = Str::random(40) . '.' . $fileType;
@@ -58,8 +63,8 @@ class ModuleController extends Controller
             'title' => 'required|string|max:255',
             'description' => 'nullable|string',
             'duration_minutes' => 'required|integer|min:1',
-            'file' => 'nullable|file|max:51200',
-        ]);
+            'file' => $this->fileRules(),
+        ], $this->fileMessages());
 
         $data = $request->only('title', 'description', 'duration_minutes');
 
@@ -67,7 +72,7 @@ class ModuleController extends Controller
             $fileType = $this->detectFileType($request->file('file'));
 
             if (! $fileType) {
-                return back()->withErrors(['file' => 'Unsupported file type detected. Only PDF, and MP4 files are allowed.'])->withInput();
+                return back()->withErrors(['file' => "This file isn't a real PDF or MP4 file. Choose a PDF or MP4 file."])->withInput();
             }
 
             if ($module->file_path) {
@@ -86,6 +91,22 @@ class ModuleController extends Controller
 
 
      // Make store() require the file optionally too, matching update()'s behavior
+    private function fileRules(): array
+    {
+        return ['nullable', 'file', 'mimes:pdf,mp4', 'max:'.UploadLimits::kb(self::MAX_FILE_KB)];
+    }
+
+    private function fileMessages(): array
+    {
+        $mb = UploadLimits::mb(self::MAX_FILE_KB);
+
+        return [
+            'file.mimes' => 'Only PDF or MP4 files can be uploaded.',
+            'file.max' => "The file is too large. Files can be up to {$mb} MB.",
+            'file.uploaded' => "The file couldn't be uploaded. Files can be up to {$mb} MB.",
+        ];
+    }
+
     private function detectFileType($file): ?string
     {
         $mime = $file->getMimeType();

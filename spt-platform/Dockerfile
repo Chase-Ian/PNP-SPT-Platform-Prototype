@@ -56,7 +56,7 @@ RUN apk add --no-cache \
     opcache
 
 # PHP defaults (2 MB upload / 8 MB POST) are too small for image uploads (5 MB) and PPTX import (20 MB)
-RUN printf "upload_max_filesize=20M\npost_max_size=25M\n" > /usr/local/etc/php/conf.d/uploads.ini
+RUN printf "upload_max_filesize=50M\npost_max_size=55M\n" > /usr/local/etc/php/conf.d/uploads.ini
 
 # Download the standalone ISRG Root X1 CA certificate for TiDB Cloud
 RUN mkdir -p /etc/ssl/certs/tidb \

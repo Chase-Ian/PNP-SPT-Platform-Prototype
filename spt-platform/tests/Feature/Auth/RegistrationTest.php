@@ -30,8 +30,8 @@ class RegistrationTest extends TestCase
             'email' => 'test@example.com',
             'unit_office' => 'Station 1',
             'region' => 'NCRPO - National Capital Region Police Office',
-            'password' => 'password',
-            'password_confirmation' => 'password',
+            'password' => 'Strong-Pass-2026',
+            'password_confirmation' => 'Strong-Pass-2026',
             'terms' => '1',
         ]);
 

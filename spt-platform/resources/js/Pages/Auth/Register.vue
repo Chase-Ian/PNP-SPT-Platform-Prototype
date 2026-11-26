@@ -1,6 +1,7 @@
 <!-- resources/js/Pages/Auth/Register.vue -->
 <script setup>
 import InputError from '@/Components/InputError.vue';
+import PasswordChecklist from '@/Components/PasswordChecklist.vue';
 import SelectMenu from '@/Components/SelectMenu.vue';
 import GuestLayout from '@/Layouts/GuestLayout.vue';
 import { Head, Link, useForm } from '@inertiajs/vue3';
@@ -121,7 +122,7 @@ const invalid = (field) => (form.errors[field] ? 'true' : undefined);
                                 <Eye v-else :size="18" aria-hidden="true" />
                             </button>
                         </div>
-                        <p id="password-hint" class="hint">At least 8 characters.</p>
+                        <PasswordChecklist id="password-hint" :password="form.password" />
                         <InputError id="password-error" class="mt-1.5" :message="form.errors.password" />
                     </div>
                     <div>

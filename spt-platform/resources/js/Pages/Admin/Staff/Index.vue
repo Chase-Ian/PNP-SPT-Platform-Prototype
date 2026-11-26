@@ -2,6 +2,7 @@
 <script setup>
 import ActionMenu from '@/Components/ActionMenu.vue';
 import DeletedAccounts from '@/Components/DeletedAccounts.vue';
+import PasswordChecklist from '@/Components/PasswordChecklist.vue';
 import AdminLayout from '@/Layouts/AdminLayout.vue';
 import EmptyState from '@/Components/EmptyState.vue';
 import InputError from '@/Components/InputError.vue';
@@ -175,8 +176,9 @@ const invalid = (field) => (form.errors[field] ? 'true' : undefined);
                     <div>
                         <label for="staff-password" class="label">Temporary password</label>
                         <input id="staff-password" v-model="form.password" type="password" autocomplete="new-password" class="field" required
-                            :aria-invalid="invalid('password')" aria-describedby="staff-password-hint" />
-                        <p id="staff-password-hint" class="hint">At least 8 characters. Share it securely; they can change it in their profile.</p>
+                            :aria-invalid="invalid('password')" aria-describedby="staff-password-hint staff-password-rules" />
+                        <p id="staff-password-hint" class="hint">Share it securely; they can change it in their profile.</p>
+                        <PasswordChecklist id="staff-password-rules" :password="form.password" />
                         <InputError class="mt-1.5" :message="form.errors.password" />
                     </div>
                     <div>

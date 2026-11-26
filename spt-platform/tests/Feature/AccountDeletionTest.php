@@ -114,7 +114,7 @@ class AccountDeletionTest extends TestCase
         $this->post('/register', [
             'first_name' => 'New', 'last_name' => 'Person', 'rank' => 'Patrolman/Patrolwoman (Pat)',
             'email' => 'taken@pnp.gov.ph', 'unit_office' => 'Unit', 'region' => 'NCRPO - National Capital Region Police Office',
-            'password' => 'a-long-password-1', 'password_confirmation' => 'a-long-password-1', 'terms' => true,
+            'password' => 'Strong-Pass-2026', 'password_confirmation' => 'Strong-Pass-2026', 'terms' => true,
         ])->assertSessionHasErrors(['email' => 'This email belongs to a deleted account. Ask an administrator to reinstate it.']);
     }
 
