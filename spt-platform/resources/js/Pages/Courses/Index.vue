@@ -1,11 +1,13 @@
 <script setup>
+import PageHeader from '@/Components/PageHeader.vue';
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
 import { Head, Link, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { ArrowLeft, Search, X, FileCheck2, ArrowLeftRightIcon, ArrowBigRight } from 'lucide-vue-next';
+import { CircleCheck, Lock, Search } from 'lucide-vue-next';
 
 const props = defineProps({ courses: Array });
-const tab = ref('catalog');
+// "/courses?tab=mine" opens My Learning directly (dashboard shortcut).
+const tab = ref(typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('tab') === 'mine' ? 'mine' : 'catalog');
 const search = ref('');
 
 const myLearningCourses = computed(() => props.courses.filter(c => c.status === 'enrolled' || c.status === 'completed'));
@@ -25,111 +27,172 @@ const drop = (course) => router.post(`/courses/${course.id}/drop`, {}, { preserv
 
 const statusLabel = (status) => ({ enrolled: 'Enrolled', completed: 'Completed' }[status] ?? 'Available');
 const statusClass = (status) => ({
-    enrolled: 'bg-blue-100 text-blue-700',
-    completed: 'bg-green-100 text-green-700',
-}[status] ?? 'bg-gray-100 text-gray-600');
+    enrolled: 'bg-primary-50 text-primary-800 ring-primary-600/20',
+    completed: 'bg-green-50 text-green-800 ring-green-600/20',
+}[status] ?? 'bg-white text-slate-600 ring-slate-300');
 </script>
 
 
 <template>
     <Head title="Course Catalog" />
     <TraineeLayout>
-        <div class="space-y-4">
-            <Link href="/dashboard" class="inline-flex items-center gap-1 text-sm font-medium">
-                <ArrowLeft :size="14" /> Back to Home
-            </Link>
+        <PageHeader back-href="/dashboard" back-label="Back to Dashboard" eyebrow="Training"
+            title="Courses" subtitle="Enroll in a course, continue your modules and take the final examination." />
 
-            <div class="flex gap-2">
-                <button @click="tab = 'catalog'" :class="tab === 'catalog' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600'" class="px-4 py-1.5 rounded-full text-sm font-medium">Course Catalog</button>
-                <button @click="tab = 'mine'" :class="tab === 'mine' ? 'bg-blue-600 text-white' : 'bg-white border text-gray-600'" class="px-4 py-1.5 rounded-full text-sm font-medium">My Learning ({{ myLearningCount }})</button>
+        <div class="inline-flex rounded-md border border-slate-300 bg-white p-0.5" role="tablist">
+            <button type="button" role="tab" :aria-selected="tab === 'catalog'" @click="tab = 'catalog'"
+                :class="tab === 'catalog' ? 'bg-primary-800 text-white' : 'text-slate-600 hover:bg-slate-50'"
+                class="rounded px-4 py-1.5 text-sm font-medium">Course Catalog</button>
+            <button type="button" role="tab" :aria-selected="tab === 'mine'" @click="tab = 'mine'"
+                :class="tab === 'mine' ? 'bg-primary-800 text-white' : 'text-slate-600 hover:bg-slate-50'"
+                class="rounded px-4 py-1.5 text-sm font-medium">My Learning ({{ myLearningCount }})</button>
+        </div>
+
+        <div v-if="tab === 'catalog'" class="card">
+            <div class="flex flex-col gap-3 border-b border-slate-200 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+                <div>
+                    <h2 class="section-title">Course Catalog</h2>
+                    <p class="text-xs text-slate-500">Browse and enroll in available learning modules (5 to 6 hours each).</p>
+                </div>
+                <div class="relative w-full sm:w-auto">
+                    <Search :size="15" :stroke-width="1.75" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input v-model="search" type="text" placeholder="Search by title or code" aria-label="Search the catalog"
+                        class="w-full rounded-md py-1.5 pl-9 pr-3 text-sm sm:w-64" />
+                </div>
             </div>
 
-            <div v-if="tab === 'catalog'" class="bg-white rounded-xl border p-6">
-                <div class="flex justify-between items-center mb-4">
-                    <div>
-                        <h3 class="font-bold text-lg">Course Catalog</h3>
-                        <p class="text-xs text-gray-500">Browse and enroll in available learning modules (5 to 6 hours each).</p>
+            <!-- Phones: one card per course -->
+            <div class="sm:hidden divide-y divide-slate-200">
+                <p v-if="filteredCatalog.length === 0" class="px-4 py-6 text-center text-sm text-slate-500">No courses match your search.</p>
+                <div v-for="course in filteredCatalog" :key="course.id" class="space-y-3 px-4 py-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-xs font-semibold text-accent-700">{{ course.activity_code }}</p>
+                            <p class="font-semibold leading-snug text-slate-900">{{ course.title }}</p>
+                            <p class="mt-0.5 text-xs text-slate-500">{{ course.duration_hours }} hours · {{ course.lesson_count }} lessons (includes final assessment)</p>
+                        </div>
+                        <span :class="statusClass(course.status)" class="badge shrink-0 ring-1 ring-inset">{{ statusLabel(course.status) }}</span>
                     </div>
-                    <div class="relative">
-                        <Search :size="14" class="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-                        <input v-model="search" type="text" placeholder="Search catalog by title or code..." class="border rounded-lg pl-9 pr-3 py-1.5 text-sm w-64" />
-                    </div>
+                    <button v-if="course.status === 'enrolled'" @click="drop(course)" class="btn btn-danger w-full">Drop</button>
+                    <button v-else-if="course.status !== 'completed'" @click="enroll(course)" class="btn btn-primary w-full">Enroll</button>
+                    <p v-else class="inline-flex items-center gap-1.5 text-sm font-medium text-green-700">
+                        <CircleCheck :size="16" :stroke-width="1.75" /> Completed
+                    </p>
                 </div>
+            </div>
 
-                <table class="w-full text-sm">
+            <div class="hidden sm:block overflow-x-auto">
+                <table class="w-full min-w-[640px] text-sm">
                     <thead>
-                        <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                            <th class="py-2 px-3">Activity Code</th>
-                            <th class="py-2 px-3">Module Details</th>
-                            <th class="py-2 px-3">Status</th>
-                            <th class="py-2 px-3">Action</th>
+                        <tr class="table-head">
+                            <th class="py-2.5 px-5">Activity Code</th>
+                            <th class="py-2.5 px-3">Module Details</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-5 text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr v-for="course in filteredCatalog" :key="course.id" class="border-b last:border-0">
-                            <td class="py-3 px-3 text-blue-600 font-medium">{{ course.activity_code }}</td>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr v-if="filteredCatalog.length === 0">
+                            <td colspan="4" class="px-5 py-6 text-center text-slate-500">No courses match your search.</td>
+                        </tr>
+                        <tr v-for="course in filteredCatalog" :key="course.id" class="hover:bg-slate-50/60">
+                            <td class="py-3 px-5 font-semibold text-accent-700 whitespace-nowrap">{{ course.activity_code }}</td>
                             <td class="py-3 px-3">
-                                <p class="font-semibold">{{ course.title }}</p>
-                                <p class="text-xs text-gray-400">{{ course.duration_hours }} Hours · {{ course.lesson_count }} Lessons (Includes Final Assessment)</p>
+                                <p class="font-semibold text-slate-900">{{ course.title }}</p>
+                                <p class="text-xs text-slate-500">{{ course.duration_hours }} hours · {{ course.lesson_count }} lessons (includes final assessment)</p>
                             </td>
                             <td class="py-3 px-3">
-                                <span :class="statusClass(course.status)" class="px-2 py-0.5 rounded-full text-xs font-medium">{{ statusLabel(course.status) }}</span>
+                                <span :class="statusClass(course.status)" class="badge ring-1 ring-inset">{{ statusLabel(course.status) }}</span>
                             </td>
-                            <td class="py-3 px-3">
-                                <button v-if="course.status === 'enrolled'" @click="drop(course)" class="bg-red-100 text-red-600 px-4 py-1.5 rounded-lg text-xs font-medium">Drop</button>
-                                <button v-else-if="course.status !== 'completed'" @click="enroll(course)" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">Enroll</button>
-                                <span v-else class="text-green-600 text-xs font-medium inline-flex items-center gap-1"><FileCheck2 :size="14" /> Completed</span>
+                            <td class="py-3 px-5 text-right">
+                                <button v-if="course.status === 'enrolled'" @click="drop(course)" class="btn btn-danger btn-sm">Drop</button>
+                                <button v-else-if="course.status !== 'completed'" @click="enroll(course)" class="btn btn-primary btn-sm">Enroll</button>
+                                <span v-else class="inline-flex items-center gap-1.5 text-xs font-medium text-green-700">
+                                    <CircleCheck :size="15" :stroke-width="1.75" /> Completed
+                                </span>
                             </td>
                         </tr>
                     </tbody>
                 </table>
             </div>
+        </div>
 
-            <!-- My Learning tab -->
-            <div v-else class="bg-white rounded-xl border p-6">
-                <h3 class="font-bold text-lg">My Learning</h3>
-                <p class="text-xs text-gray-500 mb-4">Continue your active course modules and take knowledge check quizzes.</p>
+        <!-- My Learning tab -->
+        <div v-else class="card">
+            <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
+                <h2 class="section-title">My Learning</h2>
+                <p class="text-xs text-slate-500">Continue your active course modules and take knowledge check quizzes.</p>
+            </div>
 
-                <div v-if="myLearningCourses.length === 0" class="text-sm text-gray-400 py-6 text-center">
-                    You're not enrolled in any courses yet. Browse the Course Catalog to get started.
+            <div v-if="myLearningCourses.length === 0" class="px-4 py-8 text-center text-sm text-slate-500">
+                You're not enrolled in any courses yet. Browse the Course Catalog to get started.
+            </div>
+
+            <!-- Phones: one card per course -->
+            <div v-if="myLearningCourses.length > 0" class="sm:hidden divide-y divide-slate-200">
+                <div v-for="course in myLearningCourses" :key="course.id" class="space-y-3 px-4 py-4">
+                    <div>
+                        <p class="font-semibold leading-snug text-slate-900">{{ course.title }}</p>
+                        <p class="text-xs text-slate-500">{{ course.lessons_completed }} of {{ course.lessons_total }} modules completed</p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="h-1.5 flex-1 rounded-full bg-slate-200">
+                            <div class="h-1.5 rounded-full bg-primary-700" :style="{ width: course.progress_percent + '%' }"></div>
+                        </div>
+                        <span class="text-xs font-semibold tabular-nums text-primary-900">{{ course.progress_percent }}%</span>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <Link v-if="course.launch_lesson_id" :href="`/lessons/${course.launch_lesson_id}`"
+                            class="btn btn-primary flex-1">Continue Learning</Link>
+                        <span v-if="course.exam_passed" class="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm font-medium text-green-700">
+                            <CircleCheck :size="16" :stroke-width="1.75" /> Final Exam Passed
+                        </span>
+                        <Link v-else-if="course.all_lessons_passed" :href="`/exams/${course.id}`"
+                            class="btn btn-secondary flex-1">Take Final Exam</Link>
+                        <span v-else class="flex flex-1 items-center justify-center gap-1.5 py-2 text-sm text-slate-500">
+                            <Lock :size="15" :stroke-width="1.75" /> Final exam locked
+                        </span>
+                    </div>
                 </div>
+            </div>
 
-                <table v-else class="w-full text-sm">
+            <div v-if="myLearningCourses.length > 0" class="hidden sm:block overflow-x-auto">
+                <table class="w-full min-w-[640px] text-sm">
                     <thead>
-                        <tr class="text-left text-xs text-gray-500 uppercase bg-blue-50">
-                            <th class="py-2 px-3">Module Title</th>
-                            <th class="py-2 px-3">Progress</th>
-                            <th class="py-2 px-3 text-right">Launch</th>
-                            <th class="py-2 px-3 text-right">Final Exam</th>
+                        <tr class="table-head">
+                            <th class="py-2.5 px-5">Module Title</th>
+                            <th class="py-2.5 px-3">Progress</th>
+                            <th class="py-2.5 px-3 text-right">Launch</th>
+                            <th class="py-2.5 px-5 text-right">Final Exam</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr v-for="course in myLearningCourses" :key="course.id" class="border-b last:border-0">
-                            <td class="py-4 px-3">
-                                <p class="font-semibold">{{ course.title }}</p>
-                                <p class="text-xs text-gray-400">{{ course.lessons_completed }} of {{ course.lessons_total }} modules completed</p>
+                    <tbody class="divide-y divide-slate-200">
+                        <tr v-for="course in myLearningCourses" :key="course.id" class="hover:bg-slate-50/60">
+                            <td class="py-4 px-5">
+                                <p class="font-semibold text-slate-900">{{ course.title }}</p>
+                                <p class="text-xs text-slate-500">{{ course.lessons_completed }} of {{ course.lessons_total }} modules completed</p>
                             </td>
                             <td class="py-4 px-3">
-                                <div class="flex items-center gap-2">
-                                    <div class="w-40 bg-gray-100 rounded-full h-2">
-                                        <div class="bg-blue-600 h-2 rounded-full" :style="{ width: course.progress_percent + '%' }"></div>
+                                <div class="flex items-center gap-3">
+                                    <div class="h-1.5 w-40 rounded-full bg-slate-200">
+                                        <div class="h-1.5 rounded-full bg-primary-700" :style="{ width: course.progress_percent + '%' }"></div>
                                     </div>
-                                    <span class="text-blue-600 text-xs font-medium">{{ course.progress_percent }}%</span>
+                                    <span class="text-xs font-semibold tabular-nums text-primary-900">{{ course.progress_percent }}%</span>
                                 </div>
                             </td>
                             <td class="py-4 px-3 text-right">
-                                <Link :href="course.launch_lesson_id ? `/lessons/${course.launch_lesson_id}` : '#'"
-                                    class="inline-flex items-center justify-center w-9 h-9 rounded-full bg-blue-600 text-white hover:bg-blue-700">
-                                    <ArrowBigRight :size="20" /> 
+                                <Link v-if="course.launch_lesson_id" :href="`/lessons/${course.launch_lesson_id}`" class="btn btn-primary btn-sm">
+                                    Continue
                                 </Link>
+                                <span v-else class="text-xs text-slate-400">No lessons yet</span>
                             </td>
-                            <td class="py-4 px-3 text-right">
-                                <span v-if="course.exam_passed" class="text-green-600 text-xs font-medium">✓ Passed</span>
-                                <Link v-else-if="course.all_lessons_passed" :href="`/exams/${course.id}`" class="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-blue-700">
+                            <td class="py-4 px-5 text-right">
+                                <span v-if="course.exam_passed" class="badge bg-green-50 text-green-800 ring-1 ring-inset ring-green-600/20">Passed</span>
+                                <Link v-else-if="course.all_lessons_passed" :href="`/exams/${course.id}`" class="btn btn-secondary btn-sm">
                                     Take Final Exam
                                 </Link>
-                                <span v-else class="text-gray-400 text-xs" :title="`Complete all ${course.lessons_total} lessons to unlock`">
-                                    🔒 Locked
+                                <span v-else class="inline-flex items-center gap-1.5 text-xs text-slate-500" :title="`Complete all ${course.lessons_total} lessons to unlock`">
+                                    <Lock :size="14" :stroke-width="1.75" /> Locked
                                 </span>
                             </td>
                         </tr>

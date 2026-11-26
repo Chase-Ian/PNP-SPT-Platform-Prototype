@@ -19,7 +19,7 @@ class EmailChangeDecision extends Notification
     {
         $r = $this->request;
 
-        return ['message' => $r->status === 'approved'
+        return ['url' => route('profile.edit', absolute: false), 'message' => $r->status === 'approved'
             ? "Your email change to {$r->new_email} was approved. Please verify the new address."
             : 'Your email change request was rejected.'.($r->admin_note ? " Note: {$r->admin_note}" : ''),
         ];

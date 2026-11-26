@@ -1,7 +1,8 @@
 <!-- resources/js/Pages/Lessons/Quiz.vue -->
 <script setup>
+import PageHeader from '@/Components/PageHeader.vue';
 import TraineeLayout from '@/Layouts/TraineeLayout.vue';
-import { Head, Link, useForm } from '@inertiajs/vue3';
+import { Head, useForm } from '@inertiajs/vue3';
 
 const props = defineProps({ lesson: Object, questions: Array });
 const form = useForm({ answers: {} });
@@ -12,28 +13,34 @@ const submit = () => form.post(`/lessons/${props.lesson.id}/quiz`);
 <template>
     <Head :title="`Quiz — ${lesson.title}`" />
     <TraineeLayout>
-        <div class="max-w-2xl mx-auto space-y-4">
-            <Link :href="`/lessons/${lesson.id}`" class="text-sm text-blue-600 font-medium">← Back to Module Reading Material</Link>
-
-            <div class="bg-white rounded-xl border p-6">
-                <span class="bg-blue-100 text-blue-700 text-xs font-medium px-2 py-1 rounded-full">Module Quiz</span>
-                <h1 class="text-lg font-bold mt-2">{{ lesson.title }}</h1>
-            </div>
+        <div class="max-w-2xl mx-auto space-y-5">
+            <PageHeader :back-href="`/lessons/${lesson.id}`" back-label="Back to Module Reading Material"
+                eyebrow="Module Quiz" :title="lesson.title"
+                :subtitle="questions.length ? `${questions.length} ${questions.length === 1 ? 'question' : 'questions'}. Answer all of them, then submit.` : undefined" />
 
             <form @submit.prevent="submit" class="space-y-4">
-                <div v-for="(q, i) in questions" :key="q.id" class="bg-white rounded-xl border p-5">
-                    <p class="text-xs text-gray-400 mb-1">Question {{ i + 1 }} of {{ questions.length }}</p>
-                    <p class="font-medium mb-3">{{ q.question }}</p>
+                <fieldset v-for="(q, i) in questions" :key="q.id" class="card p-4 sm:p-5">
+                    <legend class="sr-only">Question {{ i + 1 }}</legend>
+                    <p class="text-xs font-medium text-slate-500">Question {{ i + 1 }} of {{ questions.length }}</p>
+                    <p class="mt-1 mb-3 font-medium text-slate-900">{{ q.question }}</p>
                     <div class="space-y-2">
-                        <label v-for="choice in q.choices" :key="choice" class="flex items-center gap-2 border rounded-lg px-3 py-2 text-sm cursor-pointer">
+                        <label v-for="choice in q.choices" :key="choice"
+                            :class="form.answers[q.id] === choice ? 'border-primary-600 bg-primary-50 text-primary-900' : 'border-slate-200 hover:bg-slate-50'"
+                            class="flex cursor-pointer items-center gap-3 rounded-md border px-3 py-2.5 text-sm">
                             <input type="radio" :name="`q${q.id}`" :value="choice" v-model="form.answers[q.id]" />
                             {{ choice }}
                         </label>
                     </div>
-                </div>
+                </fieldset>
 
-                <button type="submit" :disabled="form.processing" class="bg-blue-600 text-white px-6 py-2 rounded-lg text-sm font-medium">
-                    Submit Quiz
+                <p v-if="questions.length === 0" class="card p-5 text-sm text-slate-600">
+                    This lesson has no quiz questions. Confirm you've reviewed the material to unlock the next lesson.
+                </p>
+
+                <p v-if="form.errors.answers" role="alert" class="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{{ form.errors.answers }}</p>
+
+                <button type="submit" :disabled="form.processing" class="btn btn-primary w-full sm:w-auto px-6">
+                    {{ questions.length === 0 ? 'Mark Lesson as Reviewed' : 'Submit Quiz' }}
                 </button>
             </form>
         </div>

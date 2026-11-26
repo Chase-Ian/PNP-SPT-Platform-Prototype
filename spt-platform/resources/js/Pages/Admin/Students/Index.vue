@@ -3,10 +3,11 @@
      results are monitored by supervisors (Supervisor/Trainees). -->
 <script setup>
 import AdminLayout from '@/Layouts/AdminLayout.vue';
-import AdminPageBanner from '@/Components/AdminPageBanner.vue';
+import PageHeader from '@/Components/PageHeader.vue';
+import StatCard from '@/Components/StatCard.vue';
 import { Head, router } from '@inertiajs/vue3';
 import { ref, computed } from 'vue';
-import { Users, Lock, Unlock, KeyRound, Trash2 } from 'lucide-vue-next';
+import { Search } from 'lucide-vue-next';
 
 const props = defineProps({ stats: Object, accounts: Array });
 const search = ref('');
@@ -43,79 +44,87 @@ const remove = (a) => {
 <template>
     <Head title="Trainee Accounts" />
     <AdminLayout>
-        <AdminPageBanner :icon="Users" badge-text="Account Administration • Trainees"
+        <PageHeader eyebrow="Account Administration · Trainees"
             title="Trainee Accounts"
             subtitle="Lock, unlock, reset two-factor authentication or delete trainee accounts. Supervisors monitor training results." />
 
-        <div class="space-y-4">
-            <div class="grid grid-cols-3 gap-4">
-                <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Trainee accounts</p>
-                    <p class="text-2xl font-bold text-blue-900">{{ stats.total }}</p>
-                </div>
-                <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">Locked</p>
-                    <p class="text-2xl font-bold text-red-600">{{ stats.locked }}</p>
-                </div>
-                <div class="bg-white rounded-xl border p-4">
-                    <p class="text-xs text-gray-500">With 2FA set up</p>
-                    <p class="text-2xl font-bold text-green-600">{{ stats.withTwoFactor }}</p>
+        <div class="grid grid-cols-3 gap-2 sm:gap-4">
+            <StatCard label="Trainee accounts" :value="stats.total" />
+            <StatCard label="Locked" :value="stats.locked" :tone="stats.locked > 0 ? 'danger' : 'default'" />
+            <StatCard label="With 2FA set up" :value="stats.withTwoFactor" tone="success" />
+        </div>
+
+        <div class="card">
+            <div class="border-b border-slate-200 px-4 py-4 sm:px-5">
+                <div class="relative w-full sm:max-w-sm">
+                    <Search :size="15" :stroke-width="1.75" class="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                    <input v-model="search" type="text" placeholder="Search by name, email or station" aria-label="Search trainee accounts"
+                        class="w-full py-2 pl-9 pr-3 text-sm" />
                 </div>
             </div>
 
-            <input v-model="search" type="text" placeholder="Search by name, email or station..."
-                class="w-full border rounded-lg px-3 py-2 text-sm" />
+            <p v-if="filtered.length === 0" class="px-4 py-6 text-sm text-slate-500 sm:px-5">No trainee accounts found.</p>
 
-            <div class="bg-white rounded-xl border p-6">
-                <p v-if="filtered.length === 0" class="text-sm text-gray-400">No trainee accounts found.</p>
-                <table v-else class="w-full text-sm">
+            <!-- Phones: one card per account, actions visible -->
+            <div v-if="filtered.length > 0" class="sm:hidden divide-y divide-slate-200">
+                <div v-for="a in filtered" :key="`card-${a.id}`" class="space-y-2 px-4 py-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="font-medium text-slate-900">{{ a.name }}</p>
+                            <p class="text-xs text-slate-500">{{ a.rank }}</p>
+                        </div>
+                        <span :class="a.is_locked ? 'bg-red-50 text-red-700 ring-red-600/20' : 'bg-green-50 text-green-800 ring-green-600/20'"
+                            class="badge shrink-0 ring-1 ring-inset">{{ a.is_locked ? 'Locked' : 'Active' }}</span>
+                    </div>
+                    <p class="text-sm break-all text-slate-800">{{ a.email }}
+                        <span class="text-xs" :class="a.email_verified ? 'text-green-700' : 'text-amber-700'">· {{ a.email_verified ? 'Verified' : 'Not verified' }}</span>
+                    </p>
+                    <p class="text-xs text-slate-500">{{ a.unit_office || '—' }}<span v-if="a.region"> · {{ a.region }}</span></p>
+                    <p class="text-xs" :class="a.two_factor_enabled ? 'text-green-700' : 'text-slate-500'">2FA {{ a.two_factor_enabled ? 'enabled' : 'not set up' }}</p>
+                    <div class="flex flex-wrap gap-2 pt-1">
+                        <button @click="toggleLock(a)" class="btn btn-secondary btn-sm flex-1">{{ a.is_locked ? 'Unlock' : 'Lock' }}</button>
+                        <button v-if="a.two_factor_enabled" @click="resetTwoFactor(a)" class="btn btn-secondary btn-sm flex-1">Reset 2FA</button>
+                        <button @click="remove(a)" class="btn btn-danger btn-sm flex-1">Delete</button>
+                    </div>
+                </div>
+            </div>
+
+            <div v-if="filtered.length > 0" class="hidden sm:block overflow-x-auto">
+                <table class="w-full min-w-[640px] text-sm">
                     <thead>
-                        <tr class="text-left text-xs text-gray-400 uppercase border-b">
-                            <th class="py-2">Trainee</th>
-                            <th class="py-2">Email</th>
-                            <th class="py-2">Unit / Region</th>
-                            <th class="py-2">Account</th>
-                            <th class="py-2">2FA</th>
-                            <th class="py-2">Actions</th>
+                        <tr class="table-head">
+                            <th class="py-2.5 px-5">Trainee</th>
+                            <th class="py-2.5 px-3">Unit / Region</th>
+                            <th class="py-2.5 px-3">Status</th>
+                            <th class="py-2.5 px-5 text-right">Actions</th>
                         </tr>
                     </thead>
-                    <tbody>
-                        <tr v-for="a in filtered" :key="a.id" class="border-b last:border-0 align-top">
-                            <td class="py-3">
-                                <p class="font-medium">{{ a.name }}</p>
-                                <p class="text-xs text-gray-400">{{ a.rank }}</p>
-                            </td>
-                            <td class="py-3">
-                                {{ a.email }}
-                                <p class="text-xs" :class="a.email_verified ? 'text-green-600' : 'text-amber-600'">
-                                    {{ a.email_verified ? 'Verified' : 'Not verified' }}
+                    <tbody class="divide-y divide-slate-200">
+                        <tr v-for="a in filtered" :key="a.id" class="align-top hover:bg-slate-50/60">
+                            <td class="py-3 px-5">
+                                <p class="font-medium text-slate-900">{{ a.name }}</p>
+                                <p class="text-xs text-slate-500">{{ a.rank }}</p>
+                                <p class="mt-1 break-words text-xs text-slate-700">
+                                    {{ a.email }}
+                                    <span class="whitespace-nowrap" :class="a.email_verified ? 'text-green-700' : 'text-amber-700'">· {{ a.email_verified ? 'Verified' : 'Not verified' }}</span>
                                 </p>
                             </td>
-                            <td class="py-3 text-gray-500">
+                            <td class="py-3 px-3 text-slate-600">
                                 {{ a.unit_office || '—' }}
-                                <p class="text-xs text-gray-400">{{ a.region }}</p>
+                                <p class="text-xs text-slate-500">{{ a.region }}</p>
                             </td>
-                            <td class="py-3">
-                                <span :class="a.is_locked ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'"
-                                    class="px-2 py-0.5 rounded-full text-xs font-medium">{{ a.is_locked ? 'Locked' : 'Active' }}</span>
+                            <td class="py-3 px-3 whitespace-nowrap">
+                                <span :class="a.is_locked ? 'bg-red-50 text-red-700 ring-red-600/20' : 'bg-green-50 text-green-800 ring-green-600/20'"
+                                    class="badge ring-1 ring-inset">{{ a.is_locked ? 'Locked' : 'Active' }}</span>
+                                <p class="mt-1 text-xs" :class="a.two_factor_enabled ? 'text-green-700' : 'text-slate-500'">
+                                    2FA {{ a.two_factor_enabled ? 'enabled' : 'not set up' }}
+                                </p>
                             </td>
-                            <td class="py-3 text-xs" :class="a.two_factor_enabled ? 'text-green-700' : 'text-gray-400'">
-                                {{ a.two_factor_enabled ? 'Enabled' : 'Not set up' }}
-                            </td>
-                            <td class="py-3">
-                                <div class="flex items-center gap-3">
-                                    <button @click="toggleLock(a)" :title="a.is_locked ? 'Unlock account' : 'Lock account'"
-                                        :class="a.is_locked ? 'text-green-600 hover:text-green-800' : 'text-orange-600 hover:text-orange-800'">
-                                        <Unlock v-if="a.is_locked" :size="16" />
-                                        <Lock v-else :size="16" />
-                                    </button>
-                                    <button v-if="a.two_factor_enabled" @click="resetTwoFactor(a)" title="Reset 2FA (lost device)"
-                                        class="text-blue-600 hover:text-blue-800">
-                                        <KeyRound :size="16" />
-                                    </button>
-                                    <button @click="remove(a)" title="Delete account" class="text-red-600 hover:text-red-800">
-                                        <Trash2 :size="16" />
-                                    </button>
+                            <td class="py-3 px-5">
+                                <div class="flex flex-nowrap justify-end gap-2">
+                                    <button @click="toggleLock(a)" class="btn btn-secondary btn-sm">{{ a.is_locked ? 'Unlock' : 'Lock' }}</button>
+                                    <button v-if="a.two_factor_enabled" @click="resetTwoFactor(a)" title="Reset 2FA (lost device)" class="btn btn-secondary btn-sm">Reset 2FA</button>
+                                    <button @click="remove(a)" class="btn btn-danger btn-sm">Delete</button>
                                 </div>
                             </td>
                         </tr>

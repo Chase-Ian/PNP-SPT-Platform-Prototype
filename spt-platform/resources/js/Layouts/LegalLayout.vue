@@ -1,9 +1,10 @@
 <!-- Layout for the Terms of Service and Privacy Notice. Public: works for
      guests (before sign-up) and signed-in users alike. -->
 <script setup>
+import BrandMark from '@/Components/BrandMark.vue';
 import LegalLinks from '@/Components/LegalLinks.vue';
 import { Head, Link, usePage } from '@inertiajs/vue3';
-import { GraduationCap, ArrowLeft } from 'lucide-vue-next';
+import { ChevronLeft } from 'lucide-vue-next';
 import { computed } from 'vue';
 
 defineProps({
@@ -19,27 +20,25 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
 <template>
     <Head :title="title" />
 
-    <div class="min-h-screen bg-gray-50">
-        <header class="bg-white border-b">
-            <div class="max-w-3xl mx-auto px-6 h-16 flex items-center justify-between">
-                <div class="flex items-center gap-2">
-                    <div class="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center text-white">
-                        <GraduationCap :size="18" />
-                    </div>
-                    <div>
-                        <p class="font-bold text-sm leading-tight">PNP LMS</p>
-                        <p class="text-xs text-blue-600 leading-tight">SPT Platform</p>
+    <div class="min-h-screen bg-slate-50">
+        <header class="bg-primary-900">
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                    <BrandMark class="w-9 h-9 shrink-0 text-accent-300" />
+                    <div class="leading-tight min-w-0">
+                        <p class="text-sm font-semibold tracking-wide text-white">PNP LMS</p>
+                        <p class="text-[11px] uppercase tracking-[0.08em] text-accent-300 truncate">Legal Documents</p>
                     </div>
                 </div>
                 <Link :href="signedIn ? route('dashboard') : route('login')"
-                    class="inline-flex items-center gap-1 text-sm text-gray-600 hover:text-gray-900">
-                    <ArrowLeft :size="14" /> {{ signedIn ? 'Back to the platform' : 'Back to sign in' }}
+                    class="shrink-0 inline-flex items-center gap-1 text-sm font-medium text-primary-100 hover:text-white">
+                    <ChevronLeft :size="16" :stroke-width="1.75" /> {{ signedIn ? 'Back to the platform' : 'Back to sign in' }}
                 </Link>
             </div>
         </header>
 
-        <main class="max-w-3xl mx-auto px-6 py-10">
-            <div v-if="draft" class="mb-6 bg-amber-50 border border-amber-300 text-amber-900 rounded-lg px-4 py-3 text-sm">
+        <main class="max-w-3xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+            <div v-if="draft" class="mb-6 bg-amber-50 border border-amber-200 border-l-4 border-l-amber-500 text-amber-900 rounded-md px-4 py-3 text-sm">
                 <p class="font-semibold">Draft for legal review</p>
                 <p class="mt-1">
                     This document has not yet been approved by the PNP Legal Service and the Data Protection Officer.
@@ -47,9 +46,10 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
                 </p>
             </div>
 
-            <article class="legal-doc bg-white rounded-xl border p-8">
-                <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
-                <p class="mt-1 text-sm text-gray-500">Version {{ version }} · Effective {{ effectiveDate }}</p>
+            <article class="legal-doc card p-5 sm:p-10">
+                <p class="eyebrow">Philippine National Police · PNP LMS</p>
+                <h1 class="mt-1 text-2xl font-semibold tracking-tight text-primary-900">{{ title }}</h1>
+                <p class="mt-1 pb-5 border-b border-slate-200 text-sm text-slate-500">Version {{ version }} · Effective {{ effectiveDate }}</p>
                 <slot />
             </article>
 
@@ -64,7 +64,7 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
 /* Not scoped: the document text lives in the page components' slots. */
 .legal-doc {
     counter-reset: legal-section;
-    color: #374151;
+    color: #334155;
     font-size: 0.925rem;
     line-height: 1.65;
 }
@@ -73,7 +73,7 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
     margin-top: 2rem;
     font-size: 1.05rem;
     font-weight: 600;
-    color: #111827;
+    color: #0F2147;
 }
 .legal-doc h2::before {
     content: counter(legal-section) ". ";
@@ -81,7 +81,7 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
 .legal-doc h3 {
     margin-top: 1.25rem;
     font-weight: 600;
-    color: #1f2937;
+    color: #1A2F58;
 }
 .legal-doc p {
     margin-top: 0.75rem;
@@ -95,7 +95,7 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
     margin-top: 0.35rem;
 }
 .legal-doc a {
-    color: #2563eb;
+    color: #243C6C;
     text-decoration: underline;
 }
 .legal-doc table {
@@ -106,14 +106,23 @@ const signedIn = computed(() => !!usePage().props.auth?.user);
 }
 .legal-doc th,
 .legal-doc td {
-    border: 1px solid #e5e7eb;
+    border: 1px solid #e2e8f0;
     padding: 0.5rem 0.65rem;
     text-align: left;
     vertical-align: top;
 }
 .legal-doc th {
-    background: #f9fafb;
+    background: #f8fafc;
     font-weight: 600;
+}
+/* Phones: each table row becomes a small block instead of squeezed columns. */
+@media (max-width: 639px) {
+    .legal-doc table, .legal-doc tbody, .legal-doc tr, .legal-doc td { display: block; width: 100%; }
+    .legal-doc thead { display: none; }
+    .legal-doc tr { border: 1px solid #e2e8f0; border-radius: 0.375rem; margin-top: 0.75rem; padding: 0.5rem 0.75rem; }
+    .legal-doc td { border: none; padding: 0.2rem 0; }
+    .legal-doc td:first-child { font-weight: 600; color: #0F2147; }
+    .legal-doc td:nth-child(3)::before { content: "Source: "; font-weight: 600; }
 }
 mark.legal-todo {
     background: #fef08a;

@@ -1,6 +1,8 @@
-<!-- New reusable component: resources/js/Components/MatchingDropdown.vue -->
+<!-- resources/js/Components/MatchingDropdown.vue: picks the match for one
+     item of a matching-type exam question. -->
 <script setup>
 import { ref } from 'vue';
+import { ChevronDown } from 'lucide-vue-next';
 
 const props = defineProps({
     modelValue: String,
@@ -20,16 +22,17 @@ const select = (option) => {
 
 <template>
     <div class="relative flex-1">
-        <button type="button" @click="open = !open" :disabled="disabled"
-            class="w-full border rounded-lg px-3 py-2 text-sm text-left flex justify-between items-center gap-2"
-            :class="disabled ? 'bg-gray-50 text-gray-400' : 'bg-white'">
+        <button type="button" @click="open = !open" :disabled="disabled" :aria-expanded="open"
+            class="flex w-full items-center justify-between gap-2 rounded-md border px-3 py-2 text-left text-sm shadow-sm"
+            :class="disabled ? 'border-slate-200 bg-slate-50 text-slate-400' : modelValue ? 'border-primary-600 bg-white text-slate-900' : 'border-slate-300 bg-white text-slate-500'">
             <span class="break-words">{{ modelValue || 'Select match' }}</span>
-            <span class="shrink-0 text-gray-400">▾</span>
+            <ChevronDown :size="16" :stroke-width="1.75" class="shrink-0 text-slate-400" />
         </button>
 
-        <div v-if="open" class="absolute z-10 mt-1 w-full bg-white border rounded-lg shadow-lg max-h-60 overflow-y-auto">
+        <div v-if="open" class="absolute z-10 mt-1 max-h-60 w-full overflow-y-auto rounded-md border border-slate-200 bg-white py-1 shadow-lg">
             <button v-for="opt in options" :key="opt" type="button" @click="select(opt)"
-                class="w-full text-left px-3 py-2 text-sm hover:bg-blue-50 break-words whitespace-normal">
+                :class="opt === modelValue ? 'bg-primary-50 font-medium text-primary-900' : 'text-slate-700 hover:bg-slate-50'"
+                class="w-full whitespace-normal break-words px-3 py-2 text-left text-sm">
                 {{ opt }}
             </button>
         </div>
